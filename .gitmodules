@@ -1,0 +1,3 @@
+[submodule "py-lua-parser"]
+	path = py-lua-parser
+	url = git@github.com:DavidVentura/py-lua-parser.git
