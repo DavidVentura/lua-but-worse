@@ -29,7 +29,7 @@ typedef struct TValue {
         return n;
     };
 
-    operator char*() const {
+    operator const char*() const {
         assertm(tag==TT_STR, "Type was not STR");
         return s;
     };
@@ -122,14 +122,19 @@ void print(const char* fmt, const TValue t) {
         printf(fmt, (uint16_t)t.n, (int16_t)z8::fix32::decimals(t.n));
     }
 }
-void print(const std::initializer_list<TValue>& values) {
-    for (auto& t : values) {
-
-        if(t.tag == TT_STR) {
-            printf("%s\n", t.s);
-        }
-        if(t.tag == TT_NUM) {
-            printf("%d.%d\n", (uint16_t)t.n, (int16_t)z8::fix32::decimals(t.n));
+void print(TValue value, int16_t x, int16_t y, int16_t col) {
+    static char numbuf[16];
+    if(value.tag == TT_STR) {
+        _print(value.s, strlen(value.s), x, y, col);
+    }
+    if(value.tag == TT_NUM) {
+        int16_t decimals = (int16_t)z8::fix32::decimals(value.n);
+        if (decimals) {
+            int len = sprintf(numbuf, "%d.%d", (uint16_t)value.n, decimals);
+            _print(numbuf, len, x, y, col);
+        } else {
+            int len = sprintf(numbuf, "%d", (uint16_t)value.n);
+            _print(numbuf, len, x, y, col);
         }
     }
 }
