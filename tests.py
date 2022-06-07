@@ -1,20 +1,15 @@
-from textwrap import dedent
+import os
+import pytest
+
 from a import transform
 
-def test_tables():
-    i = '''squares = {1, 4, 9, 16, 25}
-           member  = {x=1}
-           empty   = {}
-           '''
+def find_case_pairs():
+    return [(f'test_cases/{d}/in.lua', f'test_cases/{d}/out.cpp') for d in os.listdir('test_cases')]
 
-    expected = dedent('''
-    #include "header.h"
-    TValue empty;
-    TValue member;
-    TValue squares;
-    squares.t = new std::unordered_map<std::string, TValue>({ { fix32(1), fix32(1) }, { fix32(2), fix32(4) }, { fix32(3), fix32(9) }, { fix32(4), fix32(16) }, { fix32(5), fix32(25) } });
-    member.t = new std::unordered_map<std::string, TValue>({ { "x", fix32(1) } });
-    empty.t = new std::unordered_map<std::string, TValue>();
-    ''').strip()
-
-    assert transform(i) == expected
+@pytest.mark.parametrize("in_f,expected_f", find_case_pairs())
+def test_cases(in_f, expected_f):
+    with open(in_f) as fd:
+        i = fd.read()
+    with open(expected_f) as fd:
+        expected = fd.read()
+    assert transform(i).strip() == expected.strip()
