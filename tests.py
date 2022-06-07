@@ -12,4 +12,5 @@ def test_cases(in_f, expected_f):
         i = fd.read()
     with open(expected_f) as fd:
         expected = fd.read()
-    assert transform(i).strip() == expected.strip()
+    actual = transform(i).strip().splitlines()
+    assert actual == expected.strip().splitlines()
