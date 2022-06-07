@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <string>
 #include "fix32.h"
+#include <unordered_map>
+#include <functional>
 using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
@@ -125,8 +127,11 @@ typedef struct TValue {
                 return true;
             case TT_TAB: // by pointer identity
                 return t == other.t;
+            case TT_FN:
+                assertm(false, "Can't compare functions");
+                return false;
         }
-        assertm(false, "Can't compare");
+        assertm(false, "Nothing to compare");
         return false;
     }
 
