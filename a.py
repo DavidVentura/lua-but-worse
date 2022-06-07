@@ -8,37 +8,6 @@ from luaparser.astnodes import Assign, LocalAssign, Index, Function
 # ```
 # local j
 # ```
-# broken parsing when declaring string-based bracket access to a table
-#  player["sbr"]=118
-
-src = """
-x = 64
-y = 64
-a = "some text"
-b = "other value"
-local j = 5
-function _update()
-  q = 5
-  if (btn(0)) then x=x-1 end
-  if (btn(1)) then x=x+1 end
-  if (btn(2)) then y=y-1 end
-  if (btn(3)) then y=y+1 end
-end  
-
-function _draw()
-  print(q)
---  print(a+b)
-  cls()
-  map(0,0,0,0,16,8)
-  map(0,0,0,64,16,9)
-  spr(2,x,y)
-end
-"""
-
-with open('tennis.lua') as fd:
-    src = fd.read()
-tree = ast.parse(src)
-print('#include "header.h"')
 
 def add_decls(tree):
     tree_visitor = ast.WalkVisitor()
@@ -78,6 +47,16 @@ def add_signatures(tree):
             continue
         tree.body.add_signatures(n)
 
-add_signatures(tree)
-add_decls(tree)
-print(tree.body.dump())
+def transform(src):
+    tree = ast.parse(src)
+    ret = '#include "header.h"\n'
+    add_signatures(tree)
+    add_decls(tree)
+    ret += tree.body.dump()
+    return ret
+
+#with open('tennis.lua') as fd:
+with open('squares.lua') as fd:
+    src = fd.read()
+
+print(transform(src))
