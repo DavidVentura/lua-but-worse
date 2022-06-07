@@ -8,6 +8,8 @@ using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
+#define ttable std::unordered_map<std::string, TValue>
+
 typedef enum {
     TT_NUM     = 0,
     TT_STR,
@@ -16,14 +18,11 @@ typedef enum {
     TT_NULL,
 } tt;
 
-typedef struct Table {
-} Table;
-
 typedef struct TValue {
     union {
-        fix32                                       n;
-        const char*                                 s;
-        std::unordered_map<std::string, TValue>*    t;
+        fix32       n;
+        const char* s;
+        ttable*     t;
     };
     tt tag          = TT_NULL;
 
@@ -149,6 +148,11 @@ typedef struct TValue {
         s = val;
     }
 
+    TValue(ttable* val) {
+        tag = TT_TAB;
+        t = val;
+    }
+
 } TValue;
 
 extern uint8_t btn(uint8_t);
@@ -177,7 +181,7 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
     }
 }
 
-void foreach(TValue val, std::function<TValue* (TValue)> f) {
+void foreach(TValue val, std::function<void (TValue)> f) {
     // assertm(t.tag == TT_TAB, "Can't foreach a non-table");
     // standard for instead of magic iterator as items can be deleted from the table
     // during iteration
