@@ -2,11 +2,10 @@
 TValue c;
 TValue b;
 TValue a;
-TValue *f();
+void f();
 
-TValue *f() {
+void f() {
   a = fix32(5);
   b = fix32(7);
-  return NULL;
 }
-c = a * b; // unknown
+c = a * b; // ?
