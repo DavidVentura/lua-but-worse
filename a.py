@@ -1,4 +1,5 @@
 import textwrap
+import subprocess
 
 from luaparser import ast
 from luaparser.astnodes import Assign, LocalAssign, Index, Function
@@ -47,16 +48,25 @@ def add_signatures(tree):
             continue
         tree.body.add_signatures(n)
 
-def transform(src):
+def transform(src, pretty=True):
     tree = ast.parse(src)
     ret = '#include "header.h"\n'
     add_signatures(tree)
     add_decls(tree)
     ret += tree.body.dump()
+    if pretty:
+        ret = prettify(ret)
     return ret
 
-#with open('tennis.lua') as fd:
-with open('squares.lua') as fd:
-    src = fd.read()
+def prettify(src):
+    p = subprocess.Popen(['clang-format'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    out, err = p.communicate(input=src.encode(), timeout=1)
+    return out.decode()
 
-print(transform(src))
+
+if __name__ == '__main__':
+    #with open('tennis.lua') as fd:
+    with open('squares.lua') as fd:
+        src = fd.read()
+
+    print(transform(src))
