@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <string>
 #include "fix32.h"
+using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
@@ -18,13 +19,19 @@ typedef struct Table {
 
 typedef struct TValue {
     union {
-        z8::fix32                              n;
-        char*                                  s;
+        fix32                                       n;
+        const char*                                 s;
         std::unordered_map<std::string, TValue>*    t;
     };
     tt tag          = TT_NULL;
 
-    operator z8::fix32() const {
+    operator int8_t() const {
+        assertm(tag==TT_NUM, "Type was not number");
+        assertm(n<(int16_t)128, "Tried to cast >128 to int8_t");
+        assertm(n>(int16_t)-127, "Tried to cast <-127 to int8_t");
+        return n;
+    };
+    operator fix32() const {
         assertm(tag==TT_NUM, "Type was not number");
         return n;
     };
@@ -36,12 +43,12 @@ typedef struct TValue {
 
     operator bool() const {
         assertm(tag==TT_NUM, "Type was not number");
-        return n != z8::fix32(0);
+        return n != fix32(0);
     };
 
-    inline bool operator >(int o) {
+    inline bool operator >(fix32 o) {
         assertm(tag==TT_NUM, "Can't dec notnumber");
-        bool res = n > z8::fix32(o);
+        bool res = n > o;
         return res;
     }
     inline bool operator >(TValue o) {
@@ -51,27 +58,57 @@ typedef struct TValue {
         assertm(tag==TT_NUM, "Can't dec notnumber");
         return n < o.n;
     }
-    inline bool operator <(int16_t o) {
+    inline bool operator >=(fix32 o) {
         assertm(tag==TT_NUM, "Can't dec notnumber");
-        return n < z8::fix32(o);
+        return n >= o;
+    }
+    inline bool operator <=(fix32 o) {
+        assertm(tag==TT_NUM, "Can't dec notnumber");
+        return n <= o;
+    }
+    inline bool operator <(fix32 o) {
+        assertm(tag==TT_NUM, "Can't dec notnumber");
+        return n < o;
     }
 
-    inline bool operator ==(z8::fix32 o) {
+    inline bool operator ==(fix32 o) {
         assertm(tag==TT_NUM, "Can't dec notnumber");
         return n == o;
     }
-    inline bool operator ==(int16_t o) {
+
+    inline bool operator !=(fix32 o) {
         assertm(tag==TT_NUM, "Can't dec notnumber");
-        return n == z8::fix32(o);
+        return n != o;
     }
 
-    inline TValue operator -=(z8::fix32 o) {
+    inline TValue operator %(fix32 o) {
+        assertm(tag==TT_NUM, "Can't dec notnumber");
+        return TValue(n % o);
+    }
+
+    inline TValue operator +(fix32 o) {
+        return TValue(n + o);
+    }
+
+    inline TValue operator -(fix32 o) {
+        return TValue(n - o);
+    }
+
+    inline TValue operator -() {
+        return TValue(-n);
+    }
+
+    inline TValue operator /(fix32 o) {
+        return TValue(n / o);
+    }
+
+    inline TValue operator -=(fix32 o) {
         assertm(tag==TT_NUM, "Can't dec notnumber");
         n -= o;
         return *this;
     }
 
-    inline TValue operator +=(z8::fix32 o) {
+    inline TValue operator +=(fix32 o) {
         assertm(tag==TT_NUM, "Can't inc notnumber");
         n += o;
         return *this;
@@ -94,19 +131,15 @@ typedef struct TValue {
     }
 
     TValue() = default;
-    TValue(z8::fix32 val) {
+    TValue(fix32 val) {
         tag = TT_NUM;
         n = val;
-    }
-    TValue(int val) {
-        tag = TT_NUM;
-        n = z8::fix32(val);
     }
     TValue(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
     }
-    TValue(char* val) {
+    TValue(const char* val) {
         tag = TT_STR;
         s = val;
     }
@@ -119,7 +152,7 @@ void print(const char* fmt, const TValue t) {
         printf(fmt, t.s);
     }
     if(t.tag == TT_NUM) {
-        printf(fmt, (uint16_t)t.n, (int16_t)z8::fix32::decimals(t.n));
+        printf(fmt, (uint16_t)t.n, (int16_t)fix32::decimals(t.n));
     }
 }
 void print(TValue value, int16_t x, int16_t y, int16_t col) {
@@ -128,7 +161,7 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
         _print(value.s, strlen(value.s), x, y, col);
     }
     if(value.tag == TT_NUM) {
-        int16_t decimals = (int16_t)z8::fix32::decimals(value.n);
+        int16_t decimals = (int16_t)fix32::decimals(value.n);
         if (decimals) {
             int len = sprintf(numbuf, "%d.%d", (uint16_t)value.n, decimals);
             _print(numbuf, len, x, y, col);
@@ -138,40 +171,6 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
         }
     }
 }
-
-TValue _div(TValue t, int16_t v) {
-    TValue ret = TValue(0);
-    assert(t.tag == TT_NUM);
-    ret.n = t.n / (int16_t)v;
-    return ret;
-};
-
-TValue _add(TValue t, int v) {
-    assert(t.tag == TT_NUM);
-    return TValue(t.n + z8::fix32(v));
-};
-
-TValue _add(TValue t, z8::fix32 v) {
-    assert(t.tag == TT_NUM);
-    return TValue(t.n + v);
-};
-
-TValue _add(TValue t, TValue v) {
-    assert(t.tag == TT_NUM);
-    assert(v.tag == TT_NUM);
-    return TValue(t.n + v.n);
-};
-
-TValue _sub(TValue t, z8::fix32 v) {
-    assert(t.tag == TT_NUM);
-    return TValue(t.n - v);
-};
-
-TValue _sub(TValue t, TValue v) {
-    assert(t.tag == TT_NUM);
-    assert(v.tag == TT_NUM);
-    return TValue(t.n - v.n);
-};
 
 void foreach(TValue val, std::function<TValue* (TValue)> f) {
     // assertm(t.tag == TT_TAB, "Can't foreach a non-table");
@@ -185,20 +184,20 @@ void foreach(TValue val, std::function<TValue* (TValue)> f) {
     }
 }
 
-z8::fix32 count(TValue val) {
+fix32 count(TValue val) {
     // assertm(t.tag == TT_TAB, "Can't count a non-table");
     // p8 limits integers to uint16_t // SHRT_MAX .. also there's not enough memory anyway
     // to store so many items
     return (uint16_t)val.t->size();
 }
 
-z8::fix32 rnd(float limit = 1.0f) {
+fix32 rnd(float limit = 1.0f) {
     float x = (float)rand()/(float)(RAND_MAX/limit);
     return x;
 }
 
-z8::fix32 flr(z8::fix32 n) {
-    z8::fix32 ret = z8::fix32::floor(n);
+fix32 flr(fix32 n) {
+    fix32 ret = fix32::floor(n);
     return ret;
 }
 
