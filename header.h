@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstdio>
-#include <string>
+#include <cstring>
 #include "fix32.h"
 #include <unordered_map>
 #include <functional>
@@ -44,6 +44,7 @@ typedef struct TValue {
     };
 
     operator bool() const {
+        if(tag==TT_NULL) return false;
         assertm(tag==TT_NUM, "Type was not number");
         return n != fix32(0);
     };
@@ -175,46 +176,37 @@ typedef struct TValue {
 
 } TValue;
 
+TValue NULL_TV = TValue();
+
 class Table
 {
     public:
         std::unordered_map<std::string, TValue> fields;
-        Table* metatable;
+        Table* metatable = NULL;
 
         Table(std::unordered_map<std::string, TValue> values) {
             fields = values;
+            metatable = NULL;
         }
-        Table() {}
 
-        TValue get(std::string key) {
+        Table() {
+            metatable = NULL;
+        }
+
+        TValue& operator[](std::string const& key) {
             if(fields.count(key)) {
-                return (fields)[key];
+                return fields[key];
             }
 
             if(metatable!=NULL && metatable->fields.count("__index")) {
-                return metatable->get("__index").t->get(key);
+                fields[key] = (*(metatable->fields["__index"].t))[key];
+                return fields[key];
             }
-            return TValue(); // TT_NULL
+
+            fields[key] = NULL_TV;
+            return fields[key];
         }
 
-        void set(std::string key, const TValue v) {
-            fields[key] = v;
-        }
-
-        void inc(std::string key, const TValue delta) {
-            TValue _val = get(key);
-            fields[key] = _val + delta;
-        }
-
-        void dec(std::string key, const TValue delta) {
-            TValue _val = get(key);
-            fields[key] = _val - delta;
-        }
-
-        bool eq(std::string key, const TValue comp) {
-            TValue _val = get(key);
-            return _val == comp;
-        }
 };
 
 void setmetatable(TValue t, TValue meta) {
@@ -281,7 +273,7 @@ fix32 flr(fix32 n) {
 void add(TValue table, TValue val) {
     char* key = (char*)malloc(8);
     sprintf(key, "%d", (uint16_t)(table.t->fields.size()));
-    table.t->set(key, val);
+    (*table.t)[key] = val;
     free(key);
 }
 
