@@ -1,7 +1,9 @@
 #include "header.h"
-void f();
+int main();
 
-void f() {
-  for (auto t = fix32(1); t < fix32(7); t += fix32(1)) {
+int main() {
+  for (auto i = fix32(1); i < fix32(7); i += fix32(1)) {
+    print("%d\n", i);
   }
+  return fix32(0);
 }
