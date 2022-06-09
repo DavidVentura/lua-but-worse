@@ -224,6 +224,7 @@ void print(const char* fmt, const TValue t) {
         printf(fmt, (uint16_t)t.n, (int16_t)fix32::decimals(t.n));
     }
 }
+#if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
 void print(TValue value, int16_t x, int16_t y, int16_t col) {
     static char numbuf[16];
     if(value.tag == TT_STR) {
@@ -240,6 +241,7 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
         }
     }
 }
+#endif
 
 void foreach(TValue val, std::function<void (TValue)> f) {
     // assertm(t.tag == TT_TAB, "Can't foreach a non-table");
