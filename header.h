@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -8,8 +9,6 @@ using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
-#define ttable std::unordered_map<std::string, TValue>
-
 typedef enum {
     TT_NUM     = 0,
     TT_STR,
@@ -18,11 +17,13 @@ typedef enum {
     TT_NULL,
 } tt;
 
+class Table;
+
 typedef struct TValue {
     union {
         fix32       n;
         const char* s;
-        ttable*     t;
+        Table*      t;
     };
     tt tag          = TT_NULL;
 
@@ -115,7 +116,26 @@ typedef struct TValue {
         return *this;
     }
 
-    inline bool operator ==(const TValue other) const {
+    inline bool operator ==(TValue other) {
+        if(tag!=other.tag) return false;
+        switch(tag) {
+            case TT_NUM:
+                return n == other.n;
+            case TT_STR: // FIXME: by pointer identity
+                return s == other.s;
+            case TT_NULL:
+                return true;
+            case TT_TAB: // by pointer identity
+                return t == other.t;
+            case TT_FN:
+                assertm(false, "Can't compare functions");
+                return false;
+        }
+        assertm(false, "Nothing to compare");
+        return false;
+    }
+
+    inline bool operator ==(TValue other) const {
         if(tag!=other.tag) return false;
         switch(tag) {
             case TT_NUM:
@@ -148,12 +168,60 @@ typedef struct TValue {
         s = val;
     }
 
-    TValue(ttable* val) {
+    TValue(Table* val) {
         tag = TT_TAB;
         t = val;
     }
 
 } TValue;
+
+class Table
+{
+    public:
+        std::unordered_map<std::string, TValue> fields;
+        Table* metatable;
+
+        Table(std::unordered_map<std::string, TValue> values) {
+            fields = values;
+        }
+        Table() {}
+
+        TValue get(std::string key) {
+            if(fields.count(key)) {
+                return (fields)[key];
+            }
+
+            if(metatable!=NULL && metatable->fields.count("__index")) {
+                return metatable->get("__index").t->get(key);
+            }
+            return TValue(); // TT_NULL
+        }
+
+        void set(std::string key, const TValue v) {
+            fields[key] = v;
+        }
+
+        void inc(std::string key, const TValue delta) {
+            TValue _val = get(key);
+            fields[key] = _val + delta;
+        }
+
+        void dec(std::string key, const TValue delta) {
+            TValue _val = get(key);
+            fields[key] = _val - delta;
+        }
+
+        bool eq(std::string key, const TValue comp) {
+            TValue _val = get(key);
+            return _val == comp;
+        }
+};
+
+void setmetatable(TValue t, TValue meta) {
+    // assert(t.tag == TT_TAB)
+    // assert(meta.tag == TT_TAB)
+    t.t->metatable = meta.t;
+}
 
 extern uint8_t btn(uint8_t);
 void print(const char* fmt, const TValue t) {
@@ -185,7 +253,7 @@ void foreach(TValue val, std::function<void (TValue)> f) {
     // assertm(t.tag == TT_TAB, "Can't foreach a non-table");
     // standard for instead of magic iterator as items can be deleted from the table
     // during iteration
-    for (auto it = (*val.t).cbegin(); it != (*val.t).cend(); /* no increment */) {
+    for (auto it = val.t->fields.cbegin(); it != val.t->fields.cend(); /* no increment */) {
         auto next = it;
         ++next;
         f(it->second);
@@ -197,7 +265,7 @@ fix32 count(TValue val) {
     // assertm(t.tag == TT_TAB, "Can't count a non-table");
     // p8 limits integers to uint16_t // SHRT_MAX .. also there's not enough memory anyway
     // to store so many items
-    return (uint16_t)val.t->size();
+    return (uint16_t)val.t->fields.size();
 }
 
 fix32 rnd(float limit = 1.0f) {
@@ -212,16 +280,15 @@ fix32 flr(fix32 n) {
 
 void add(TValue table, TValue val) {
     char* key = (char*)malloc(8);
-    sprintf(key, "%d", (uint16_t)((*table.t).size()));
-    (*table.t)[key] = val;
+    sprintf(key, "%d", (uint16_t)(table.t->fields.size()));
+    table.t->set(key, val);
     free(key);
 }
 
 void del(TValue table, TValue val) {
-    for (auto it = (*table.t).cbegin(); it != (*table.t).cend(); ++it)
-    {
+    for (auto it = table.t->fields.cbegin(); it != table.t->fields.cend(); ++it) {
         if (it->second == val) {
-            (*table.t).erase(it);
+            table.t->fields.erase(it);
             break;
         }
     }
