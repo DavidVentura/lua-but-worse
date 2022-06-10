@@ -248,10 +248,9 @@ class Table
 
 };
 
-
 void setmetatable(TValue t, TValue meta) {
-    // assert(t.tag == TT_TAB)
-    // assert(meta.tag == TT_TAB)
+    assert(t.tag == TT_TAB);
+    assert(meta.tag == TT_TAB);
     t.t->metatable = meta.t;
 }
 
@@ -303,7 +302,7 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
 #endif
 
 void foreach(TValue val, std::function<void (TValue)> f) {
-    // assertm(t.tag == TT_TAB, "Can't foreach a non-table");
+    assertm(val.tag == TT_TAB, "Can't foreach a non-table");
     // standard for instead of magic iterator as items can be deleted from the table
     // during iteration
     for (auto it = val.t->fields.cbegin(); it != val.t->fields.cend(); /* no increment */) {
@@ -315,8 +314,8 @@ void foreach(TValue val, std::function<void (TValue)> f) {
 }
 
 fix32 count(TValue val) {
-    // assertm(t.tag == TT_TAB, "Can't count a non-table");
-    // p8 limits integers to uint16_t // SHRT_MAX .. also there's not enough memory anyway
+    assertm(val.tag == TT_TAB, "Can't count a non-table");
+    // p8 limits integers to uint16_t (SHRT_MAX) .. also there's not enough memory anyway
     // to store so many items
     return (uint16_t)val.t->fields.size();
 }
