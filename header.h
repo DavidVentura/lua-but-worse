@@ -195,16 +195,13 @@ struct std::hash<TValue>
                 // poor man's hash
                 // most strings are "x1" or "x2" etc
                 return s.s[0] ^ s.s[1];
-                //return std::hash<std::string>{}(s.s);
             case TT_TAB:
                 return (std::size_t)s.t; // unique by address
             case TT_NUM:
-                return s.n.bits();
-                //return std::hash<int32_t>{}(s.n.bits()); // unique by value, as bits
+                return s.n.bits(); // unique by value, as bits
             case TT_FN:
                 assertm(false, "Can't hash a function yet");
                 return 0;
-                //return &s.f; // unique by address
             case TT_NULL:
                 return 0; // all TT_NULL have the same hash
         }
