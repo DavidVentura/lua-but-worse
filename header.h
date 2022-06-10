@@ -209,6 +209,7 @@ class Table
     public:
         std::unordered_map<TValue, TValue> fields;
         Table* metatable = NULL;
+        uint16_t last_auto_index = 0;
 
         Table(std::initializer_list<std::pair<const TValue, TValue>> values): fields(values) {
             metatable = NULL;
@@ -248,23 +249,33 @@ void setmetatable(TValue t, TValue meta) {
 
 extern uint8_t btn(uint8_t);
 void print(const TValue t) {
-    if(t.tag == TT_STR) {
-        printf("%s\n", t.s);
-    }
-    if(t.tag == TT_NUM) {
-        fix32 _dec = fix32::decimals(t.n);
-        if(_dec > fix32(0)) {
-            char buf[17];
-            fix32::to_string(_dec, buf);
-            printf("%d.%s\n", int16_t(t.n), buf);
-        } else {
-            printf("%d\n", int16_t(t.n));
-        }
+    switch(t.tag) {
+        case TT_STR:
+            printf("%s\n", t.s);
+            break;
+        case TT_NUM:
+            {
+                fix32 _dec = fix32::decimals(t.n);
+                if(_dec > fix32(0)) {
+                    char buf[17];
+                    fix32::to_string(_dec, buf);
+                    printf("%d.%s\n", int16_t(t.n), buf);
+                } else {
+                    printf("%d\n", int16_t(t.n));
+                }
+                break;
+            }
+        case TT_NULL:
+            printf("NULL\n");
+            break;
+        case TT_TAB:
+            printf("T<%d>\n", t.t);
+            break;
     }
 }
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
 void print(TValue value, int16_t x, int16_t y, int16_t col) {
-    static char numbuf[16];
+    static char numbuf[23];
     if(value.tag == TT_STR) {
         _print(value.s, strlen(value.s), x, y, col);
     }
@@ -272,7 +283,7 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
         int16_t decimals = (uint16_t)fix32::decimals(value.n);
         if (decimals) {
             char buf[17];
-            fix32::to_string(_dec, buf);
+            fix32::to_string(decimals, buf);
             int len = sprintf(numbuf, "%d.%s", (uint16_t)value.n, buf);
             _print(numbuf, len, x, y, col);
         } else {
@@ -312,14 +323,14 @@ fix32 flr(fix32 n) {
     return ret;
 }
 
-void add(TValue table, TValue val) {
-    char* key = (char*)malloc(8);
-    sprintf(key, "%d", (uint16_t)(table.t->fields.size()));
-    (*table.t)[key] = val;
-    free(key);
+TValue add(TValue table, TValue val) {
+    table.t->last_auto_index++;
+    (*table.t)[table.t->last_auto_index] = val;
+    return val;
 }
 
 void del(TValue table, TValue val) {
+    assertm(table.tag==TT_TAB, "Tried to delete from a non-table");
     for (auto it = table.t->fields.cbegin(); it != table.t->fields.cend(); ++it) {
         if (it->second == val) {
             table.t->fields.erase(it);
