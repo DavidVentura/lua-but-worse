@@ -1,11 +1,13 @@
 #include "header.h"
 TValue c;
-TValue b;
-TValue a;
-void f();
+TValue main();
 
-void f() {
+TValue main() {
+  TValue b;
+  TValue a;
   a = fix32(5);
   b = fix32(7);
+  c = a * b; // ?
+  print(c);
+  return fix32(0);
 }
-c = a * b; // ?

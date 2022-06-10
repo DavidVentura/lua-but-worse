@@ -216,12 +216,19 @@ void setmetatable(TValue t, TValue meta) {
 }
 
 extern uint8_t btn(uint8_t);
-void print(const char* fmt, const TValue t) {
+void print(const TValue t) {
     if(t.tag == TT_STR) {
-        printf(fmt, t.s);
+        printf("%s\n", t.s);
     }
     if(t.tag == TT_NUM) {
-        printf(fmt, (uint16_t)t.n, (int16_t)fix32::decimals(t.n));
+        fix32 _dec = fix32::decimals(t.n);
+        if(_dec > fix32(0)) {
+            char buf[17];
+            fix32::to_string(_dec, buf);
+            printf("%d.%s\n", int16_t(t.n), buf);
+        } else {
+            printf("%d\n", int16_t(t.n));
+        }
     }
 }
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
@@ -231,9 +238,11 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
         _print(value.s, strlen(value.s), x, y, col);
     }
     if(value.tag == TT_NUM) {
-        int16_t decimals = (int16_t)fix32::decimals(value.n);
+        int16_t decimals = (uint16_t)fix32::decimals(value.n);
         if (decimals) {
-            int len = sprintf(numbuf, "%d.%d", (uint16_t)value.n, decimals);
+            char buf[17];
+            fix32::to_string(_dec, buf);
+            int len = sprintf(numbuf, "%d.%s", (uint16_t)value.n, buf);
             _print(numbuf, len, x, y, col);
         } else {
             int len = sprintf(numbuf, "%d", (uint16_t)value.n);

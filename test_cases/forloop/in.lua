@@ -1,6 +1,6 @@
 function main()
         for i=1,7 do
-                print("%d\n", i)
+                print(i)
         end
         return 0
 end

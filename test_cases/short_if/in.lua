@@ -1,0 +1,17 @@
+function main()
+  test = 0
+  if (test) return 5
+  if (test) return 5 else a = 1
+  if (test) return 5 else b = 2 c = 3
+  if (not test) d = -4 else e = 0
+  print(a)
+  print(b)
+  print(c)
+  print(d)
+
+-- broken
+-- normal if, in brackets
+--if (test) then
+----        noop
+--end
+end

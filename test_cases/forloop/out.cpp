@@ -1,9 +1,9 @@
 #include "header.h"
-int main();
+TValue main();
 
-int main() {
+TValue main() {
   for (auto i = fix32(1); i < fix32(7); i += fix32(1)) {
-    print("%d\n", i);
+    print(i);
   }
   return fix32(0);
 }

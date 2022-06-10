@@ -1,6 +1,7 @@
-function f()
-	a = 5
-	b = 7
+function main()
+	local a = 5
+	local b = 7
+	c = a * b
+	print(c)
+	return 0
 end
-c = a * b
-
