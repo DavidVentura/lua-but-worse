@@ -1,3 +1,4 @@
+#include <initializer_list>
 #include <iostream>
 #include <cassert>
 #include <cstdio>
@@ -89,6 +90,10 @@ typedef struct TValue {
         return TValue(n % o);
     }
 
+    inline TValue operator *(fix32 o) {
+        return TValue(n * o);
+    }
+
     inline TValue operator +(fix32 o) {
         return TValue(n + o);
     }
@@ -136,7 +141,7 @@ typedef struct TValue {
         return false;
     }
 
-    inline bool operator ==(TValue other) const {
+    inline bool operator ==(const TValue &other) const {
         if(tag!=other.tag) return false;
         switch(tag) {
             case TT_NUM:
@@ -176,15 +181,40 @@ typedef struct TValue {
 
 } TValue;
 
+
+template<>
+struct std::hash<TValue>
+{
+    std::size_t operator()(TValue const& s) const noexcept
+    {
+        switch(s.tag) {
+            case TT_STR:
+                return std::hash<std::string>{}(s.s);
+            case TT_TAB:
+                return (std::size_t)s.t; // unique by address
+            case TT_NUM:
+                return std::hash<int32_t>{}((int32_t)s.n); // unique by value, as bits
+//            case TT_FN:
+//                return &s.f; // unique by address
+            case TT_NULL:
+                return 0; // all TT_NULL have the same hash
+        }
+    }
+};
+
 TValue NULL_TV = TValue();
 
 class Table
 {
     public:
-        std::unordered_map<std::string, TValue> fields;
+        std::unordered_map<TValue, TValue> fields;
         Table* metatable = NULL;
 
-        Table(std::unordered_map<std::string, TValue> values) {
+        Table(std::initializer_list<std::pair<const TValue, TValue>> values): fields(values) {
+            metatable = NULL;
+        }
+
+        Table(std::unordered_map<TValue, TValue> values) {
             fields = values;
             metatable = NULL;
         }
@@ -193,7 +223,7 @@ class Table
             metatable = NULL;
         }
 
-        TValue& operator[](std::string const& key) {
+        TValue& operator[](TValue const& key) {
             if(fields.count(key)) {
                 return fields[key];
             }
@@ -208,6 +238,7 @@ class Table
         }
 
 };
+
 
 void setmetatable(TValue t, TValue meta) {
     // assert(t.tag == TT_TAB)
