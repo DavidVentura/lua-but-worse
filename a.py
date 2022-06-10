@@ -1,8 +1,9 @@
+import sys
 import textwrap
 import subprocess
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type
 #from luaparser.astnodes import LocalFunction, Function, Statement, Call, Expression, String, Assign, If, Number, Block, SubOp, AddOp, Name, ElseIf
 
 # TODO: broken parsing when declaring local variables with no value:
@@ -48,11 +49,29 @@ def add_signatures(tree):
             continue
         tree.body.add_signatures(n)
 
-def transform(src, pretty=True):
+def patch_main_type(tree):
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    seen = []
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Function):
+            continue
+        if not n.name.id == 'main':
+            continue
+        n.ret_type = Type.TESTING_INT
+
+def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     ret = '#include "header.h"\n'
+    if testing:
+        patch_main_type(tree)
     add_signatures(tree)
     add_decls(tree)
+
+    if dump_ast:
+        print(ast.to_pretty_str(tree))
+
     ret += tree.body.dump()
     if pretty:
         ret = prettify(ret)
@@ -65,8 +84,8 @@ def prettify(src):
 
 
 if __name__ == '__main__':
-    #with open('tennis.lua') as fd:
-    with open('squares.lua') as fd:
+    with open(sys.argv[1]) as fd:
         src = fd.read()
 
-    print(transform(src))
+    t = transform(src, pretty=True, dump_ast=False)
+    print(t)
