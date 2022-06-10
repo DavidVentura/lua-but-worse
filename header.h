@@ -58,20 +58,21 @@ typedef struct TValue {
     inline bool operator >(TValue o) {
         return n > o.n;
     }
+
     inline bool operator <(TValue o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
+        assertm(tag==TT_NUM, "Can't <t notnumber");
         return n < o.n;
     }
     inline bool operator >=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
+        assertm(tag==TT_NUM, "Can't <= notnumber");
         return n >= o;
     }
     inline bool operator <=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
+        assertm(tag==TT_NUM, "Can't <= notnumber");
         return n <= o;
     }
     inline bool operator <(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
+        assertm(tag==TT_NUM, "Can't <f32 notnumber");
         return n < o;
     }
 
