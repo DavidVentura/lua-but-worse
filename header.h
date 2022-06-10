@@ -275,8 +275,11 @@ void print(const TValue t) {
         case TT_NULL:
             printf("NULL\n");
             break;
+        case TT_FN:
+            assertm(false, "Can't print a function yet");
+            break;
         case TT_TAB:
-            printf("T<%d>\n", t.t);
+            printf("T<%d>\n", (size_t)t.t);
             break;
     }
 }
