@@ -182,24 +182,34 @@ typedef struct TValue {
 
 } TValue;
 
+void print(const TValue t);
+
 
 template<>
 struct std::hash<TValue>
 {
-    std::size_t operator()(TValue const& s) const noexcept
+    inline std::size_t operator()(TValue const& s) const noexcept
     {
         switch(s.tag) {
             case TT_STR:
-                return std::hash<std::string>{}(s.s);
+                // poor man's hash
+                // most strings are "x1" or "x2" etc
+                return s.s[0] ^ s.s[1];
+                //return std::hash<std::string>{}(s.s);
             case TT_TAB:
                 return (std::size_t)s.t; // unique by address
             case TT_NUM:
-                return std::hash<int32_t>{}((int32_t)s.n); // unique by value, as bits
-//            case TT_FN:
-//                return &s.f; // unique by address
+                return s.n.bits();
+                //return std::hash<int32_t>{}(s.n.bits()); // unique by value, as bits
+            case TT_FN:
+                assertm(false, "Can't hash a function yet");
+                return 0;
+                //return &s.f; // unique by address
             case TT_NULL:
                 return 0; // all TT_NULL have the same hash
         }
+        assertm(false, "Unhandled case");
+        return 0;
     }
 };
 
