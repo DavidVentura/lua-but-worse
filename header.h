@@ -334,8 +334,9 @@ fix32 flr(fix32 n) {
 }
 
 TValue add(TValue table, TValue val) {
+    assertm(table.tag==TT_TAB, "Tried to add from a non-table");
     table.t->last_auto_index++;
-    (*table.t)[table.t->last_auto_index] = val;
+    (*table.t)[fix32(table.t->last_auto_index)] = val;
     return val;
 }
 
