@@ -5,9 +5,9 @@ TValue c;
 TValue b;
 TValue a;
 TValue test;
-void main();
+TValue main();
 
-void main() {
+TValue main() {
   test = fix32(0);
 
   if (test) {
@@ -36,4 +36,9 @@ void main() {
   print(b);
   print(c);
   print(d);
+
+  if (test) {
+    print("this should not be visible");
+  }
+  return fix32(0);
 }

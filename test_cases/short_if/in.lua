@@ -11,7 +11,8 @@ function main()
 
 -- broken
 -- normal if, in brackets
---if (test) then
-----        noop
---end
+if (test) then
+    print("this should not be visible")
+end
+return 0
 end
