@@ -6,6 +6,9 @@ TValue a;
 TValue main();
 
 TValue main() {
+  TValue x;
+  x = fix32(1);
+  x += fix32(2);
   a = fix32(1);
   b = fix32(2);
   c = flr(fix32(1.5f)); // ?
