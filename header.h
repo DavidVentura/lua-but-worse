@@ -232,7 +232,7 @@ class Table
             metatable = NULL;
         }
 
-        TValue& operator[](TValue const& key) {
+        inline TValue& operator[](TValue const& key) {
             if(fields.count(key)) {
                 return fields[key];
             }
