@@ -27,6 +27,7 @@ typedef struct TValue {
         Table*      t;
     };
     tt tag          = TT_NULL;
+    size_t hash     = 0;
 
     operator int8_t() const {
         assertm(tag==TT_NUM, "Type was not number");
@@ -161,23 +162,50 @@ typedef struct TValue {
         return false;
     }
 
-    TValue() = default;
+    TValue& operator=(fix32 val) {
+        tag = TT_NUM;
+        n = val;
+        hash = n.bits();
+        return *this;
+    }
+    TValue& operator=(bool val) {
+        tag = TT_NUM;
+        n = val ? 1 : 0;
+        hash = n.bits();
+        return *this;
+    }
+
+    TValue& operator=(Table* val) {
+        tag = TT_TAB;
+        t = val;
+        hash = (size_t)val;
+        return *this;
+    }
+
+    TValue() {
+        tag = TT_NULL;
+        hash = 0x5a5a5a5a;
+    }
     TValue(fix32 val) {
         tag = TT_NUM;
         n = val;
+        hash = n.bits();
     }
     TValue(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
+        hash = n.bits();
     }
     TValue(const char* val) {
         tag = TT_STR;
         s = val;
+        hash = (val[0] | val[1] << 1); // unless the strings are empty; they always have 2 bytes+
     }
 
     TValue(Table* val) {
         tag = TT_TAB;
         t = val;
+        hash = (size_t)val;
     }
 
 } TValue;
@@ -186,27 +214,9 @@ void print(const TValue t);
 
 
 template<>
-struct std::hash<TValue>
-{
-    inline std::size_t operator()(TValue const& s) const noexcept
-    {
-        switch(s.tag) {
-            case TT_STR:
-                // poor man's hash
-                // most strings are "x1" or "x2" etc
-                return s.s[0] ^ s.s[1];
-            case TT_TAB:
-                return (std::size_t)s.t; // unique by address
-            case TT_NUM:
-                return s.n.bits(); // unique by value, as bits
-            case TT_FN:
-                assertm(false, "Can't hash a function yet");
-                return 0;
-            case TT_NULL:
-                return 0; // all TT_NULL have the same hash
-        }
-        assertm(false, "Unhandled case");
-        return 0;
+struct std::hash<TValue> {
+    inline std::size_t operator()(TValue const& s) const noexcept {
+        return s.hash;
     }
 };
 
