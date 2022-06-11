@@ -321,10 +321,10 @@ void print(const TValue t) {
             assertm(false, "Can't print a function yet");
             break;
         case TT_TAB:
-            printf("T<%d>\n", (size_t)t.t);
+            printf("T<%x>\n", (size_t)t.t);
             break;
         case TT_OPT:
-            printf("OPT token\n");
+            printf("OPT token at 0x%X\n", (size_t)&t);
             break;
     }
 }
