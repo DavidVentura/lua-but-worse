@@ -35,7 +35,6 @@ so, literal field accesses can be optimized for faster access and programatic ac
 Input:
 
 ```lua
--- ...
 function main()
 	squares = {1, 4, 9, 16, 25}
 	member  = {x=1}
@@ -47,7 +46,9 @@ function main()
 end
 ```
 
-```
+Output
+
+```cpp
 #include "header.h"
 TValue empty;
 TValue member;
