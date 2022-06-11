@@ -394,7 +394,7 @@ TValue add(TValue table, TValue val) {
     assertm(table.tag==TT_TAB, "Tried to add from a non-table");
     table.t->last_auto_index++;
     *(*table.t)[fix32(table.t->last_auto_index)] = val;
-    printf("Table has %d\n", table.t->fields.size());
+    // printf("Table has %d\n", table.t->fields.size());
     return val;
 }
 
@@ -402,6 +402,10 @@ void del(TValue table, TValue val) {
     assertm(table.tag==TT_TAB, "Tried to delete from a non-table");
     for (auto it = table.t->fields.cbegin(); it != table.t->fields.cend(); ++it) {
         if (*it->second == val) {
+            if(it->second->tag == TT_TAB) {
+                delete it->second->t;
+                delete it->second;
+            }
             table.t->fields.erase(it);
             break;
         }
