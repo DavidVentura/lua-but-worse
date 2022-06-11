@@ -16,6 +16,8 @@ typedef enum {
     TT_TAB,
     TT_FN,
     TT_NULL,
+    TT_OPT, // is a local pointer for faster access; should always be
+            // replaced by assigning a different type
 } tt;
 
 class Table;
@@ -138,6 +140,9 @@ typedef struct TValue {
             case TT_FN:
                 assertm(false, "Can't compare functions");
                 return false;
+            case TT_OPT:
+                assertm(false, "Can't compare OPT values");
+                return false;
         }
         assertm(false, "Nothing to compare");
         return false;
@@ -156,6 +161,8 @@ typedef struct TValue {
                 return t == other.t;
             case TT_FN:
                 assertm(false, "Can't compare functions");
+            case TT_OPT:
+                assertm(false, "Can't compare OPT values");
                 return false;
         }
         assertm(false, "Nothing to compare");
@@ -203,9 +210,16 @@ typedef struct TValue {
     }
 
     TValue(Table* val) {
+        printf("Creating value from Table*\n");
         tag = TT_TAB;
         t = val;
         hash = (size_t)val;
+    }
+
+    static TValue OPT_VAL() {
+        TValue t = TValue();
+        t.tag = TT_OPT;
+        return t;
     }
 
 } TValue;
@@ -220,39 +234,57 @@ struct std::hash<TValue> {
     }
 };
 
-TValue NULL_TV = TValue();
-
 class Table
 {
     public:
-        std::unordered_map<TValue, TValue> fields;
+        std::unordered_map<TValue, TValue*> fields;
         Table* metatable = NULL;
         uint16_t last_auto_index = 0;
 
-        Table(std::initializer_list<std::pair<const TValue, TValue>> values): fields(values) {
-            metatable = NULL;
+        TValue x    = TValue::OPT_VAL();
+        TValue y    = TValue::OPT_VAL();
+        TValue dx   = TValue::OPT_VAL();
+        TValue dy   = TValue::OPT_VAL();
+        TValue spr  = TValue::OPT_VAL();
+        TValue x1   = TValue::OPT_VAL();
+        TValue y1   = TValue::OPT_VAL();
+        TValue x2   = TValue::OPT_VAL();
+        TValue y2   = TValue::OPT_VAL();
+
+        Table(std::initializer_list<std::pair<const TValue, TValue*>> values): fields(values) {
         }
 
+        /*
         Table(std::unordered_map<TValue, TValue> values) {
             fields = values;
             metatable = NULL;
         }
+        */
 
         Table() {
-            metatable = NULL;
+            fields["x1"]     = &x1;
+            fields["x2"]     = &x2;
+            fields["y1"]     = &y1;
+            fields["y2"]     = &y2;
+            fields["x"]     = &x;
+            fields["y"]     = &y;
+            fields["dx"]    = &dx;
+            fields["dy"]    = &dy;
+            fields["spr"]   = &spr;
         }
 
-        inline TValue& operator[](TValue const& key) {
-            if(fields.count(key)) {
+        inline TValue* operator[](TValue const& key) {
+            if(fields.count(key) && fields[key]->tag != TT_OPT) {
+                // TT_OPT here means "optimized" -- unset
                 return fields[key];
             }
 
             if(metatable!=NULL && metatable->fields.count("__index")) {
-                fields[key] = (*(metatable->fields["__index"].t))[key];
+                fields[key] = (*(metatable->fields["__index"]->t))[key];
                 return fields[key];
             }
 
-            fields[key] = NULL_TV;
+            fields[key] = new TValue();
             return fields[key];
         }
 
@@ -291,6 +323,9 @@ void print(const TValue t) {
         case TT_TAB:
             printf("T<%d>\n", (size_t)t.t);
             break;
+        case TT_OPT:
+            printf("OPT token\n");
+            break;
     }
 }
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
@@ -321,7 +356,9 @@ void foreach(TValue val, std::function<void (TValue)> f) {
     for (auto it = val.t->fields.cbegin(); it != val.t->fields.cend(); /* no increment */) {
         auto next = it;
         ++next;
-        f(it->second);
+        if(it->second->tag != TT_OPT) {
+            f(*it->second);
+        }
         it = next;
     }
 }
@@ -346,14 +383,15 @@ fix32 flr(fix32 n) {
 TValue add(TValue table, TValue val) {
     assertm(table.tag==TT_TAB, "Tried to add from a non-table");
     table.t->last_auto_index++;
-    (*table.t)[fix32(table.t->last_auto_index)] = val;
+    *(*table.t)[fix32(table.t->last_auto_index)] = val;
+    printf("Table has %d\n", table.t->fields.size());
     return val;
 }
 
 void del(TValue table, TValue val) {
     assertm(table.tag==TT_TAB, "Tried to delete from a non-table");
     for (auto it = table.t->fields.cbegin(); it != table.t->fields.cend(); ++it) {
-        if (it->second == val) {
+        if (*it->second == val) {
             table.t->fields.erase(it);
             break;
         }
