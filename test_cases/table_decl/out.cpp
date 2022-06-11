@@ -12,4 +12,6 @@ void main() {
                        {fix32(5), new TValue(fix32(25))}});
   member = new Table({{"x", new TValue(fix32(1))}});
   empty = new Table();
+  (*(*member.t)[empty]) = fix32(5); // ?
+  print((*(*member.t)[empty]));
 }
