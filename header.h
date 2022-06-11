@@ -251,7 +251,17 @@ class Table
         TValue x2   = TValue::OPT_VAL();
         TValue y2   = TValue::OPT_VAL();
 
-        Table(std::initializer_list<std::pair<const TValue, TValue*>> values): fields(values) {
+        Table(std::initializer_list<std::pair<const TValue, TValue*>> values) : Table() {
+            for(auto [key, val]: values) {
+                if(fields.count(key)) {
+                    // pre-populated part of the map with a reference
+                    // to a local class member
+                    *fields[key] = *val;
+                } else {
+                    // dynamic key
+                    fields[key] = val;
+                }
+            }
         }
 
         /*
@@ -266,11 +276,11 @@ class Table
             fields["x2"]     = &x2;
             fields["y1"]     = &y1;
             fields["y2"]     = &y2;
-            fields["x"]     = &x;
-            fields["y"]     = &y;
-            fields["dx"]    = &dx;
-            fields["dy"]    = &dy;
-            fields["spr"]   = &spr;
+            fields["x"]      = &x;
+            fields["y"]      = &y;
+            fields["dx"]     = &dx;
+            fields["dy"]     = &dy;
+            fields["spr"]    = &spr;
         }
 
         inline TValue* operator[](TValue const& key) {
