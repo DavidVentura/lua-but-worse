@@ -4,9 +4,9 @@ TValue a;
 TValue main();
 
 TValue main() {
-  a = new Table({{"x", new TValue(fix32(5))}});
+  a = new SpecialTable({{"x", new TValue(fix32(5))}});
   (*(*a.t)["__index"]) = a; // ?
-  b = new Table();
+  b = new SpecialTable();
   setmetatable(b, a);
   print((*(*b.t)["x"]));
   (*(*b.t)["x"]) += fix32(5);

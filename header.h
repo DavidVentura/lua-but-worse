@@ -241,17 +241,7 @@ class Table
         Table* metatable = NULL;
         uint16_t last_auto_index = 0;
 
-        TValue x    = TValue::OPT_VAL();
-        TValue y    = TValue::OPT_VAL();
-        TValue dx   = TValue::OPT_VAL();
-        TValue dy   = TValue::OPT_VAL();
-        TValue spr  = TValue::OPT_VAL();
-        TValue x1   = TValue::OPT_VAL();
-        TValue y1   = TValue::OPT_VAL();
-        TValue x2   = TValue::OPT_VAL();
-        TValue y2   = TValue::OPT_VAL();
-
-        Table(std::initializer_list<std::pair<const TValue, TValue*>> values) : Table() {
+        void prepopulate(std::initializer_list<std::pair<const TValue, TValue*>> values) {
             for(auto [key, val]: values) {
                 if(fields.count(key)) {
                     // pre-populated part of the map with a reference
@@ -262,25 +252,7 @@ class Table
                     fields[key] = val;
                 }
             }
-        }
 
-        /*
-        Table(std::unordered_map<TValue, TValue> values) {
-            fields = values;
-            metatable = NULL;
-        }
-        */
-
-        Table() {
-            fields["x1"]     = &x1;
-            fields["x2"]     = &x2;
-            fields["y1"]     = &y1;
-            fields["y2"]     = &y2;
-            fields["x"]      = &x;
-            fields["y"]      = &y;
-            fields["dx"]     = &dx;
-            fields["dy"]     = &dy;
-            fields["spr"]    = &spr;
         }
 
         inline TValue* operator[](TValue const& key) {
@@ -296,6 +268,37 @@ class Table
 
             fields[key] = new TValue();
             return fields[key];
+        }
+
+};
+
+class SpecialTable : public Table {
+
+    public:
+        TValue x    = TValue::OPT_VAL();
+        TValue y    = TValue::OPT_VAL();
+        TValue dx   = TValue::OPT_VAL();
+        TValue dy   = TValue::OPT_VAL();
+        TValue spr  = TValue::OPT_VAL();
+        TValue x1   = TValue::OPT_VAL();
+        TValue y1   = TValue::OPT_VAL();
+        TValue x2   = TValue::OPT_VAL();
+        TValue y2   = TValue::OPT_VAL();
+
+        SpecialTable(std::initializer_list<std::pair<const TValue, TValue*>> values) : SpecialTable() {
+            prepopulate(values);
+        }
+
+        SpecialTable() {
+            fields["x1"]     = &x1;
+            fields["x2"]     = &x2;
+            fields["y1"]     = &y1;
+            fields["y2"]     = &y2;
+            fields["x"]      = &x;
+            fields["y"]      = &y;
+            fields["dx"]     = &dx;
+            fields["dy"]     = &dy;
+            fields["spr"]    = &spr;
         }
 
 };
