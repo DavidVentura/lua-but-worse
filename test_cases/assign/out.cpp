@@ -1,5 +1,6 @@
 #include "header.h"
 namespace Game {
+  TValue e;
   TValue d;
   TValue c;
   TValue b;
@@ -14,8 +15,11 @@ namespace Game {
     b = fix32(2);
     c = flr(fix32(1.5f)); // ?
     d = flr(fix32(2.5f)); // ?
+    e = fix32(1);
+    e = fix32(2);
     print(a * c);
     print(b * d);
+    print(e);
     return fix32(0);
   }
 } // namespace Game

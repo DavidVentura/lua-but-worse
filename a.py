@@ -14,25 +14,30 @@ def add_decls(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    seen = []
+    seen = {}
     for n in tree_visitor.nodes:
         if isinstance(n, LocalAssign):
             for t in n.targets:
                 if isinstance(t, Index):
                     continue
-                pair = (t.scope(), t)
-                if pair not in seen:
-                    seen.append(pair)
+                key = id(t.scope())
+                seen.setdefault(key, [])
+                if t.id not in [a.id for _, a in seen[key]]:
+                    seen[key].append((t.scope(), t))
+
         elif isinstance(n, Assign):
+            # global variables, always go to the root
+            key = id(tree.body)
             for t in n.targets:
                 if isinstance(t, Index):
                     continue
-                pair = (tree.body, t)
-                if pair not in seen:
-                    seen.append(pair)
+                seen.setdefault(key, [])
+                if t.id not in [a.id for _, a in seen[key]]:
+                    seen[key].append((tree.body, t))
 
-    for block, name in seen:
-        block.add_declaration(name)
+    for names in seen.values():
+        for block, name in names:
+            block.add_declaration(name)
 
 def rename_stdlib_calls(tree):
     tree_visitor = ast.WalkVisitor()
