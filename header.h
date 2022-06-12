@@ -37,7 +37,7 @@ typedef struct TValue {
         assertm(n>(int16_t)-127, "Tried to cast <-127 to int8_t");
         return n;
     };
-    operator fix32() const {
+    inline operator fix32() const {
         assertm(tag==TT_NUM, "Type was not number");
         return n;
     };
@@ -96,6 +96,10 @@ typedef struct TValue {
 
     inline TValue operator *(fix32 o) {
         return TValue(n * o);
+    }
+
+    inline TValue operator *(TValue o) {
+        return TValue(n * o.n);
     }
 
     inline TValue operator +(fix32 o) {
@@ -223,6 +227,19 @@ typedef struct TValue {
     }
 
 } TValue;
+
+TValue operator* (fix32 x, const TValue& y)
+{
+    assertm(y.tag == TT_NUM, "Tried to right-multiply a non-number");
+    return y.n * x;
+}
+
+TValue operator< (fix32 x, const TValue& y)
+{
+    assertm(y.tag == TT_NUM, "Tried to < a non-number");
+    return y.n < x;
+}
+
 
 void print(const TValue t);
 
@@ -413,4 +430,10 @@ void del(TValue table, TValue val) {
             break;
         }
     }
+}
+
+TValue sget(TValue s, TValue n) {
+    return TValue(fix32(1));
+}
+void pset(TValue x, TValue y, TValue color) {
 }
