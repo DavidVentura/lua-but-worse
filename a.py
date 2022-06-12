@@ -3,8 +3,7 @@ import textwrap
 import subprocess
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type
-#from luaparser.astnodes import LocalFunction, Function, Statement, Call, Expression, String, Assign, If, Number, Block, SubOp, AddOp, Name, ElseIf
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -35,6 +34,17 @@ def add_decls(tree):
     for block, name in seen:
         block.add_declaration(name)
 
+def rename_stdlib_calls(tree):
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    seen = []
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Call):
+            continue
+        if n.func.id in ['sin', 'cos']:
+            n.func.id = f'fix32::{n.func.id}'
+
 def add_signatures(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -48,18 +58,6 @@ def add_signatures(tree):
         if n.parent.parent.parent is not None:
             continue
         tree.body.add_signatures(n)
-
-def patch_main_type(tree):
-    tree_visitor = ast.WalkVisitor()
-    tree_visitor.visit(tree)
-
-    seen = []
-    for n in tree_visitor.nodes:
-        if not isinstance(n, Function):
-            continue
-        if not n.name.id == 'main':
-            continue
-        n.ret_type = Type.TESTING_INT
 
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
