@@ -64,8 +64,8 @@ def patch_main_type(tree):
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     ret = '#include "header.h"\n'
-    if testing:
-        patch_main_type(tree)
+    ret += 'namespace Game {\n'
+    rename_stdlib_calls(tree)
     add_signatures(tree)
     add_decls(tree)
 
@@ -73,6 +73,13 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
         print(ast.to_pretty_str(tree))
 
     ret += tree.body.dump()
+    ret += '}\n'
+    if testing:
+        ret += textwrap.dedent('''
+        int main() {
+            Game::main();
+            return 0;
+        }''')
     if pretty:
         ret = prettify(ret)
     return ret
