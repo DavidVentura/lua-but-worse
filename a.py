@@ -1,14 +1,19 @@
+import string
+import logging
+import subprocess
 import sys
 import textwrap
-import subprocess
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
 # local j
 # ```
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 def add_decls(tree):
     tree_visitor = ast.WalkVisitor()
@@ -64,25 +69,112 @@ def add_signatures(tree):
             continue
         tree.body.add_signatures(n)
 
+def find_static_table_accesses(tree):
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    values = set()
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Index):
+            continue
+        if isinstance(n.idx, String):
+            values.add(n.idx.s)
+            n.optimized_access = True
+        elif isinstance(n.idx, Name) and n.notation == IndexNotation.DOT:
+            values.add(n.id)
+            n.optimized_access = True
+        else:
+            logger.debug("Not optimizing non-string/constant value", getattr(n.idx, 'id', getattr(n.idx, 'n', n.id)))
+    return sorted(values)
+
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
-    ret = '#include "header.h"\n'
-    ret += 'namespace Game {\n'
     rename_stdlib_calls(tree)
     add_signatures(tree)
     add_decls(tree)
+    static_table_fields = find_static_table_accesses(tree)
 
     if dump_ast:
         print(ast.to_pretty_str(tree))
 
+    _field_to_const = {x: f'FIELD_{x.upper()}' for x in static_table_fields}
+    ff_len = len(static_table_fields)
+    var_init = '\n'.join([f'fields["{x}"]\t= fast_fields[{_field_to_const[x]}];' for x in static_table_fields])
+    field_to_idx = '\n'.join(f'const uint16_t {_field_to_const[x]} = {i};' for i, x in enumerate(static_table_fields))
+    idx_to_name = f'const TValue* idx_to_name[{ff_len}] = {{' + ', '.join(f'new TValue("{var}")' for var in static_table_fields) + '};'
+
+
+    gen = string.Template('''#include "header.h"
+$field_to_idx
+$idx_to_name
+
+class SpecialTable : public Table {
+
+    public:
+       TValue* fast_fields[$ff_len];
+
+        SpecialTable(std::initializer_list<std::pair<const TValue, TValue*>> values) : SpecialTable() {
+            prepopulate(values);
+        }
+
+        SpecialTable() {
+            for(uint16_t i=0; i<$ff_len; i++)
+                fast_fields[i] = TValue::OPT_VAL();
+
+            $var_init
+        }
+
+        // why o why does this not work when defined in Table
+        inline TValue* operator[](TValue const& key) {
+            if(fields.count(key) && fields[key]->tag != TT_OPT) {
+                // TT_OPT here means "optimized" -- unset
+                return fields[key];
+            }
+
+            if(metatable!=NULL && metatable->fields.count("__index")) {
+                fields[key] = (*(metatable->fields["__index"]->t))[key];
+                return fields[key];
+            }
+
+            fields[key] = new TValue();
+            return fields[key];
+        }
+
+        void set(uint16_t idx, TValue val) {
+            *fast_fields[idx] = val;
+        }
+
+        void inc(uint16_t idx, TValue val) {
+            TValue* target = fast_fields[idx];
+            if(target->tag == TT_OPT) {
+                *target = *(*this)[*idx_to_name[idx]];
+            }
+            *target += val;
+        }
+        TValue get(uint16_t idx) {
+            TValue ret = *fast_fields[idx];
+            if(ret.tag == TT_OPT) {
+                return *(*this)[*idx_to_name[idx]];
+            }
+            return ret;
+        }
+
+
+};
+#include "impl.cpp"
+    ''').substitute(field_to_idx=field_to_idx, var_init=var_init, idx_to_name=idx_to_name, ff_len=ff_len)
+
+    ret = gen
+    ret += 'namespace Game {\n'
     ret += tree.body.dump()
-    ret += '}\n'
+    ret += '\n}\n'
     if testing:
         ret += textwrap.dedent('''
         int main() {
             Game::main();
             return 0;
         }''')
+
     if pretty:
         ret = prettify(ret)
     return ret

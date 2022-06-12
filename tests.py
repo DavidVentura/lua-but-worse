@@ -16,7 +16,7 @@ def _compile_and_run(transformed_src: str, dest_dir: Path):
     with _target_temp.open('w') as fd:
         fd.write(transformed_src)
 
-    s = subprocess.check_output(['g++', '-std=c++17', f'-I{here.absolute()}', str(_target_temp)], cwd=dest_dir)
+    s = subprocess.check_output(['g++', '-O2', '-std=c++17', f'-I{here.absolute()}', str(_target_temp)], cwd=dest_dir)
     s = subprocess.check_output(['./a.out'], cwd=dest_dir)
     return s.decode().strip().splitlines()
 
