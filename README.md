@@ -8,6 +8,7 @@ Tables are just `std::unordered_map`.
 
 * Memory leaks everywhere.
 * Deleting a table (`del(tab, item)` if `item` is a table) will free its memory without considering that it might be used in more places
+* Assigning NULL to a field in a table (`a.x = nil`) will _not_ free its memory
 
 ## Performance
 
@@ -15,20 +16,24 @@ For the Pico-8 game "Tennis" (very simple pong-like) the compiled performance is
 
 This is achieved with a single optimization:
 
-For literal table accesses (`tab["constant"]`), the `Table` class gets a `constant` member and a `"constant"` entry in the hashmap, pointing to the class member, making these two accesses equal:
+For each literal table access (`tab["key1"]`, `tab.key2`), the `Table` class gets an array of TValues of that size (in this case, 2), and keys in the hashmap (`key1`, `key2`) that point to the corresponding array entries, making these two accesses equal:
 
 ```cpp
-*member.t->fields["constant"];
-member.t->constant;
+*member.t->fields["key1"];
+member.t->fast_fields[0];
 ```
 
 so, literal field accesses can be optimized for faster access and programatic access to keys still works.
+
+For a purely calculation-based "micro benchmark" (no table accesses) coming from a real game (`spr_r` from game Rockets!) performance is ~90x (!) when comparing to the original version, which uses globals for all its variables, and ~45x (!) for the optimized version (using locals) [Time to run benchmark went from 30s to 336ms].  
+There are no (user-generated) table lookups in this benchmark, so the speedup comes purely from translating the code. This type of benchmark is the best case for this translation: memory accesses are _terribly_ slow (via PSRAM).
 
 ## Not implemented
 
 * Methods (`tab:method`)
 * Functions that return tuples (`a, b = func()`)
 * Proper memory management
+* Metamethods (other than `__index`)
 
 ## What it looks like
 
