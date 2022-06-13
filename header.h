@@ -29,7 +29,12 @@ typedef struct TValue {
         SpecialTable*      t;
     };
     tt tag          = TT_NULL;
-    size_t hash     = 0;
+    // size_t hash     = 0;
+
+    operator int16_t() const {
+        assertm(tag==TT_NUM, "Type was not number");
+        return n;
+    };
 
     operator int8_t() const {
         assertm(tag==TT_NUM, "Type was not number");
@@ -47,7 +52,7 @@ typedef struct TValue {
         return s;
     };
 
-    operator bool() const {
+    inline operator bool() const {
         if(tag==TT_NULL) return false;
         assertm(tag==TT_NUM, "Type was not number");
         return n != fix32(0);
@@ -176,53 +181,48 @@ typedef struct TValue {
     TValue& operator=(fix32 val) {
         tag = TT_NUM;
         n = val;
-        hash = n.bits();
         return *this;
     }
     TValue& operator=(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
-        hash = n.bits();
         return *this;
     }
 
     TValue& operator=(SpecialTable* val) {
         tag = TT_TAB;
         t = val;
-        hash = (size_t)val;
         return *this;
     }
 
     TValue() {
         tag = TT_NULL;
-        hash = 0x5a5a5a5a;
     }
     TValue(fix32 val) {
         tag = TT_NUM;
         n = val;
-        hash = n.bits();
+        //hash = n.bits();
     }
     TValue(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
-        hash = n.bits();
+        //hash = n.bits();
     }
     TValue(const char* val) {
         tag = TT_STR;
         s = val;
-        hash = (val[0] | val[1] << 1); // unless the strings are empty; they always have 2 bytes+
     }
 
     TValue(SpecialTable* val) {
         printf("Creating value from Table*\n");
         tag = TT_TAB;
         t = val;
-        hash = (size_t)val;
+        //hash = (size_t)val;
     }
 
-    static TValue* OPT_VAL() {
-        TValue* t = new TValue();
-        t->tag = TT_OPT;
+    static TValue OPT_VAL() {
+        TValue t = TValue();
+        t.tag = TT_OPT;
         return t;
     }
 
@@ -247,7 +247,23 @@ void print(const TValue t);
 template<>
 struct std::hash<TValue> {
     inline std::size_t operator()(TValue const& s) const noexcept {
-        return s.hash;
+        switch(s.tag) {
+            case TT_NUM:
+                return s.n.bits();
+            case TT_TAB:
+                return (size_t)s.t;
+            case TT_NULL:
+                return 0x5a5a5a5a;
+            case TT_STR:
+                return (s.s[0] | s.s[1] << 1); // unless the strings are empty; they always have 2 bytes+
+            case TT_FN:
+            case TT_OPT:
+                assertm(false, "Did not match any tag on hash");
+                return 0;
+        }
+        //return s.hash;
+        assertm(false, "Did not match any tag on hash");
+        return 0;
     }
 };
 
@@ -255,6 +271,7 @@ class Table
 {
     public:
         std::unordered_map<TValue, TValue*> fields;
+
         Table* metatable = NULL;
         uint16_t last_auto_index = 0;
 

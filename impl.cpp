@@ -72,19 +72,19 @@ void foreach(TValue val, std::function<void (TValue)> f) {
     }
 }
 
-fix32 count(TValue val) {
+inline fix32 count(TValue val) {
     assertm(val.tag == TT_TAB, "Can't count a non-table");
     // p8 limits integers to uint16_t (SHRT_MAX) .. also there's not enough memory anyway
     // to store so many items
     return (uint16_t)val.t->fields.size();
 }
 
-fix32 rnd(float limit = 1.0f) {
+inline fix32 rnd(float limit = 1.0f) {
     float x = (float)rand()/(float)(RAND_MAX/limit);
     return x;
 }
 
-fix32 flr(fix32 n) {
+inline fix32 flr(fix32 n) {
     fix32 ret = fix32::floor(n);
     return ret;
 }
@@ -93,7 +93,6 @@ TValue add(TValue table, TValue val) {
     assertm(table.tag==TT_TAB, "Tried to add from a non-table");
     table.t->last_auto_index++;
     *(*table.t)[fix32(table.t->last_auto_index)] = val;
-    // printf("Table has %d\n", table.t->fields.size());
     return val;
 }
 
@@ -111,8 +110,20 @@ void del(TValue table, TValue val) {
     }
 }
 
-TValue sget(TValue s, TValue n) {
-    return TValue(fix32(1));
+inline TValue sget(TValue x, TValue y) {
+#if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
+    return get_pixel(x, y);
+#else
+    return TValue(fix32(0));
+#endif
 }
-void pset(TValue x, TValue y, TValue color) {
+inline void pset(TValue x, TValue y, TValue color) {
+#if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
+    _pset(x, y, color);
+#endif
+}
+
+inline TValue _or(TValue a, TValue b) {
+    if(a.tag!=TT_NULL) return a;
+    return b;
 }

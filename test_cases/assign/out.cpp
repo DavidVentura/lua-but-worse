@@ -5,7 +5,7 @@ const TValue *idx_to_name[0] = {};
 class SpecialTable : public Table {
 
 public:
-  TValue *fast_fields[0];
+  TValue fast_fields[0];
 
   SpecialTable(std::initializer_list<std::pair<const TValue, TValue *>> values) : SpecialTable() { prepopulate(values); }
 
@@ -30,17 +30,22 @@ public:
     return fields[key];
   }
 
-  void set(uint16_t idx, TValue val) { *fast_fields[idx] = val; }
+  void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
-  void inc(uint16_t idx, TValue val) {
-    TValue *target = fast_fields[idx];
-    if (target->tag == TT_OPT) {
-      *target = *(*this)[*idx_to_name[idx]];
+  void sub(uint16_t idx, TValue val) {
+    if (fast_fields[idx].tag == TT_OPT) {
+      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
     }
-    *target += val;
+    fast_fields[idx] -= val;
+  }
+  void inc(uint16_t idx, TValue val) {
+    if (fast_fields[idx].tag == TT_OPT) {
+      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
+    }
+    fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
-    TValue ret = *fast_fields[idx];
+    TValue ret = fast_fields[idx];
     if (ret.tag == TT_OPT) {
       return *(*this)[*idx_to_name[idx]];
     }

@@ -6,7 +6,7 @@ const TValue *idx_to_name[2] = {new TValue("__index"), new TValue("x")};
 class SpecialTable : public Table {
 
 public:
-  TValue *fast_fields[2];
+  TValue fast_fields[2];
 
   SpecialTable(std::initializer_list<std::pair<const TValue, TValue *>> values) : SpecialTable() { prepopulate(values); }
 
@@ -14,8 +14,8 @@ public:
     for (uint16_t i = 0; i < 2; i++)
       fast_fields[i] = TValue::OPT_VAL();
 
-    fields["__index"] = fast_fields[FIELD___INDEX];
-    fields["x"] = fast_fields[FIELD_X];
+    fields["__index"] = &fast_fields[FIELD___INDEX];
+    fields["x"] = &fast_fields[FIELD_X];
   }
 
   // why o why does this not work when defined in Table
@@ -34,17 +34,22 @@ public:
     return fields[key];
   }
 
-  void set(uint16_t idx, TValue val) { *fast_fields[idx] = val; }
+  void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
-  void inc(uint16_t idx, TValue val) {
-    TValue *target = fast_fields[idx];
-    if (target->tag == TT_OPT) {
-      *target = *(*this)[*idx_to_name[idx]];
+  void sub(uint16_t idx, TValue val) {
+    if (fast_fields[idx].tag == TT_OPT) {
+      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
     }
-    *target += val;
+    fast_fields[idx] -= val;
+  }
+  void inc(uint16_t idx, TValue val) {
+    if (fast_fields[idx].tag == TT_OPT) {
+      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
+    }
+    fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
-    TValue ret = *fast_fields[idx];
+    TValue ret = fast_fields[idx];
     if (ret.tag == TT_OPT) {
       return *(*this)[*idx_to_name[idx]];
     }
