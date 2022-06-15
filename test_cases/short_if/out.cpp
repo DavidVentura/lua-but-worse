@@ -63,29 +63,29 @@ namespace Game {
   TValue main();
 
   TValue main() {
-    test = fix32(0);
+    test = 0;
 
     if (test) {
-      return fix32(5);
+      return 5;
     }
 
     if (test) {
-      return fix32(5);
+      return 5;
     } else {
-      a = fix32(1);
+      a = 1;
     }
 
     if (test) {
-      return fix32(5);
+      return 5;
     } else {
-      b = fix32(2);
-      c = fix32(3);
+      b = 2;
+      c = 3;
     }
 
     if (!test) {
-      d = -fix32(4); // ?
+      d = -4; // ?
     } else {
-      e = fix32(0);
+      e = 0;
     }
     print(a);
     print(b);
@@ -95,6 +95,6 @@ namespace Game {
     if (test) {
       print("this should not be visible");
     }
-    return fix32(0);
+    return 0;
   }
 } // namespace Game

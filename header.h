@@ -20,15 +20,19 @@ typedef enum {
             // replaced by assigning a different type
 } tt;
 
+class TValue;
 class SpecialTable;
+void print(const TValue t);
 
-typedef struct TValue {
-    union {
-        fix32       n;
-        const char* s;
-        SpecialTable*      t;
-    };
+class TValue {
+    public:
+//    union {
+        fix32                          n;
+        const char*                    s;
+        SpecialTable*                  t;
+//    };
     tt tag          = TT_NULL;
+    std::function<TValue(std::vector<TValue> args)> f;  // TODO move into variant or numbers are gonna be heavy
     // size_t hash     = 0;
 
     operator int16_t() const {
@@ -100,10 +104,13 @@ typedef struct TValue {
     }
 
     inline TValue operator *(fix32 o) {
+        assertm(tag==TT_NUM, "Can't mult notnumber");
         return TValue(n * o);
     }
 
     inline TValue operator *(TValue o) {
+        assertm(tag==TT_NUM,   "Can't mult (self) notnumber");
+        assertm(o.tag==TT_NUM, "Can't mult (other) notnumber");
         return TValue(n * o.n);
     }
 
@@ -133,6 +140,11 @@ typedef struct TValue {
         assertm(tag==TT_NUM, "Can't inc notnumber");
         n += o;
         return *this;
+    }
+
+    inline TValue operator()(std::vector<TValue> args) {
+        assertm(tag==TT_FN, "Tried to call a non-function");
+        return f(args);
     }
 
     inline bool operator ==(TValue other) {
@@ -183,6 +195,11 @@ typedef struct TValue {
         n = val;
         return *this;
     }
+    TValue& operator=(int val) {
+        tag = TT_NUM;
+        n = fix32(val);
+        return *this;
+    }
     TValue& operator=(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
@@ -203,6 +220,10 @@ typedef struct TValue {
         n = val;
         //hash = n.bits();
     }
+    TValue(int val) {
+        tag = TT_NUM;
+        n = fix32(val);
+    }
     TValue(bool val) {
         tag = TT_NUM;
         n = val ? 1 : 0;
@@ -214,7 +235,6 @@ typedef struct TValue {
     }
 
     TValue(SpecialTable* val) {
-        printf("Creating value from Table*\n");
         tag = TT_TAB;
         t = val;
         //hash = (size_t)val;
@@ -225,8 +245,14 @@ typedef struct TValue {
         t.tag = TT_OPT;
         return t;
     }
+    TValue& operator= (std::function<TValue(std::vector<TValue>)> val) {
+        tag = TT_FN;
+        f = val;
+        return *this;
+    }
 
-} TValue;
+}; // TValue;
+
 
 TValue operator* (fix32 x, const TValue& y)
 {
@@ -241,7 +267,6 @@ TValue operator< (fix32 x, const TValue& y)
 }
 
 
-void print(const TValue t);
 
 
 template<>
@@ -290,3 +315,9 @@ class Table
         }
 
 };
+
+TValue get_with_default(const std::vector<TValue>& v, uint8_t idx) {
+    if(idx>= v.size())
+        return TValue();
+    return v[idx];
+}

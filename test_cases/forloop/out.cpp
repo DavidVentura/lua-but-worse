@@ -57,9 +57,9 @@ namespace Game {
   TValue main();
 
   TValue main() {
-    for (auto i = fix32(1); i < fix32(7); i += fix32(1)) {
+    for (auto i = 1; i < 7; i += 1) {
       print(i);
     }
-    return fix32(0);
+    return 0;
   }
 } // namespace Game

@@ -60,14 +60,10 @@ namespace Game {
   void main();
 
   void main() {
-    squares = new SpecialTable({{fix32(1), new TValue(fix32(1))},
-                                {fix32(2), new TValue(fix32(4))},
-                                {fix32(3), new TValue(fix32(9))},
-                                {fix32(4), new TValue(fix32(16))},
-                                {fix32(5), new TValue(fix32(25))}});
-    member = new SpecialTable({{"x", new TValue(fix32(1))}});
+    squares = new SpecialTable({{1, new TValue(1)}, {2, new TValue(4)}, {3, new TValue(9)}, {4, new TValue(16)}, {5, new TValue(25)}});
+    member = new SpecialTable({{"x", new TValue(1)}});
     empty = new SpecialTable();
-    (*(*member.t)[empty]) = fix32(5); // ?
+    (*(*member.t)[empty]) = 5; // ?
     print((*(*member.t)[empty]));
   }
 } // namespace Game

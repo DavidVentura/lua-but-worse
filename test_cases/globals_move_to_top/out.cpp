@@ -60,10 +60,10 @@ namespace Game {
   TValue main() {
     TValue b;
     TValue a;
-    a = fix32(5);
-    b = fix32(7);
+    a = 5;
+    b = 7;
     c = a * b; // ?
     print(c);
-    return fix32(0);
+    return 0;
   }
 } // namespace Game

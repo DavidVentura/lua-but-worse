@@ -1,3 +1,4 @@
+const fix32 ZERO = fix32(0);
 
 void setmetatable(TValue t, TValue meta) {
     assert(t.tag == TT_TAB);
@@ -14,7 +15,7 @@ void print(const TValue t) {
         case TT_NUM:
             {
                 fix32 _dec = fix32::decimals(t.n);
-                if(_dec > fix32(0)) {
+                if(_dec > ZERO) {
                     char buf[17];
                     fix32::to_string(_dec, buf);
                     printf("%d.%s\n", int16_t(t.n), buf);
@@ -27,7 +28,7 @@ void print(const TValue t) {
             printf("NULL\n");
             break;
         case TT_FN:
-            assertm(false, "Can't print a function yet");
+            printf("F<%x>\n", (size_t)t.t);
             break;
         case TT_TAB:
             printf("T<%x>\n", (size_t)t.t);

@@ -1,21 +1,17 @@
 #include "header.h"
-const uint16_t FIELD___INDEX = 0;
-const uint16_t FIELD_X = 1;
-const TValue *idx_to_name[2] = {new TValue("__index"), new TValue("x")};
+
+const TValue *idx_to_name[0] = {};
 
 class SpecialTable : public Table {
 
 public:
-  TValue fast_fields[2];
+  TValue fast_fields[0];
 
   SpecialTable(std::initializer_list<std::pair<const TValue, TValue *>> values) : SpecialTable() { prepopulate(values); }
 
   SpecialTable() {
-    for (uint16_t i = 0; i < 2; i++)
+    for (uint16_t i = 0; i < 0; i++)
       fast_fields[i] = TValue::OPT_VAL();
-
-    fields["__index"] = &fast_fields[FIELD___INDEX];
-    fields["x"] = &fast_fields[FIELD_X];
   }
 
   // why o why does this not work when defined in Table
@@ -60,16 +56,22 @@ public:
 namespace Game {
   TValue b;
   TValue a;
+  TValue captured;
   TValue main();
 
   TValue main() {
-    a = new SpecialTable({{"x", new TValue(5)}});
-    a.t->set(FIELD___INDEX, a);
-    b = new SpecialTable();
-    setmetatable(b, a);
-    print(b.t->get(FIELD_X));
-    b.t->inc(FIELD_X, 5);
-    print(b.t->get(FIELD_X));
+    captured = 7;
+    a = [&](std::vector<TValue> args) -> TValue {
+      TValue x = get_with_default(args, 0);
+      return x * captured;
+    };
+    print(a({5}));
+    b = [&](std::vector<TValue> args) -> TValue {
+      TValue x = get_with_default(args, 0);
+      TValue y = get_with_default(args, 1);
+      return x * y;
+    };
+    print(b({5, 6}));
     return 0;
   }
 } // namespace Game
