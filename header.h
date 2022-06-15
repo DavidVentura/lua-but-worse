@@ -240,6 +240,11 @@ class TValue {
         //hash = (size_t)val;
     }
 
+    TValue(std::function<TValue(std::vector<TValue>)> val) {
+        tag = TT_FN;
+        f = val;
+    }
+
     static TValue OPT_VAL() {
         TValue t = TValue();
         t.tag = TT_OPT;
