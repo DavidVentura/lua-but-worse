@@ -9,6 +9,7 @@ from a import transform, Function
 from luaparser.astnodes import Type
 
 here = Path(__file__).parent
+SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
 
 def _compile_and_run(transformed_src: str, dest_dir: Path):
     _target_temp = Path(dest_dir / 'out.cpp')
@@ -26,16 +27,19 @@ def find_case_pairs():
 
 @pytest.mark.parametrize("in_f,expected_f,stdout_f", find_case_pairs())
 def test_cases(in_f: Path, expected_f: Path, stdout_f: Path, monkeypatch):
-    print(in_f, expected_f)
     with in_f.open() as fd:
         i = fd.read()
-    with expected_f.open() as fd:
-        expected = fd.read()
 
     code = transform(i).strip()
     actual = code.splitlines()
-    with open('temp_out.cpp', 'w') as fd:
-        print(code, file=fd)
+    if SHOULD_REGENERATE_OUTPUT:
+        with expected_f.open('w') as fd:
+            print(code, file=fd)
+            expected = code
+
+    with expected_f.open() as fd:
+        expected = fd.read()
+
     assert actual == expected.strip().splitlines()
 
     if stdout_f is None:
