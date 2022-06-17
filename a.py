@@ -5,7 +5,7 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number, Method, Invoke
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -55,6 +55,30 @@ def rename_stdlib_calls(tree):
         if n.func.id in ['sin', 'cos']:
             n.func.id = f'fix32::{n.func.id}'
 
+def transform_methods(tree):
+    """
+    Rewrite methods (`function tab:method() ... end`) into an assignment of lambda into a table
+    ```
+    tab["method"] = lambda(...)
+    ```
+
+    And method calls (`tab:method()`) into table calls with a self-argument (`tab['method'](tab)`)
+
+    Further passes will optimize this access into a fast-field access.
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if isinstance(n, Method):
+            replacement = n.replace_with_assign()
+            idx = n.parent.body.index(n)
+            n.parent.body[idx] = replacement
+        if isinstance(n, Invoke):
+            replacement = n.replace_with_idx_call()
+            n.parent.replace_child(n, replacement)
+
+
 def add_signatures(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -90,6 +114,7 @@ def find_static_table_accesses(tree):
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     rename_stdlib_calls(tree)
+    transform_methods(tree)
     add_signatures(tree)
     add_decls(tree)
     static_table_fields = find_static_table_accesses(tree)
