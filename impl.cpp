@@ -6,6 +6,8 @@ void setmetatable(TValue t, TValue meta) {
 
 extern uint8_t btn(uint8_t);
 void print(const TValue t) {
+    if (t.is_opt)
+        printf("OPT token at %p\n", (void*)&t);
     switch(t.data.index()) {
         case TT_STR:
             printf("%s\n", std::get<const char*>(t.data));
@@ -33,8 +35,6 @@ void print(const TValue t) {
             printf("T<%p>\n", (void*)std::get<SpecialTable*>(t.data));
             break;
     }
-    if (t.is_opt)
-            printf("OPT token at %p\n", (void*)&t);
 }
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
 void print(TValue value, int16_t x, int16_t y, int16_t col) {

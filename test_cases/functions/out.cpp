@@ -18,14 +18,19 @@ public:
 
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
-    if (fields.count(key) && !fields[key]->is_opt) {
-      // TT_OPT here means "optimized" -- unset
+    if (fields.count(key)) {
+      if (!fields[key]->is_opt) {
+        // TT_OPT here means "optimized" -- unset
+        return fields[key];
+      }
+      fields[key]->is_opt = false; // make NULL
+      fields[key] = nullptr;
       return fields[key];
     }
 
     if (metatable != NULL && metatable->fields.count("__index")) {
-      fields[key] = (*std::get<SpecialTable *>(metatable->fields["__index"]->data))[key];
-      return fields[key];
+      auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
+      return (*st)[key];
     }
 
     fields[key] = new TValue();
@@ -36,20 +41,26 @@ public:
 
   void sub(uint16_t idx, TValue val) {
     if (fast_fields[idx].is_opt) {
-      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
+      fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
     if (fast_fields[idx].is_opt) {
-      fast_fields[idx] = *(*this)[*idx_to_name[idx]];
+      fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
     if (ret.is_opt) {
-      return *(*this)[*idx_to_name[idx]];
+      if (metatable != NULL && metatable->fields.count("__index")) {
+        auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
+        return st->get(idx);
+      }
+      auto t = TValue();
+      set(idx, t);
+      return t;
     }
     return ret;
   }
