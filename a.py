@@ -5,7 +5,7 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number, Method, Invoke
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number, Method, Invoke, Block
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -16,6 +16,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 def add_decls(tree):
+    """
+    Adds variable declarations in corresponding blocks. Globals are declared at the root chunk.
+    """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
@@ -45,6 +48,11 @@ def add_decls(tree):
             block.add_declaration(name)
 
 def rename_stdlib_calls(tree):
+    """
+    Rewrites certain function calls to not use C stdlib names, like
+
+    `sin` -> `fix32::sin`
+    """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
@@ -54,6 +62,29 @@ def rename_stdlib_calls(tree):
             continue
         if n.func.id in ['sin', 'cos']:
             n.func.id = f'fix32::{n.func.id}'
+
+def move_to_preinit(tree):
+    """
+    Moves all top-level expressions to a custom __preinit() function.
+
+    Top-level functions are excluded from this.
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+
+    moved_nodes = []
+
+    for n in tree_visitor.nodes:
+        if isinstance(n, Function):
+            continue
+        if n.parent != tree.body:
+            continue
+        tree.body.body.remove(n)
+        moved_nodes.append(n)
+
+    _preinit = Function(Name("__preinit"), [], Block(moved_nodes))
+    tree.body.body.append(_preinit)
 
 def transform_methods(tree):
     """
@@ -79,7 +110,17 @@ def transform_methods(tree):
             n.parent.replace_child(n, replacement)
 
 
+def _is_inside(node, what):
+    if node.parent is None:
+        return False
+    if isinstance(node.parent, what):
+        return True
+    return _is_inside(node.parent, what)
+
 def add_signatures(tree):
+    """
+    Adds forward declaration for functions, on the root chunk
+    """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
@@ -87,13 +128,16 @@ def add_signatures(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Function):
             continue
-        # magical 3 indents = root; need a better way to figure out if a function
-        # lives inside another function
-        if n.parent.parent.parent is not None:
+        if _is_inside(n, Function):
             continue
         tree.body.add_signatures(n)
 
 def find_static_table_accesses(tree):
+    """
+    Flags constant table accesses (tab["const"] or tab.const) as "optimizable" 
+
+    Returns a sorted, deduplicated list of all constant field names.
+    """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
@@ -115,6 +159,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     rename_stdlib_calls(tree)
     transform_methods(tree)
+    move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
     static_table_fields = find_static_table_accesses(tree)
@@ -212,6 +257,7 @@ class SpecialTable : public Table {
     if testing:
         ret += textwrap.dedent('''
         int main() {
+            Game::__preinit();
             Game::main();
             return 0;
         }''')

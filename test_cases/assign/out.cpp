@@ -70,6 +70,7 @@ namespace Game {
   TValue c;
   TValue b;
   TValue a;
+  void __preinit();
   TValue main();
 
   TValue main() {
@@ -87,4 +88,6 @@ namespace Game {
     print(e);
     return 0;
   }
+
+  void __preinit() {}
 } // namespace Game

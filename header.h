@@ -244,6 +244,10 @@ TValue operator< (fix32 x, const TValue& y)
 {
     return std::get<fix32>(y.data) < x;
 }
+TValue operator< (TValue x, int o)
+{
+    return std::get<fix32>(x.data) < fix32(o);
+}
 
 
 

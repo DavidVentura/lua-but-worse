@@ -68,6 +68,7 @@ namespace Game {
   TValue empty;
   TValue member;
   TValue squares;
+  void __preinit();
   void main();
 
   void main() {
@@ -77,4 +78,6 @@ namespace Game {
     (*(*std::get<SpecialTable *>(member.data))[empty]) = 5; // ?
     print((*(*std::get<SpecialTable *>(member.data))[empty]));
   }
+
+  void __preinit() {}
 } // namespace Game

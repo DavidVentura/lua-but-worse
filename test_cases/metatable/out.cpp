@@ -73,6 +73,7 @@ public:
 namespace Game {
   TValue b;
   TValue a;
+  void __preinit();
   TValue main();
 
   TValue main() {
@@ -88,4 +89,6 @@ namespace Game {
     print(std::get<SpecialTable *>(b.data)->get(FIELD_Y));
     return 0;
   }
+
+  void __preinit() {}
 } // namespace Game

@@ -65,50 +65,18 @@ public:
 };
 #include "impl.cpp"
 namespace Game {
-  TValue e;
-  TValue d;
-  TValue c;
-  TValue b;
   TValue a;
-  TValue test;
   void __preinit();
-  TValue main();
+  void main();
 
-  TValue main() {
-    test = 0;
+  void main() { print(a); }
 
-    if (test) {
-      return 5;
+  void __preinit() {
+    a = 5;
+    a += 1;
+
+    if ((a < 3)) {
+      a = 7;
     }
-
-    if (test) {
-      return 5;
-    } else {
-      a = 1;
-    }
-
-    if (test) {
-      return 5;
-    } else {
-      b = 2;
-      c = 3;
-    }
-
-    if (!test) {
-      d = -4; // ?
-    } else {
-      e = 0;
-    }
-    print(a);
-    print(b);
-    print(c);
-    print(d);
-
-    if (test) {
-      print("this should not be visible");
-    }
-    return 0;
   }
-
-  void __preinit() {}
 } // namespace Game

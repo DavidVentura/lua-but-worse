@@ -66,6 +66,7 @@ public:
 #include "impl.cpp"
 namespace Game {
   TValue c;
+  void __preinit();
   TValue main();
 
   TValue main() {
@@ -77,4 +78,6 @@ namespace Game {
     print(c);
     return 0;
   }
+
+  void __preinit() {}
 } // namespace Game

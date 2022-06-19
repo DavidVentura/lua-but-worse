@@ -72,6 +72,7 @@ namespace Game {
   TValue b;
   TValue a;
   TValue captured;
+  void __preinit();
   TValue main();
 
   TValue main() {
@@ -96,4 +97,6 @@ namespace Game {
     print((*(*std::get<SpecialTable *>(c.data))[v])({}));
     return 0;
   }
+
+  void __preinit() {}
 } // namespace Game
