@@ -18,13 +18,13 @@ public:
 
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
-    if (fields.count(key) && fields[key]->tag != TT_OPT) {
+    if (fields.count(key) && !fields[key]->is_opt) {
       // TT_OPT here means "optimized" -- unset
       return fields[key];
     }
 
     if (metatable != NULL && metatable->fields.count("__index")) {
-      fields[key] = (*(metatable->fields["__index"]->t))[key];
+      fields[key] = (*std::get<SpecialTable *>(metatable->fields["__index"]->data))[key];
       return fields[key];
     }
 
@@ -35,20 +35,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].tag == TT_OPT) {
+    if (fast_fields[idx].is_opt) {
       fast_fields[idx] = *(*this)[*idx_to_name[idx]];
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].tag == TT_OPT) {
+    if (fast_fields[idx].is_opt) {
       fast_fields[idx] = *(*this)[*idx_to_name[idx]];
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.tag == TT_OPT) {
+    if (ret.is_opt) {
       return *(*this)[*idx_to_name[idx]];
     }
     return ret;
@@ -77,11 +77,12 @@ namespace Game {
     });
     print(b({5, 6}));
     c = new SpecialTable();
-    c.t->set(FIELD_F, TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table"; }));
-    print(c.t->get(FIELD_F)({}));
+    std::get<SpecialTable *>(c.data)->set(FIELD_F, TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table"; }));
+    print(std::get<SpecialTable *>(c.data)->get(FIELD_F)({}));
     v = "index";
-    (*(*c.t)[v]) = TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table, via hashmap"; }); // ?
-    print((*(*c.t)[v])({}));
+    (*(*std::get<SpecialTable *>(c.data))[v]) =
+        TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table, via hashmap"; }); // ?
+    print((*(*std::get<SpecialTable *>(c.data))[v])({}));
     return 0;
   }
 } // namespace Game

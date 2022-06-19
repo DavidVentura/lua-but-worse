@@ -1,5 +1,5 @@
 #include <initializer_list>
-#include <iostream>
+#include <variant>
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -10,15 +10,12 @@ using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
-typedef enum {
-    TT_NUM     = 0,
-    TT_STR,
-    TT_TAB,
-    TT_FN,
-    TT_NULL,
-    TT_OPT, // is a local pointer for faster access; should always be
-            // replaced by assigning a different type
-} tt;
+// must match with variant type order
+const uint8_t TT_NUM  = 0;
+const uint8_t TT_STR  = 1;
+const uint8_t TT_TAB  = 2;
+const uint8_t TT_FN   = 3;
+const uint8_t TT_NULL = 4;
 
 class TValue;
 class SpecialTable;
@@ -26,164 +23,145 @@ void print(const TValue t);
 
 class TValue {
     public:
-//    union {
-        fix32                          n;
-        const char*                    s;
-        SpecialTable*                  t;
-//    };
-    tt tag          = TT_NULL;
-    std::function<TValue(std::vector<TValue> args)> f;  // TODO move into variant or numbers are gonna be heavy
-    // size_t hash     = 0;
+        using func = std::function<TValue(std::vector<TValue> args)>;
 
+        using myvariant = std::variant<fix32,
+                                       const char*,
+                                       SpecialTable*,
+                                       func,
+                                       std::nullptr_t
+                                       >;
+        myvariant data;
+        bool is_opt = false;
+    // size_t hash     = 0;
     operator int16_t() const {
-        assertm(tag==TT_NUM, "Type was not number");
-        return n;
+        return std::get<fix32>(data);
     };
 
     operator int8_t() const {
-        assertm(tag==TT_NUM, "Type was not number");
-        assertm(n<(int16_t)128, "Tried to cast >128 to int8_t");
-        assertm(n>(int16_t)-127, "Tried to cast <-127 to int8_t");
-        return n;
+        //assertm(n<(int16_t)128, "Tried to cast >128 to int8_t");
+        //assertm(n>(int16_t)-127, "Tried to cast <-127 to int8_t");
+        return std::get<fix32>(data);
     };
     inline operator fix32() const {
-        assertm(tag==TT_NUM, "Type was not number");
-        return n;
+        return std::get<fix32>(data);
     };
 
     operator const char*() const {
-        assertm(tag==TT_STR, "Type was not STR");
-        return s;
+        return std::get<const char*>(data);
     };
 
     inline operator bool() const {
-        if(tag==TT_NULL) return false;
-        assertm(tag==TT_NUM, "Type was not number");
-        return n != fix32(0);
+        if(data.index()==TT_NULL) return false;
+        return std::get<fix32>(data) != fix32(0);
     };
 
     inline bool operator >(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
-        bool res = n > o;
-        return res;
+        return std::get<fix32>(data) > o;
     }
+    /*
     inline bool operator >(TValue o) {
-        return n > o.n;
+        return std::get<fix32>(data) > std::get<fix32>(o.data);
     }
 
     inline bool operator <(TValue o) {
         assertm(tag==TT_NUM, "Can't <t notnumber");
-        return n < o.n;
+        return data < o.data;
+        return std::get<fix32>(data) < std::get<fix32>(o.data);
     }
+    */
     inline bool operator >=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't <= notnumber");
-        return n >= o;
+        return std::get<fix32>(data) >= o;
     }
     inline bool operator <=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't <= notnumber");
-        return n <= o;
+        return std::get<fix32>(data) <= o;
     }
     inline bool operator <(fix32 o) {
-        assertm(tag==TT_NUM, "Can't <f32 notnumber");
-        return n < o;
+        return std::get<fix32>(data) < o;
     }
 
     inline bool operator ==(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
-        return n == o;
+        return std::get<fix32>(data) == o;
     }
 
     inline bool operator !=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
-        return n != o;
+        return std::get<fix32>(data) != o;
     }
 
     inline TValue operator %(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
-        return TValue(n % o);
+        return std::get<fix32>(data) % o;
     }
 
     inline TValue operator *(fix32 o) {
-        assertm(tag==TT_NUM, "Can't mult notnumber");
-        return TValue(n * o);
+        return std::get<fix32>(data) * o;
     }
 
     inline TValue operator *(TValue o) {
-        assertm(tag==TT_NUM,   "Can't mult (self) notnumber");
-        assertm(o.tag==TT_NUM, "Can't mult (other) notnumber");
-        return TValue(n * o.n);
+        return std::get<fix32>(data) * std::get<fix32>(o.data);
     }
 
     inline TValue operator +(fix32 o) {
-        return TValue(n + o);
+        return TValue(std::get<fix32>(data) + o);
     }
 
     inline TValue operator -(fix32 o) {
-        return TValue(n - o);
+        return TValue(std::get<fix32>(data) - o);
     }
 
     inline TValue operator -() {
-        return TValue(-n);
+        return TValue(-std::get<fix32>(data));
     }
 
     inline TValue operator /(fix32 o) {
-        return TValue(n / o);
+        return TValue(std::get<fix32>(data) / o);
     }
 
     inline TValue operator -=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't dec notnumber");
-        n -= o;
+        data = std::get<fix32>(data) - o;
         return *this;
     }
 
     inline TValue operator +=(fix32 o) {
-        assertm(tag==TT_NUM, "Can't inc notnumber");
-        n += o;
+        data = std::get<fix32>(data) + o;
         return *this;
     }
 
     inline TValue operator()(std::vector<TValue> args) {
-        assertm(tag==TT_FN, "Tried to call a non-function");
-        return f(args);
+        return std::get<func>(data)(args);
     }
 
-    inline bool operator ==(TValue other) {
-        if(tag!=other.tag) return false;
-        switch(tag) {
+    bool operator ==(TValue other) {
+        if(data.index()!=other.data.index()) return false;
+        switch(data.index()) {
             case TT_NUM:
-                return n == other.n;
+                return std::get<fix32>(data) == std::get<fix32>(other.data);
             case TT_STR: // FIXME: by pointer identity
-                return s == other.s;
+                return std::get<const char*>(data) == std::get<const char*>(other.data);
             case TT_NULL:
                 return true;
             case TT_TAB: // by pointer identity
-                return t == other.t;
+                return std::get<SpecialTable*>(data) == std::get<SpecialTable*>(other.data);
             case TT_FN:
                 assertm(false, "Can't compare functions");
-                return false;
-            case TT_OPT:
-                assertm(false, "Can't compare OPT values");
                 return false;
         }
         assertm(false, "Nothing to compare");
         return false;
     }
 
-    inline bool operator ==(const TValue &other) const {
-        if(tag!=other.tag) return false;
-        switch(tag) {
+    const bool operator ==(const TValue other) const {
+        if(data.index()!=other.data.index()) return false;
+        switch(data.index()) {
             case TT_NUM:
-                return n == other.n;
+                return std::get<fix32>(data) == std::get<fix32>(other.data);
             case TT_STR: // FIXME: by pointer identity
-                return s == other.s;
+                return std::get<const char*>(data) == std::get<const char*>(other.data);
             case TT_NULL:
                 return true;
             case TT_TAB: // by pointer identity
-                return t == other.t;
+                return std::get<SpecialTable*>(data) == std::get<SpecialTable*>(other.data);
             case TT_FN:
                 assertm(false, "Can't compare functions");
-            case TT_OPT:
-                assertm(false, "Can't compare OPT values");
                 return false;
         }
         assertm(false, "Nothing to compare");
@@ -191,68 +169,66 @@ class TValue {
     }
 
     TValue& operator=(fix32 val) {
-        tag = TT_NUM;
-        n = val;
+        data = val;
+        is_opt = false;
         return *this;
     }
     TValue& operator=(int val) {
-        tag = TT_NUM;
-        n = fix32(val);
+        data = fix32(val);
+        is_opt = false;
         return *this;
     }
     TValue& operator=(bool val) {
-        tag = TT_NUM;
-        n = val ? 1 : 0;
+        data = val ? 1 : 0;
+        is_opt = false;
         return *this;
     }
 
     TValue& operator=(SpecialTable* val) {
-        tag = TT_TAB;
-        t = val;
+        data = val;
+        is_opt = false;
         return *this;
     }
 
     TValue() {
-        tag = TT_NULL;
+        data = nullptr;
+        is_opt = false;
     }
     TValue(fix32 val) {
-        tag = TT_NUM;
-        n = val;
-        //hash = n.bits();
+        data = val;
+        is_opt = false;
     }
     TValue(int val) {
-        tag = TT_NUM;
-        n = fix32(val);
+        data = fix32(val);
+        is_opt = false;
     }
     TValue(bool val) {
-        tag = TT_NUM;
-        n = val ? 1 : 0;
-        //hash = n.bits();
+        data = val ? 1 : 0;
+        is_opt = false;
     }
     TValue(const char* val) {
-        tag = TT_STR;
-        s = val;
+        data = val;
+        is_opt = false;
     }
 
     TValue(SpecialTable* val) {
-        tag = TT_TAB;
-        t = val;
-        //hash = (size_t)val;
+        data = val;
+        is_opt = false;
     }
 
     TValue(std::function<TValue(std::vector<TValue>)> val) {
-        tag = TT_FN;
-        f = val;
+        data = val;
+        is_opt = false;
     }
 
     static TValue OPT_VAL() {
         TValue t = TValue();
-        t.tag = TT_OPT;
+        t.is_opt = true;
         return t;
     }
     TValue& operator= (std::function<TValue(std::vector<TValue>)> val) {
-        tag = TT_FN;
-        f = val;
+        is_opt = false;
+        data = val;
         return *this;
     }
 
@@ -261,37 +237,35 @@ class TValue {
 
 TValue operator* (fix32 x, const TValue& y)
 {
-    assertm(y.tag == TT_NUM, "Tried to right-multiply a non-number");
-    return y.n * x;
+    return std::get<fix32>(y.data) * x;
 }
 
 TValue operator< (fix32 x, const TValue& y)
 {
-    assertm(y.tag == TT_NUM, "Tried to < a non-number");
-    return y.n < x;
+    return std::get<fix32>(y.data) < x;
 }
-
 
 
 
 template<>
 struct std::hash<TValue> {
     inline std::size_t operator()(TValue const& s) const noexcept {
-        switch(s.tag) {
+        switch(s.data.index()) {
             case TT_NUM:
-                return s.n.bits();
+                return std::get<fix32>(s.data).bits();
             case TT_TAB:
-                return (size_t)s.t;
+                return (size_t)std::get<SpecialTable*>(s.data);
             case TT_NULL:
                 return 0x5a5a5a5a;
             case TT_STR:
-                return (s.s[0] | s.s[1] << 1); // unless the strings are empty; they always have 2 bytes+
+                {
+                auto c = std::get<const char*>(s.data);
+                return (c[0] | c[1] << 1); // unless the strings are empty; they always have 2 bytes+
+                }
             case TT_FN:
-            case TT_OPT:
                 assertm(false, "Did not match any tag on hash");
                 return 0;
         }
-        //return s.hash;
         assertm(false, "Did not match any tag on hash");
         return 0;
     }
@@ -300,12 +274,14 @@ struct std::hash<TValue> {
 class Table
 {
     public:
+        using pair = std::pair<TValue, TValue*>;
+        using cpair = std::pair<const TValue, TValue*>;
         std::unordered_map<TValue, TValue*> fields;
 
         Table* metatable = NULL;
         uint16_t last_auto_index = 0;
 
-        void prepopulate(std::initializer_list<std::pair<const TValue, TValue*>> values) {
+        void prepopulate(std::initializer_list<cpair> values) {
             for(auto [key, val]: values) {
                 if(fields.count(key)) {
                     // pre-populated part of the map with a reference
