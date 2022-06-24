@@ -79,7 +79,6 @@ namespace Game {
     if (test) {
       return fix32(5);
     }
-    print("asd");
 
     if (test) {
       return fix32(5);

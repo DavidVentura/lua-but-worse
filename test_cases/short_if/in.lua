@@ -9,8 +9,6 @@ function main()
   print(c)
   print(d)
 
--- broken
--- normal if, in brackets
 if (test) then
     print("this should not be visible")
 end
