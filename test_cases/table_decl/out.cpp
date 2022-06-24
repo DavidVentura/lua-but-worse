@@ -1,17 +1,21 @@
 #include "header.h"
-
-const TValue *idx_to_name[0] = {};
+const uint16_t FIELD_TOP = 0;
+const uint16_t FIELD_Y = 1;
+const TValue *idx_to_name[2] = {new TValue("top"), new TValue("y")};
 
 class SpecialTable : public Table {
 
 public:
-  TValue fast_fields[0];
+  TValue fast_fields[2];
 
   SpecialTable(std::initializer_list<std::pair<const TValue, TValue *>> values) : SpecialTable() { prepopulate(values); }
 
   SpecialTable() {
-    for (uint16_t i = 0; i < 0; i++)
+    for (uint16_t i = 0; i < 2; i++)
       fast_fields[i] = TValue();
+
+    fields["top"] = &fast_fields[FIELD_TOP];
+    fields["y"] = &fast_fields[FIELD_Y];
   }
 
   // why o why does this not work when defined in Table
@@ -64,6 +68,7 @@ public:
 };
 #include "impl.cpp"
 namespace Game {
+  TValue literals;
   TValue empty;
   TValue member;
   TValue squares;
@@ -78,6 +83,11 @@ namespace Game {
                                 {fix32(5), new TValue(fix32(25))}});
     member = new SpecialTable({{"x", new TValue(fix32(1))}});
     empty = new SpecialTable();
+    literals = new SpecialTable({{"top", new TValue(new SpecialTable({{"x", new TValue(fix32(0))}, {"y", new TValue(-fix32(68))}}))},
+                                 {"bottom", new TValue(new SpecialTable({{"x", new TValue(fix32(0))}, {"y", new TValue(fix32(68))}}))},
+                                 {"left", new TValue(new SpecialTable({{"x", new TValue(-fix32(68))}, {"y", new TValue(fix32(0))}}))},
+                                 {"right", new TValue(new SpecialTable({{"x", new TValue(fix32(68))}, {"y", new TValue(fix32(0))}}))}});
+    print(std::get<SpecialTable *>(std::get<SpecialTable *>(literals.data)->get(FIELD_TOP).data)->get(FIELD_Y));
     (*(*std::get<SpecialTable *>(member.data))[empty]) = fix32(5); // ?
     print((*(*std::get<SpecialTable *>(member.data))[empty]));
   }
