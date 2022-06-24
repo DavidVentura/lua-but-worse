@@ -6,6 +6,7 @@
 #include "fix32.h"
 #include <unordered_map>
 #include <functional>
+#include <memory>
 using namespace z8;
 
 #define assertm(exp, msg) assert(((void)msg, exp))
@@ -14,12 +15,26 @@ using namespace z8;
 const uint8_t TT_NUM  = 0;
 const uint8_t TT_STR  = 1;
 const uint8_t TT_TAB  = 2;
-const uint8_t TT_FN   = 3;
-const uint8_t TT_NULL = 4;
+const uint8_t TT_NULL = 3;
+const uint8_t TT_BOOL = 4;
+const uint8_t TT_FN   = 5;
 
 class TValue;
 class SpecialTable;
 void print(const TValue t);
+
+
+class FWrapper {
+    // this std::function is 24 bytes, which makes the variant 24 bytes
+    // which makes every number / etc 24 bytes. due to the million unnecessary copies
+    // that are currently triggered, it makes some actions significantly slower
+    // Wrapping it in a pointer makes function accesses slower, but those are infrequent
+    public:
+        using ftype = std::function<TValue(std::vector<TValue> args)>;
+        ftype func;
+
+    FWrapper(ftype val) : func(val) {}
+};
 
 class TValue {
     public:
@@ -28,13 +43,19 @@ class TValue {
         using myvariant = std::variant<fix32,
                                        const char*,
                                        SpecialTable*,
-                                       func,
-                                       std::nullptr_t
+                                       std::nullptr_t,
+                                       bool,
+                                       FWrapper*
                                        >;
         myvariant data;
-        bool is_opt = false;
     // size_t hash     = 0;
     operator int16_t() const {
+        return std::get<fix32>(data);
+    };
+
+    operator uint8_t() const {
+        //assertm(n<(int16_t)255, "Tried to cast >255 to int8_t");
+        //assertm(n>(int16_t)0, "Tried to cast <0 to int8_t");
         return std::get<fix32>(data);
     };
 
@@ -53,33 +74,45 @@ class TValue {
 
     inline operator bool() const {
         if(data.index()==TT_NULL) return false;
-        return std::get<fix32>(data) != fix32(0);
+        if(data.index()==TT_BOOL) return std::get<bool>(data);
+        return true;
     };
 
     inline bool operator >(fix32 o) {
         return std::get<fix32>(data) > o;
     }
-    /*
     inline bool operator >(TValue o) {
         return std::get<fix32>(data) > std::get<fix32>(o.data);
     }
 
     inline bool operator <(TValue o) {
-        assertm(tag==TT_NUM, "Can't <t notnumber");
-        return data < o.data;
         return std::get<fix32>(data) < std::get<fix32>(o.data);
     }
-    */
     inline bool operator >=(fix32 o) {
         return std::get<fix32>(data) >= o;
     }
+    inline bool operator >(int o) {
+        return std::get<fix32>(data) > fix32(o);
+    }
+    inline bool operator >=(int o) {
+        return std::get<fix32>(data) >= fix32(o);
+    }
+    inline bool operator <=(int o) {
+        return std::get<fix32>(data) <= fix32(o);
+    }
     inline bool operator <=(fix32 o) {
         return std::get<fix32>(data) <= o;
+    }
+    inline bool operator <=(TValue o) {
+        return std::get<fix32>(data) <= std::get<fix32>(o.data);
     }
     inline bool operator <(fix32 o) {
         return std::get<fix32>(data) < o;
     }
 
+    inline bool operator ==(int o) {
+        return std::get<fix32>(data) == fix32(o);
+    }
     inline bool operator ==(fix32 o) {
         return std::get<fix32>(data) == o;
     }
@@ -98,6 +131,14 @@ class TValue {
 
     inline TValue operator *(TValue o) {
         return std::get<fix32>(data) * std::get<fix32>(o.data);
+    }
+
+    inline TValue operator +(TValue o) {
+        return TValue(std::get<fix32>(data) + std::get<fix32>(o.data));
+    }
+
+    inline TValue operator +(int o) {
+        return TValue(std::get<fix32>(data) + fix32(o));
     }
 
     inline TValue operator +(fix32 o) {
@@ -127,7 +168,7 @@ class TValue {
     }
 
     inline TValue operator()(std::vector<TValue> args) {
-        return std::get<func>(data)(args);
+        return std::get<TT_FN>(data)->func(args);
     }
 
     bool operator ==(TValue other) {
@@ -137,6 +178,8 @@ class TValue {
                 return std::get<fix32>(data) == std::get<fix32>(other.data);
             case TT_STR: // FIXME: by pointer identity
                 return std::get<const char*>(data) == std::get<const char*>(other.data);
+            case TT_BOOL:
+                return std::get<bool>(data) == std::get<bool>(other.data);
             case TT_NULL:
                 return true;
             case TT_TAB: // by pointer identity
@@ -149,13 +192,15 @@ class TValue {
         return false;
     }
 
-    const bool operator ==(const TValue other) const {
+    bool operator ==(const TValue other) const {
         if(data.index()!=other.data.index()) return false;
         switch(data.index()) {
             case TT_NUM:
                 return std::get<fix32>(data) == std::get<fix32>(other.data);
             case TT_STR: // FIXME: by pointer identity
                 return std::get<const char*>(data) == std::get<const char*>(other.data);
+            case TT_BOOL:
+                return std::get<bool>(data) == std::get<bool>(other.data);
             case TT_NULL:
                 return true;
             case TT_TAB: // by pointer identity
@@ -170,67 +215,63 @@ class TValue {
 
     TValue& operator=(fix32 val) {
         data = val;
-        is_opt = false;
         return *this;
     }
     TValue& operator=(int val) {
         data = fix32(val);
-        is_opt = false;
         return *this;
     }
     TValue& operator=(bool val) {
         data = val ? 1 : 0;
-        is_opt = false;
         return *this;
     }
 
     TValue& operator=(SpecialTable* val) {
         data = val;
-        is_opt = false;
         return *this;
     }
 
     TValue() {
         data = nullptr;
-        is_opt = false;
     }
     TValue(fix32 val) {
         data = val;
-        is_opt = false;
     }
     TValue(int val) {
         data = fix32(val);
-        is_opt = false;
     }
     TValue(bool val) {
         data = val ? 1 : 0;
-        is_opt = false;
     }
     TValue(const char* val) {
         data = val;
-        is_opt = false;
     }
 
     TValue(SpecialTable* val) {
         data = val;
-        is_opt = false;
     }
 
     TValue(std::function<TValue(std::vector<TValue>)> val) {
-        data = val;
-        is_opt = false;
-    }
-
-    static TValue OPT_VAL() {
-        TValue t = TValue();
-        t.is_opt = true;
-        return t;
+        data = std::make_shared<FWrapper>(val);
     }
     TValue& operator= (std::function<TValue(std::vector<TValue>)> val) {
-        is_opt = false;
-        data = val;
+        data = std::make_shared<FWrapper>(val);
         return *this;
     }
+
+    /*
+    TValue(TValue&& other) {
+        data = other.data;
+        other.data = nullptr;
+    }
+    TValue& operator=(TValue&& other) {
+        if(this != &other) {
+            data = other.data;
+            other.data = nullptr;
+        }
+        return *this;
+    }
+    */
 
 }; // TValue;
 
@@ -261,6 +302,8 @@ struct std::hash<TValue> {
                 return (size_t)std::get<SpecialTable*>(s.data);
             case TT_NULL:
                 return 0x5a5a5a5a;
+            case TT_BOOL:
+                return std::get<bool>(s.data);
             case TT_STR:
                 {
                 auto c = std::get<const char*>(s.data);
@@ -305,4 +348,15 @@ TValue get_with_default(const std::vector<TValue>& v, uint8_t idx) {
     if(idx>= v.size())
         return TValue();
     return v[idx];
+}
+
+inline TValue _and(TValue left, TValue right) {
+    // The operator and returns its first argument if it is false; otherwise, it returns its second argument.
+    if (!left) return left;
+    return right;
+}
+inline TValue _or(TValue left, TValue right) {
+    // The operator or returns its first argument if it is not false; otherwise, it returns its second argument:
+    if (left) return left;
+    return right;
 }

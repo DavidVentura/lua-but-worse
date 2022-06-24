@@ -6,8 +6,6 @@ void setmetatable(TValue t, TValue meta) {
 
 extern uint8_t btn(uint8_t);
 void print(const TValue t) {
-    if (t.is_opt)
-        printf("OPT token at %p\n", (void*)&t);
     switch(t.data.index()) {
         case TT_STR:
             printf("%s\n", std::get<const char*>(t.data));
@@ -29,7 +27,7 @@ void print(const TValue t) {
             printf("NULL\n");
             break;
         case TT_FN:
-            printf("F<%p>\n", (void*)&std::get<TValue::func>(t.data));
+            printf("F<%p>\n", (void*)&std::get<TT_FN>(t.data));
             break;
         case TT_TAB:
             printf("T<%p>\n", (void*)std::get<SpecialTable*>(t.data));
@@ -39,18 +37,20 @@ void print(const TValue t) {
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
 void print(TValue value, int16_t x, int16_t y, int16_t col) {
     static char numbuf[23];
-    if(value.tag == TT_STR) {
-        _print(value.s, strlen(value.s), x, y, col);
+    if(value.data.index() == TT_STR) {
+        auto s = std::get<const char*>(value.data);
+        _print(s, strlen(s), x, y, col);
     }
-    if(value.tag == TT_NUM) {
-        int16_t decimals = (uint16_t)fix32::decimals(value.n);
+    if(value.data.index() == TT_NUM) {
+        auto n = std::get<fix32>(value.data);
+        int16_t decimals = (uint16_t)fix32::decimals(n);
         if (decimals) {
             char buf[17];
             fix32::to_string(decimals, buf);
-            int len = sprintf(numbuf, "%d.%s", (uint16_t)value.n, buf);
+            int len = sprintf(numbuf, "%d.%s", (uint16_t)n, buf);
             _print(numbuf, len, x, y, col);
         } else {
-            int len = sprintf(numbuf, "%d", (uint16_t)value.n);
+            int len = sprintf(numbuf, "%d", (uint16_t)n);
             _print(numbuf, len, x, y, col);
         }
     }
@@ -64,7 +64,7 @@ void foreach(TValue val, std::function<void (TValue)> f) {
     for (auto it = t->fields.cbegin(); it != t->fields.cend(); /* no increment */) {
         auto next = it;
         ++next;
-        if(!it->second->is_opt) {
+        if(it->second->data.index() != TT_NULL) {
             f(*it->second);
         }
         it = next;
@@ -101,7 +101,8 @@ void del(TValue table, TValue val) {
     for (auto it = t->fields.cbegin(); it != t->fields.cend(); ++it) {
         if (*it->second == val) {
             if(it->second->data.index() == TT_TAB) {
-                //delete it->second->t;
+                free(std::get<SpecialTable*>(it->second->data));
+                // delete it->second->data;
                 delete it->second;
             }
             t->fields.erase(it);
@@ -121,9 +122,4 @@ inline void pset(TValue x, TValue y, TValue color) {
 #if defined(SDL_BACKEND) || defined(ESP_BACKEND) || defined(PICO_BACKEND)
     _pset(x, y, color);
 #endif
-}
-
-inline TValue _or(TValue a, TValue b) {
-    if(a.data.index()!=TT_NULL) return a;
-    return b;
 }

@@ -189,7 +189,7 @@ class SpecialTable : public Table {
 
         SpecialTable() {
             for(uint16_t i=0; i<$ff_len; i++)
-                fast_fields[i] = TValue::OPT_VAL();
+                fast_fields[i] = TValue();
 
             $var_init
         }
@@ -197,11 +197,10 @@ class SpecialTable : public Table {
         // why o why does this not work when defined in Table
         inline TValue* operator[](TValue const& key) {
             if(fields.count(key)) {
-              if(!fields[key]->is_opt) {
+              if(fields[key]->data.index() != TT_NULL) {
                 // TT_OPT here means "optimized" -- unset
                 return fields[key];
               }
-              fields[key]->is_opt = false; // make NULL
               fields[key] = nullptr;
               return fields[key];
             }
@@ -220,20 +219,20 @@ class SpecialTable : public Table {
         }
 
         void sub(uint16_t idx, TValue val) {
-            if(fast_fields[idx].is_opt) {
+            if(fast_fields[idx].data.index() == TT_NULL) {
                 fast_fields[idx] = get(idx);
             }
             fast_fields[idx] -= val;
         }
         void inc(uint16_t idx, TValue val) {
-            if(fast_fields[idx].is_opt) {
+            if(fast_fields[idx].data.index() == TT_NULL) {
                 fast_fields[idx] = get(idx);
             }
             fast_fields[idx] += val;
         }
         TValue get(uint16_t idx) {
             TValue ret = fast_fields[idx];
-            if(ret.is_opt) {
+            if(ret.data.index() == TT_NULL) {
                 if(metatable!=NULL && metatable->fields.count("__index")) {
                     auto st = std::get<SpecialTable*>(metatable->fields["__index"]->data);
                     return st->get(idx);
