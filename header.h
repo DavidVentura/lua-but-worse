@@ -222,7 +222,7 @@ class TValue {
         return *this;
     }
     TValue& operator=(bool val) {
-        data = val ? 1 : 0;
+        data = val;
         return *this;
     }
 
