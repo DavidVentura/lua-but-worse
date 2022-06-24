@@ -25,8 +25,10 @@ member.t->fast_fields[0];
 
 so, literal field accesses can be optimized for faster access and programatic access to keys still works.
 
-For a purely calculation-based "micro benchmark" (no table accesses) coming from a real game (`spr_r` from game Rockets!) performance is ~90x (!) when comparing to the original version, which uses globals for all its variables, and ~45x (!) for the optimized version (using locals) [Time to run benchmark went from 30s to 336ms].  
+For a purely calculation-based "micro benchmark" (no table accesses) coming from a real game (`spr_r` from game Rockets!) performance is ~30x (!) when comparing to the original version, which uses globals for all its variables, and ~21x (!) for the optimized version (using locals) [Time to run benchmark went from 93s to 3278ms].  
 There are no (user-generated) table lookups in this benchmark, so the speedup comes purely from translating the code. This type of benchmark is the best case for this translation: memory accesses are _terribly_ slow (via PSRAM).
+
+There's a not-yet-implemented possible optimization: downcasting (at compile time) `TValue` to `fix32` when possible -- in this benchmark the execution goes to 2264ms (~1.44x faster)
 
 ## Not implemented
 
