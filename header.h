@@ -252,10 +252,10 @@ class TValue {
     }
 
     TValue(std::function<TValue(std::vector<TValue>)> val) {
-        data = std::make_shared<FWrapper>(val);
+        data = new FWrapper(val);
     }
     TValue& operator= (std::function<TValue(std::vector<TValue>)> val) {
-        data = std::make_shared<FWrapper>(val);
+        data = new FWrapper(val);
         return *this;
     }
 
