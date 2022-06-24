@@ -13,7 +13,7 @@ public:
 
   SpecialTable() {
     for (uint16_t i = 0; i < 3; i++)
-      fast_fields[i] = TValue::OPT_VAL();
+      fast_fields[i] = TValue();
 
     fields["__index"] = &fast_fields[FIELD___INDEX];
     fields["method"] = &fast_fields[FIELD_METHOD];
@@ -23,11 +23,10 @@ public:
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
     if (fields.count(key)) {
-      if (!fields[key]->is_opt) {
+      if (fields[key]->data.index() != TT_NULL) {
         // TT_OPT here means "optimized" -- unset
         return fields[key];
       }
-      fields[key]->is_opt = false; // make NULL
       fields[key] = nullptr;
       return fields[key];
     }
@@ -44,20 +43,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.is_opt) {
+    if (ret.data.index() == TT_NULL) {
       if (metatable != NULL && metatable->fields.count("__index")) {
         auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
         return st->get(idx);
@@ -81,7 +80,7 @@ namespace Game {
     std::get<SpecialTable *>(a.data)->set(FIELD___INDEX, a);
     std::get<SpecialTable *>(a.data)->set(FIELD_METHOD, TValue([&](std::vector<TValue> args) -> TValue {
                                             TValue self = get_with_default(args, 0);
-                                            std::get<SpecialTable *>(self.data)->set(FIELD_X, 5);
+                                            std::get<SpecialTable *>(self.data)->set(FIELD_X, fix32(5));
                                             return TValue();
                                           }));
     b = new SpecialTable();

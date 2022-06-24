@@ -11,17 +11,16 @@ public:
 
   SpecialTable() {
     for (uint16_t i = 0; i < 0; i++)
-      fast_fields[i] = TValue::OPT_VAL();
+      fast_fields[i] = TValue();
   }
 
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
     if (fields.count(key)) {
-      if (!fields[key]->is_opt) {
+      if (fields[key]->data.index() != TT_NULL) {
         // TT_OPT here means "optimized" -- unset
         return fields[key];
       }
-      fields[key]->is_opt = false; // make NULL
       fields[key] = nullptr;
       return fields[key];
     }
@@ -38,20 +37,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.is_opt) {
+    if (ret.data.index() == TT_NULL) {
       if (metatable != NULL && metatable->fields.count("__index")) {
         auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
         return st->get(idx);
@@ -75,29 +74,30 @@ namespace Game {
   TValue main();
 
   TValue main() {
-    test = 0;
+    test = false;
 
     if (test) {
-      return 5;
+      return fix32(5);
+    }
+    print("asd");
+
+    if (test) {
+      return fix32(5);
+    } else {
+      a = fix32(1);
     }
 
     if (test) {
-      return 5;
+      return fix32(5);
     } else {
-      a = 1;
-    }
-
-    if (test) {
-      return 5;
-    } else {
-      b = 2;
-      c = 3;
+      b = fix32(2);
+      c = fix32(3);
     }
 
     if (!test) {
-      d = -4; // ?
+      d = -fix32(4); // ?
     } else {
-      e = 0;
+      e = fix32(0);
     }
     print(a);
     print(b);
@@ -107,7 +107,7 @@ namespace Game {
     if (test) {
       print("this should not be visible");
     }
-    return 0;
+    return fix32(0);
   }
 
   void __preinit() {}

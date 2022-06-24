@@ -11,17 +11,16 @@ public:
 
   SpecialTable() {
     for (uint16_t i = 0; i < 0; i++)
-      fast_fields[i] = TValue::OPT_VAL();
+      fast_fields[i] = TValue();
   }
 
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
     if (fields.count(key)) {
-      if (!fields[key]->is_opt) {
+      if (fields[key]->data.index() != TT_NULL) {
         // TT_OPT here means "optimized" -- unset
         return fields[key];
       }
-      fields[key]->is_opt = false; // make NULL
       fields[key] = nullptr;
       return fields[key];
     }
@@ -38,20 +37,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.is_opt) {
+    if (ret.data.index() == TT_NULL) {
       if (metatable != NULL && metatable->fields.count("__index")) {
         auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
         return st->get(idx);
@@ -69,10 +68,10 @@ namespace Game {
   TValue main();
 
   TValue main() {
-    for (auto i = 1; i < 7; i += 1) {
+    for (auto i = fix32(1); i < fix32(7); i += fix32(1)) {
       print(i);
     }
-    return 0;
+    return fix32(0);
   }
 
   void __preinit() {}

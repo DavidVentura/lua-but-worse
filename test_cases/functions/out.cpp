@@ -11,7 +11,7 @@ public:
 
   SpecialTable() {
     for (uint16_t i = 0; i < 1; i++)
-      fast_fields[i] = TValue::OPT_VAL();
+      fast_fields[i] = TValue();
 
     fields["f"] = &fast_fields[FIELD_F];
   }
@@ -19,11 +19,10 @@ public:
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
     if (fields.count(key)) {
-      if (!fields[key]->is_opt) {
+      if (fields[key]->data.index() != TT_NULL) {
         // TT_OPT here means "optimized" -- unset
         return fields[key];
       }
-      fields[key]->is_opt = false; // make NULL
       fields[key] = nullptr;
       return fields[key];
     }
@@ -40,20 +39,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.is_opt) {
+    if (ret.data.index() == TT_NULL) {
       if (metatable != NULL && metatable->fields.count("__index")) {
         auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
         return st->get(idx);
@@ -76,18 +75,18 @@ namespace Game {
   TValue main();
 
   TValue main() {
-    captured = 7;
+    captured = fix32(7);
     a = TValue([&](std::vector<TValue> args) -> TValue {
       TValue x = get_with_default(args, 0);
       return x * captured;
     });
-    print(a({5}));
+    print(a({fix32(5)}));
     b = TValue([&](std::vector<TValue> args) -> TValue {
       TValue x = get_with_default(args, 0);
       TValue y = get_with_default(args, 1);
       return x * y;
     });
-    print(b({5, 6}));
+    print(b({fix32(5), fix32(6)}));
     c = new SpecialTable();
     std::get<SpecialTable *>(c.data)->set(FIELD_F, TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table"; }));
     print(std::get<SpecialTable *>(c.data)->get(FIELD_F)({}));
@@ -95,7 +94,7 @@ namespace Game {
     (*(*std::get<SpecialTable *>(c.data))[v]) =
         TValue([&](std::vector<TValue> args) -> TValue { return "works inside a table, via hashmap"; }); // ?
     print((*(*std::get<SpecialTable *>(c.data))[v])({}));
-    return 0;
+    return fix32(0);
   }
 
   void __preinit() {}

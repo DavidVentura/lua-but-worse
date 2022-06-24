@@ -11,17 +11,16 @@ public:
 
   SpecialTable() {
     for (uint16_t i = 0; i < 0; i++)
-      fast_fields[i] = TValue::OPT_VAL();
+      fast_fields[i] = TValue();
   }
 
   // why o why does this not work when defined in Table
   inline TValue *operator[](TValue const &key) {
     if (fields.count(key)) {
-      if (!fields[key]->is_opt) {
+      if (fields[key]->data.index() != TT_NULL) {
         // TT_OPT here means "optimized" -- unset
         return fields[key];
       }
-      fields[key]->is_opt = false; // make NULL
       fields[key] = nullptr;
       return fields[key];
     }
@@ -38,20 +37,20 @@ public:
   void set(uint16_t idx, TValue val) { fast_fields[idx] = val; }
 
   void sub(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] -= val;
   }
   void inc(uint16_t idx, TValue val) {
-    if (fast_fields[idx].is_opt) {
+    if (fast_fields[idx].data.index() == TT_NULL) {
       fast_fields[idx] = get(idx);
     }
     fast_fields[idx] += val;
   }
   TValue get(uint16_t idx) {
     TValue ret = fast_fields[idx];
-    if (ret.is_opt) {
+    if (ret.data.index() == TT_NULL) {
       if (metatable != NULL && metatable->fields.count("__index")) {
         auto st = std::get<SpecialTable *>(metatable->fields["__index"]->data);
         return st->get(idx);
@@ -72,10 +71,14 @@ namespace Game {
   void main();
 
   void main() {
-    squares = new SpecialTable({{1, new TValue(1)}, {2, new TValue(4)}, {3, new TValue(9)}, {4, new TValue(16)}, {5, new TValue(25)}});
-    member = new SpecialTable({{"x", new TValue(1)}});
+    squares = new SpecialTable({{fix32(1), new TValue(fix32(1))},
+                                {fix32(2), new TValue(fix32(4))},
+                                {fix32(3), new TValue(fix32(9))},
+                                {fix32(4), new TValue(fix32(16))},
+                                {fix32(5), new TValue(fix32(25))}});
+    member = new SpecialTable({{"x", new TValue(fix32(1))}});
     empty = new SpecialTable();
-    (*(*std::get<SpecialTable *>(member.data))[empty]) = 5; // ?
+    (*(*std::get<SpecialTable *>(member.data))[empty]) = fix32(5); // ?
     print((*(*std::get<SpecialTable *>(member.data))[empty]));
   }
 

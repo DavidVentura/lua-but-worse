@@ -1,5 +1,5 @@
 function main()
-  test = 0
+  test = false
   if (test) return 5
   if (test) return 5 else a = 1
   if (test) return 5 else b = 2 c = 3
