@@ -57,7 +57,8 @@ void print(TValue value, int16_t x, int16_t y, int16_t col) {
 }
 #endif
 
-void foreach(TValue val, std::function<void (TValue)> f) {
+void foreach(TValue val, TValue fnval) {
+    auto f = std::get<TT_FN>(fnval.data)->func;
     auto t = std::get<SpecialTable*>(val.data);
     // standard for instead of magic iterator as items can be deleted from the table
     // during iteration
@@ -65,7 +66,7 @@ void foreach(TValue val, std::function<void (TValue)> f) {
         auto next = it;
         ++next;
         if(it->second->data.index() != TT_NULL) {
-            f(*it->second);
+            f({*it->second});
         }
         it = next;
     }
