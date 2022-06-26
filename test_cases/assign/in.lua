@@ -8,9 +8,13 @@ function main()
     o = {}
     u = {a=1}
     o.a = u.a
+
+    t = 7
+    t = ({[7]=8,[8]=7})[t]
     print(a*c)
     print(b*d)
     print(e)
     print(o.a)
+    print(t)
     return 0
 end

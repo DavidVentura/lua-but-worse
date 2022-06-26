@@ -66,6 +66,7 @@ public:
 };
 #include "impl.cpp"
 namespace Game {
+  TValue t;
   TValue u;
   TValue o;
   TValue e;
@@ -89,10 +90,13 @@ namespace Game {
     o = new SpecialTable();
     u = new SpecialTable({{"a", new TValue(fix32(1))}});
     std::get<SpecialTable *>(o.data)->set(FIELD_A, std::get<SpecialTable *>(u.data)->get(FIELD_A));
+    t = fix32(7);
+    t = *((*new SpecialTable({{fix32(7), new TValue(fix32(8))}, {fix32(8), new TValue(fix32(7))}}))[t]); // ?
     print(a * c);
     print(b * d);
     print(e);
     print(std::get<SpecialTable *>(o.data)->get(FIELD_A));
+    print(t);
     return fix32(0);
   }
 
