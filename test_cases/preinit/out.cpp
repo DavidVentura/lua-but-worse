@@ -1,17 +1,19 @@
 #include "header.h"
-
-const TValue *idx_to_name[0] = {};
+const uint16_t FIELD_METHOD = 0;
+const TValue *idx_to_name[1] = {new TValue("method")};
 
 class SpecialTable : public Table {
 
 public:
-  TValue fast_fields[0];
+  TValue fast_fields[1];
 
   SpecialTable(std::initializer_list<std::pair<const TValue, TValue *>> values) : SpecialTable() { prepopulate(values); }
 
   SpecialTable() {
-    for (uint16_t i = 0; i < 0; i++)
+    for (uint16_t i = 0; i < 1; i++)
       fast_fields[i] = TValue();
+
+    fields["method"] = &fast_fields[FIELD_METHOD];
   }
 
   // why o why does this not work when defined in Table
@@ -64,6 +66,7 @@ public:
 };
 #include "impl.cpp"
 namespace Game {
+  TValue b;
   TValue a;
   void __preinit();
   void main();
@@ -77,5 +80,10 @@ namespace Game {
     if ((a < fix32(3))) {
       a = fix32(7);
     }
+    b = new SpecialTable();
+    std::get<SpecialTable *>(b.data)->set(FIELD_METHOD, TValue([&](std::vector<TValue> args) -> TValue {
+                                            TValue self = get_with_default(args, 0);
+                                            print("method");
+                                          }));
   }
 } // namespace Game
