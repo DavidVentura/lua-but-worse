@@ -62,6 +62,8 @@ def rename_stdlib_calls(tree):
             continue
         if n.func.id in ['sin', 'cos']:
             n.func.id = f'fix32::{n.func.id}'
+        if n.func.id in ['sqrt', 'atan2']:
+            n.func.id = f'{n.func.id}f'
 
 def move_to_preinit(tree):
     """
@@ -76,9 +78,9 @@ def move_to_preinit(tree):
     moved_nodes = []
 
     for n in tree_visitor.nodes:
-        if isinstance(n, Function):
-            continue
         if n.parent != tree.body:
+            continue
+        if isinstance(n, Function):
             continue
         tree.body.body.remove(n)
         moved_nodes.append(n)
