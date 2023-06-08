@@ -12,21 +12,21 @@ here = Path(__file__).parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
 
 def _compile_and_run(transformed_src: str, dest_dir: Path):
-    _target_temp = Path(dest_dir / 'out.cpp')
+    _target_temp = Path(dest_dir / 'out.c')
 
     with _target_temp.open('w') as fd:
         fd.write(transformed_src)
 
-    s = subprocess.check_output(['g++', '-O2', '-std=c++17', f'-I{here.absolute()}', str(_target_temp)], cwd=dest_dir)
+    s = subprocess.check_output(['gcc', '-Oz', '-std=c99', '-fsanitize=address', f'-I{here.absolute()}', str(_target_temp)], cwd=dest_dir)
     s = subprocess.check_output(['./a.out'], cwd=dest_dir)
     return s.decode().strip().splitlines()
 
 def find_case_pairs():
-    return [(Path(f'test_cases/{d}/in.lua'), Path(f'test_cases/{d}/out.cpp'), Path(f'test_cases/{d}/expected_stdout'))
-            for d in os.listdir('test_cases')]
+    return os.listdir('test_cases')
 
-@pytest.mark.parametrize("in_f,expected_f,stdout_f", find_case_pairs())
-def test_cases(in_f: Path, expected_f: Path, stdout_f: Path, monkeypatch):
+@pytest.mark.parametrize("test_case", find_case_pairs())
+def test_cases(test_case: str, monkeypatch):
+    in_f, expected_f, stdout_f = (Path(f'test_cases/{test_case}/in.lua'), Path(f'test_cases/{test_case}/out.c'), Path(f'test_cases/{test_case}/expected_stdout'))
     with in_f.open() as fd:
         i = fd.read()
 
@@ -49,8 +49,10 @@ def test_cases(in_f: Path, expected_f: Path, stdout_f: Path, monkeypatch):
         expected_stdout = fd.read()
 
     _patched_src = transform(i, testing=True).strip()
-    with open('patched_out.cpp', 'w') as fd:
+    with open('patched_out.c', 'w') as fd:
         print(_patched_src, file=fd)
+
+    print(_patched_src)
 
     with tempfile.TemporaryDirectory() as td:
         exec_output = _compile_and_run(_patched_src, Path(td))
