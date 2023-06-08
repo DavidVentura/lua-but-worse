@@ -51,6 +51,10 @@ bool fix32_equals(fix32_t a, fix32_t b) {
 fix32_t fix32_flr(fix32_t a) {
 	return (fix32_t){.i = a.i, .f = 0};
 }
+
+fix32_t fix32_invert_sign(fix32_t a) {
+	return (fix32_t){.i = (int16_t)-a.i, .f = 0};
+}
 void fix32_pluseq(fix32_t* a, fix32_t b) {
 	*a = fix32_add(*a, b);
 }

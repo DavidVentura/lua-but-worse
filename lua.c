@@ -5,7 +5,7 @@
 #include <string.h>
 #include "fix32.h"
 
-enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4};
+enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
 typedef struct Table_s Table_t;
@@ -33,15 +33,25 @@ struct Table_s {
 
 Table_t* ENV;
 Table_t global__UpValues;
+#define TNUM8(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
+#define TNUM(x)   ((TValue_t){.tag = NUM,  .num = (x)})
+#define TSTR(x)   ((TValue_t){.tag = STR,  .str = (x)})
+#define TBOOL(x)  ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
+
 TValue_t T_NULL = {.tag = NUL};
-#define TNUM8(x) ((TValue_t){.tag = NUM, .num = (fix32_from_int8(x))})
-#define TNUM(x)  ((TValue_t){.tag = NUM, .num = (x)})
-#define TSTR(x)  ((TValue_t){.tag = STR, .str = (x)})
+const fix32_t _zero = (fix32_t){.i=0, .f=0};
+const fix32_t _one = (fix32_t){.i=1, .f=0};
+TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
+TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
 void print(TValue_t v) {
 	switch(v.tag) {
 		case NUM:
-			printf("%d.%d\n", v.num.i, v.num.f);
+			if(v.num.f == 0) {
+				printf("%d\n", v.num.i);
+			} else {
+				printf("%d.%d\n", v.num.i, v.num.f);
+			}
 			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);
@@ -116,6 +126,22 @@ void _pluseq(TValue_t* a, TValue_t b) {
 
 bool _lt(TValue_t a, TValue_t b) {
 	return fix32_lt(a.num, b.num); // TODO assert
+}
+
+TValue_t _invert_sign(TValue_t a) {
+	return TNUM(fix32_invert_sign(a.num)); // TODO assert
+}
+
+bool _bool(TValue_t a) {
+	if(a.tag == NUM)
+		return a.num.i != 0 || a.num.f != 0;
+	if(a.tag == STR)
+		return a.str != NULL;
+	if(a.tag == NUL)
+		return false;
+	if(a.tag == BOOL)
+		return a.num.i != 0;
+	return false;
 }
 
 Table_t* make_table(uint16_t size) {
