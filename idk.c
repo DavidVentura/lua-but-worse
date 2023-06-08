@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include "fix32.h"
 
 enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4};
 
-typedef uint32_t number;
 typedef struct TValue_s TValue_t;
 typedef struct Table_s Table_t;
 
@@ -14,7 +14,7 @@ struct TValue_s {
 	enum typetag_t tag; // 3 bits used only
 	union {
 		char* str;
-		number num;
+		fix32_t num;
 		void* fun;
 		Table_t* table;
 	};
@@ -34,14 +34,15 @@ struct Table_s {
 Table_t* ENV;
 Table_t global__UpValues;
 TValue_t T_NULL = {.tag = NUL};
-#define TNUM(x) ((TValue_t){.tag = NUM, .num = (x)})
-#define TSTR(x) ((TValue_t){.tag = STR, .str = (x)})
+#define TNUM8(x) ((TValue_t){.tag = NUM, .num = (fix32_from_int8(x))})
+#define TNUM(x)  ((TValue_t){.tag = NUM, .num = (x)})
+#define TSTR(x)  ((TValue_t){.tag = STR, .str = (x)})
 
 bool equal(TValue_t a, TValue_t b) {
 	if(a.tag != b.tag) return false;
 	switch(a.tag) {
 		case NUM:
-			return a.num == b.num;
+			return fix32_equals(a.num, b.num);
 		case STR:
 			return strncmp(a.str, b.str, UINT8_MAX) == 0;
 		default:
@@ -52,7 +53,7 @@ bool equal(TValue_t a, TValue_t b) {
 void print(TValue_t v) {
 	switch(v.tag) {
 		case NUM:
-			printf("%d\n", v.num);
+			printf("%d.%d\n", v.num.i, v.num.f);
 			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);
@@ -100,7 +101,11 @@ TValue_t get_tabvalue(Table_t* u, const TValue_t* key) {
 }
 
 TValue_t _mult(TValue_t a, TValue_t b) {
-	return TNUM(a.num * b.num);
+	return TNUM(fix32_mul(a.num, b.num));
+}
+
+TValue_t _add(TValue_t a, TValue_t b) {
+	return TNUM(fix32_add(a.num, b.num));
 }
 
 Table_t* make_table(uint16_t size) {
@@ -114,12 +119,13 @@ Table_t* make_table(uint16_t size) {
 void potato() {
 	// as this function is a closure inside `global` scope,
 	// it should read/write directly to global__UpValues
-	set_tabvalue(ENV, &TSTR("c"), TNUM(11));
-	set_tabvalue(ENV, &TSTR("b"), TNUM(7));
+	set_tabvalue(ENV, &TSTR("c"), TNUM8(11));
+	set_tabvalue(ENV, &TSTR("b"), TNUM8(7));
 }
 void thing2() {
-	print(_mult(get_tabvalue(ENV, &TSTR("b")), TNUM(3)));
-	print(_mult(get_tabvalue(ENV, &TSTR("c")), TNUM(3)));
+	print(_mult(get_tabvalue(ENV, &TSTR("b")), TNUM8(3)));
+	print(_add(get_tabvalue(ENV, &TSTR("b")),
+			   get_tabvalue(ENV, &TSTR("c"))));
 }
 
 void global() {
