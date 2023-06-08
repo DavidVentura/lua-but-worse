@@ -47,3 +47,7 @@ fix32_t fix32_mul(fix32_t a, fix32_t b) {
 bool fix32_equals(fix32_t a, fix32_t b) {
 	return a.i == b.i && a.f == b.f;
 }
+
+fix32_t fix32_flr(fix32_t a) {
+	return (fix32_t){.i = a.i, .f = 0};
+}
