@@ -110,6 +110,14 @@ TValue_t _add(TValue_t a, TValue_t b) {
 	return TNUM(fix32_add(a.num, b.num));
 }
 
+void _pluseq(TValue_t* a, TValue_t b) {
+	fix32_pluseq(&a->num, b.num); // TODO assert
+}
+
+bool _lt(TValue_t a, TValue_t b) {
+	return fix32_lt(a.num, b.num); // TODO assert
+}
+
 Table_t* make_table(uint16_t size) {
 	KV_t* kvs = calloc(sizeof(KV_t), size);
 	Table_t* ret = malloc(sizeof(Table_t));

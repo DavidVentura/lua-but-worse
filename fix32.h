@@ -51,3 +51,12 @@ bool fix32_equals(fix32_t a, fix32_t b) {
 fix32_t fix32_flr(fix32_t a) {
 	return (fix32_t){.i = a.i, .f = 0};
 }
+void fix32_pluseq(fix32_t* a, fix32_t b) {
+	*a = fix32_add(*a, b);
+}
+
+bool fix32_lt(fix32_t a, fix32_t b) {
+	if( a.i > b.i ) return false;
+	if( a.i == b.i && a.f >= b.f ) return false;
+	return true;
+}
