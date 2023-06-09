@@ -32,15 +32,26 @@ struct Table_s {
 };
 
 Table_t* ENV;
-Table_t global__UpValues;
 #define TNUM8(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
 #define TNUM(x)   ((TValue_t){.tag = NUM,  .num = (x)})
 #define TSTR(x)   ((TValue_t){.tag = STR,  .str = (x)})
 #define TBOOL(x)  ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 
+/*
+ * Multiplying by 100k gives accurate measurements down to 0x0001,
+ * though it requires spilling to 64bit values. Will revisit
+ * if it's a performance concern
+ *
+ * >>> hex((0xFFFF * 100_000))
+ * '0x1869e7960'
+ * >>> hex((0xFFFF * 10_000))
+ * '0x270fd8f0'
+ */
+#define FIX32_DEC_AS_INT(x) (((uint32_t)x) * 100000) >> 16
+
 TValue_t T_NULL = {.tag = NUL};
 const fix32_t _zero = (fix32_t){.i=0, .f=0};
-const fix32_t _one = (fix32_t){.i=1, .f=0};
+const fix32_t _one  = (fix32_t){.i=1, .f=0};
 TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
 TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
@@ -50,7 +61,13 @@ void print(TValue_t v) {
 			if(v.num.f == 0) {
 				printf("%d\n", v.num.i);
 			} else {
-				printf("%d.%d\n", v.num.i, v.num.f);
+				uint32_t dec_part = FIX32_DEC_AS_INT(v.num.f);
+				uint8_t leading_zeroes = 5;
+				while (dec_part % 10 == 0) {
+					dec_part /= 10;
+					leading_zeroes--;
+				}
+				printf("%d.%0*d\n", v.num.i, leading_zeroes, dec_part);
 			}
 			break;
 		default:
