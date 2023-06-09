@@ -81,6 +81,9 @@ void print(TValue_t v) {
 				printf("%d.%0*d\n", v.num.i, leading_zeroes, dec_part);
 			}
 			break;
+		case NUL:
+			printf("NULL\n");
+			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);
 			break;
@@ -94,6 +97,10 @@ bool equal(TValue_t a, TValue_t b) {
 			return fix32_equals(a.num, b.num);
 		case STR:
 			return strncmp(a.str, b.str, UINT8_MAX) == 0;
+		case NUL:
+			return true;
+		case TAB:
+			return a.table == b.table;
 		default:
 			printf("IDK how to compare type %d\n", a.tag);
 			return false;
