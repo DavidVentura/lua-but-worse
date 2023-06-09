@@ -5,21 +5,21 @@ void __preinit();
 void __main();
 
 void __main() {
-  a = new SpecialTable();
-  (*(*std::get<SpecialTable *>(a.data))["__index"]) = a; // ?
+  a = TTAB(make_table(4));
+  set_tabvalue(a.table, TSTR("__index"), a) = a; // ?
   method = TValue([&](std::vector<TValue> args) -> TValue {
     TValue self = get_with_default(args, 0);
-    (*(*std::get<SpecialTable *>(self.data))["x"]) = TNUM(fix32_from_int16(5)); // ?
+    set_tabvalue(self.table, TSTR("x"), TNUM16(5)) = TNUM16(5); // ?
     return NUL;
   });
-  b = new SpecialTable();
+  b = TTAB(make_table(4));
   setmetatable(b, a);
-  (*(*std::get<SpecialTable *>(b.data))["method"])({b});
-  print((*(*std::get<SpecialTable *>(a.data))["x"]));
-  print((*(*std::get<SpecialTable *>(b.data))["x"]));
-  (*(*std::get<SpecialTable *>(a.data))["method"])({a});
-  print((*(*std::get<SpecialTable *>(a.data))["x"]));
-  print((*(*std::get<SpecialTable *>(b.data))["x"]));
+  get_tabvalue(b.table, TSTR("method"))({b});
+  print(get_tabvalue(a.table, TSTR("x")));
+  print(get_tabvalue(b.table, TSTR("x")));
+  get_tabvalue(a.table, TSTR("method"))({a});
+  print(get_tabvalue(a.table, TSTR("x")));
+  print(get_tabvalue(b.table, TSTR("x")));
 }
 
 void __preinit() {}

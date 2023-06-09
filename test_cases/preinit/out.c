@@ -6,10 +6,10 @@ void __main();
 void __main() { print(a); }
 
 void __preinit() {
-  a = TNUM(fix32_from_int16(5));
-  _pluseq(&a, TNUM(fix32_from_int16(1)));
+  a = TNUM16(5);
+  _pluseq(&a, TNUM16(1));
 
-  if (_bool(_lt(a, TNUM(fix32_from_int16(3))))) {
-    a = TNUM(fix32_from_int16(7));
+  if (_bool(_lt(a, TNUM16(3)))) {
+    a = TNUM16(7);
   }
 }

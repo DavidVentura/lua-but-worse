@@ -7,25 +7,30 @@ void __preinit();
 void __main();
 
 void __main() {
-  squares = new SpecialTable({{TNUM(fix32_from_int16(1)), new TValue(TNUM(fix32_from_int16(1)))},
-                              {TNUM(fix32_from_int16(2)), new TValue(TNUM(fix32_from_int16(4)))},
-                              {TNUM(fix32_from_int16(3)), new TValue(TNUM(fix32_from_int16(9)))},
-                              {TNUM(fix32_from_int16(4)), new TValue(TNUM(fix32_from_int16(16)))},
-                              {TNUM(fix32_from_int16(5)), new TValue(TNUM(fix32_from_int16(25)))}});
-  member = new SpecialTable({{"x", new TValue(TNUM(fix32_from_int16(1)))}});
-  empty = new SpecialTable();
-  literals = new SpecialTable(
-      {{"" top "", new TValue(new SpecialTable(
-                       {{"x", new TValue(TNUM(fix32_from_int16(0)))}, {"y", new TValue(_invert_sign(TNUM(fix32_from_int16(68))))}}))},
-       {"" bottom "",
-        new TValue(new SpecialTable({{"x", new TValue(TNUM(fix32_from_int16(0)))}, {"y", new TValue(TNUM(fix32_from_int16(68)))}}))},
-       {"" left "", new TValue(new SpecialTable(
-                        {{"x", new TValue(_invert_sign(TNUM(fix32_from_int16(68))))}, {"y", new TValue(TNUM(fix32_from_int16(0)))}}))},
-       {"" right "",
-        new TValue(new SpecialTable({{"x", new TValue(TNUM(fix32_from_int16(68)))}, {"y", new TValue(TNUM(fix32_from_int16(0)))}}))}});
-  print((*(*std::get<SpecialTable *>((*(*std::get<SpecialTable *>(literals.data))["top"]).data))["y"]));
-  (*(*std::get<SpecialTable *>(member.data))[empty]) = TNUM(fix32_from_int16(5)); // ?
-  print((*(*std::get<SpecialTable *>(member.data))[empty]));
+  squares = TTAB(make_table(4));
+  set_tabvalue(squares.table, TNUM16(1), TNUM16(1));
+  set_tabvalue(squares.table, TNUM16(2), TNUM16(4));
+  set_tabvalue(squares.table, TNUM16(3), TNUM16(9));
+  set_tabvalue(squares.table, TNUM16(4), TNUM16(16));
+  set_tabvalue(squares.table, TNUM16(5), TNUM16(25));
+  ;
+  member = TTAB(make_table(4));
+  set_tabvalue(member.table, TSTR("x"), TNUM16(1));
+  ;
+  empty = TTAB(make_table(4));
+  literals = TTAB(make_table(4));
+  set_tabvalue(literals.table, TSTR("" top ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
+               set_tabvalue(T_IDK.table, TSTR("y"), _invert_sign(TNUM16(68))););
+  set_tabvalue(literals.table, TSTR("" bottom ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
+               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(68)););
+  set_tabvalue(literals.table, TSTR("" left ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), _invert_sign(TNUM16(68)));
+               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
+  set_tabvalue(literals.table, TSTR("" right ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(68));
+               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
+  ;
+  print(get_tabvalue(get_tabvalue(literals.table, TSTR("top")).table, TSTR("y")));
+  set_tabvalue(member.table, empty, TNUM16(5)) = TNUM16(5); // ?
+  print(get_tabvalue(member.table, empty));
 }
 
 void __preinit() {}

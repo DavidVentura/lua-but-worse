@@ -12,27 +12,28 @@ TValue_t __main();
 
 TValue_t __main() {
   TValue_t x;
-  x = TNUM(fix32_from_int16(1));
-  _pluseq(&x, TNUM(fix32_from_int16(2)));
-  a = TNUM(fix32_from_int16(1));
-  b = TNUM(fix32_from_int16(2));
-  c = flr(FROMFLOATfix32(1.5f)); // ?
-  d = flr(FROMFLOATfix32(2.5f)); // ?
-  e = TNUM(fix32_from_int16(1));
-  e = TNUM(fix32_from_int16(2));
-  o = new SpecialTable();
-  u = new SpecialTable({{"a", new TValue(TNUM(fix32_from_int16(1)))}});
-  (*(*std::get<SpecialTable *>(o.data))["a"]) = (*(*std::get<SpecialTable *>(u.data))["a"]); // ?
-  t = TNUM(fix32_from_int16(7));
-  t = (*(*std::get<SpecialTable *>(new SpecialTable({{TNUM(fix32_from_int16(7)), new TValue(TNUM(fix32_from_int16(8)))},
-                                                     {TNUM(fix32_from_int16(8)), new TValue(TNUM(fix32_from_int16(7)))}})
-                                       .data))[t]); // ?
+  x = TNUM16(1);
+  _pluseq(&x, TNUM16(2));
+  a = TNUM16(1);
+  b = TNUM16(2);
+  c = flr(TNUM(fix32_from_float(1.5f))); // ?
+  d = flr(TNUM(fix32_from_float(2.5f))); // ?
+  e = TNUM16(1);
+  e = TNUM16(2);
+  o = TTAB(make_table(4));
+  u = TTAB(make_table(4));
+  set_tabvalue(u.table, TSTR("a"), TNUM16(1));
+  ;
+  get_tabvalue(o.table, TSTR("a")) = get_tabvalue(u.table, TSTR("a")); // ?
+  t = TNUM16(7);
+  t = get_tabvalue(TTAB(make_table(4)); set_tabvalue(T_IDK.table, TNUM16(7), TNUM16(8)); set_tabvalue(T_IDK.table, TNUM16(8), TNUM16(7));
+                       .table, t); // ?
   print(_mult(a, c));
   print(_mult(b, d));
   print(e);
-  print((*(*std::get<SpecialTable *>(o.data))["a"]));
+  print(get_tabvalue(o.table, TSTR("a")));
   print(t);
-  return TNUM(fix32_from_int16(0));
+  return TNUM16(0);
 }
 
 void __preinit() {}

@@ -9,7 +9,7 @@ TValue_t __main() {
   b = TNUM(((fix32_t){.i = 0x0, .f = 0x1000}));
   print(a);
   print(b);
-  return TNUM(fix32_from_int16(0));
+  return TNUM16(0);
 }
 
 void __preinit() {}

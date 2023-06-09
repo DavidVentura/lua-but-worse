@@ -5,17 +5,19 @@ void __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  a = new SpecialTable({{"x", new TValue(TNUM(fix32_from_int16(5)))}});
-  (*(*std::get<SpecialTable *>(a.data))["__index"]) = a; // ?
-  b = new SpecialTable();
+  a = TTAB(make_table(4));
+  set_tabvalue(a.table, TSTR("x"), TNUM16(5));
+  ;
+  set_tabvalue(a.table, TSTR("__index"), a) = a; // ?
+  b = TTAB(make_table(4));
   setmetatable(b, a);
-  print((*(*std::get<SpecialTable *>(b.data))["x"]));
-  set_tabvalue(b.table, FIELD_X, TNUM(fix32_from_int16(5)));
-  print((*(*std::get<SpecialTable *>(b.data))["x"]));
-  print((*(*std::get<SpecialTable *>(b.data))["y"]));
-  (*(*std::get<SpecialTable *>(a.data))["y"]) = TNUM(fix32_from_int16(7)); // ?
-  print((*(*std::get<SpecialTable *>(b.data))["y"]));
-  return TNUM(fix32_from_int16(0));
+  print(get_tabvalue(b.table, TSTR("x")));
+  NOT_USED_set_tabvalue(b.table, FIELD_X, TNUM16(5));
+  print(get_tabvalue(b.table, TSTR("x")));
+  print(get_tabvalue(b.table, TSTR("y")));
+  set_tabvalue(a.table, TSTR("y"), TNUM16(7)) = TNUM16(7); // ?
+  print(get_tabvalue(b.table, TSTR("y")));
+  return TNUM16(0);
 }
 
 void __preinit() {}
