@@ -56,7 +56,6 @@ def rename_stdlib_calls(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    seen = []
     for n in tree_visitor.nodes:
         if not isinstance(n, Call):
             continue
@@ -132,6 +131,8 @@ def add_signatures(tree):
             continue
         if _is_inside(n, Function):
             continue
+        if n.name.id == 'main':
+            n.name.id = '__main'
         tree.body.add_signatures(n)
 
 def find_static_table_accesses(tree):
@@ -164,102 +165,30 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
-    static_table_fields = find_static_table_accesses(tree)
+    #static_table_fields = find_static_table_accesses(tree)
+    #static_table_fields = [] # FIXME LATER
 
     if dump_ast:
         print(ast.to_pretty_str(tree))
 
-    _field_to_const = {x: f'FIELD_{x.upper()}' for x in static_table_fields}
-    ff_len = len(static_table_fields)
-    var_init = '\n'.join([f'fields["{x}"]\t= &fast_fields[{_field_to_const[x]}];' for x in static_table_fields])
-    field_to_idx = '\n'.join(f'const uint16_t {_field_to_const[x]} = {i};' for i, x in enumerate(static_table_fields))
-    idx_to_name = f'const TValue* idx_to_name[{ff_len}] = {{' + ', '.join(f'new TValue("{var}")' for var in static_table_fields) + '};'
+    #_field_to_const = {x: f'FIELD_{x.upper()}' for x in static_table_fields}
+    #ff_len = len(static_table_fields)
+    #var_init = '\n'.join([f'fields["{x}"]\t= &fast_fields[{_field_to_const[x]}];' for x in static_table_fields])
+    #field_to_idx = '\n'.join(f'const uint16_t {_field_to_const[x]} = {i};' for i, x in enumerate(static_table_fields))
+    #idx_to_name = f'const TValue* idx_to_name[{ff_len}] = {{' + ', '.join(f'new TValue("{var}")' for var in static_table_fields) + '};'
 
 
-    gen = string.Template('''#include "header.h"
-$field_to_idx
-$idx_to_name
+    #gen = string.Template('''#include "lua.c"
+    #        ''').substitute(field_to_idx=field_to_idx, var_init=var_init, idx_to_name=idx_to_name, ff_len=ff_len)
 
-class SpecialTable : public Table {
-
-    public:
-       TValue fast_fields[$ff_len];
-
-        SpecialTable(std::initializer_list<std::pair<const TValue, TValue*>> values) : SpecialTable() {
-            prepopulate(values);
-        }
-
-        SpecialTable() {
-            for(uint16_t i=0; i<$ff_len; i++)
-                fast_fields[i] = TValue();
-
-            $var_init
-        }
-
-        // why o why does this not work when defined in Table
-        inline TValue* operator[](TValue const& key) {
-            if(fields.count(key)) {
-              if(fields[key]->data.index() != TT_NULL) {
-                // TT_OPT here means "optimized" -- unset
-                return fields[key];
-              }
-              fields[key] = nullptr;
-              return fields[key];
-            }
-
-            if(metatable!=NULL && metatable->fields.count("__index")) {
-                auto st = std::get<SpecialTable*>(metatable->fields["__index"]->data);
-                return (*st)[key];
-            }
-
-            fields[key] = new TValue();
-            return fields[key];
-        }
-
-        void set(uint16_t idx, TValue val) {
-            fast_fields[idx] = val;
-        }
-
-        void sub(uint16_t idx, TValue val) {
-            if(fast_fields[idx].data.index() == TT_NULL) {
-                fast_fields[idx] = get(idx);
-            }
-            fast_fields[idx] -= val;
-        }
-        void inc(uint16_t idx, TValue val) {
-            if(fast_fields[idx].data.index() == TT_NULL) {
-                fast_fields[idx] = get(idx);
-            }
-            fast_fields[idx] += val;
-        }
-        TValue get(uint16_t idx) {
-            TValue ret = fast_fields[idx];
-            if(ret.data.index() == TT_NULL) {
-                if(metatable!=NULL && metatable->fields.count("__index")) {
-                    auto st = std::get<SpecialTable*>(metatable->fields["__index"]->data);
-                    return st->get(idx);
-                }
-                auto t = TValue();
-                set(idx, t);
-                return t;
-            }
-            return ret;
-        }
-
-
-};
-#include "impl.cpp"
-    ''').substitute(field_to_idx=field_to_idx, var_init=var_init, idx_to_name=idx_to_name, ff_len=ff_len)
-
+    gen = '#include "lua.c"\n'
     ret = gen
-    ret += 'namespace Game {\n'
     ret += tree.body.dump()
-    ret += '\n}\n'
     if testing:
         ret += textwrap.dedent('''
         int main() {
-            Game::__preinit();
-            Game::main();
+            __preinit();
+            __main();
             return 0;
         }''')
 
