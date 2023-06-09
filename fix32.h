@@ -31,6 +31,10 @@ fix32_t fix32_from_bits(uint32_t b) {
 	return (fix32_t){.i = (int16_t)((b & 0xffff0000) >> 16), .f = (uint16_t)(b & 0xffff)};
 }
 
+fix32_t fix32_from_float(float f) {
+	return fix32_from_bits((int32_t)((int64_t)(f * 65536.0f)));
+}
+
 fix32_t fix32_add(fix32_t a, fix32_t b) {
 	uint32_t _a = fix32_to_bits(a);
 	uint32_t _b = fix32_to_bits(b);
@@ -53,7 +57,7 @@ fix32_t fix32_flr(fix32_t a) {
 }
 
 fix32_t fix32_invert_sign(fix32_t a) {
-	return (fix32_t){.i = (int16_t)-a.i, .f = 0};
+	return (fix32_t){.i = (int16_t)-a.i, .f = a.f};
 }
 void fix32_pluseq(fix32_t* a, fix32_t b) {
 	*a = fix32_add(*a, b);
