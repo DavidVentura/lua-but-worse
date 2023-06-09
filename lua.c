@@ -32,10 +32,21 @@ struct Table_s {
 };
 
 Table_t* ENV;
-#define TNUM8(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
-#define TNUM(x)   ((TValue_t){.tag = NUM,  .num = (x)})
+
+TValue_t _tvalue_from_table(Table_t t) {
+	return ((TValue_t){.tag = TAB, .table = &t});
+}
+
+TValue_t _tvalue_from_table_p(Table_t* t) {
+	return ((TValue_t){.tag = TAB, .table = t});
+}
+
+#define TNUM(x)    ((TValue_t){.tag = NUM,  .num = (x)})
+#define TNUM8(x)   ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
+#define TNUM16(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
 #define TSTR(x)   ((TValue_t){.tag = STR,  .str = (x)})
 #define TBOOL(x)  ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
+#define TTAB(x)  	_Generic(x, Table_t: _tvalue_from_table, Table_t*: _tvalue_from_table_p)(x)
 
 /*
  * Multiplying by 100k gives accurate measurements down to 0x0001,
@@ -97,10 +108,10 @@ void grow_table(Table_t* t) {
 	t->len = new_len;
 }
 
-void set_tabvalue(Table_t* u, const TValue_t* key, TValue_t v) {
+void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	uint16_t first_null = UINT16_MAX;
 	for(uint16_t i=0; i<u->len; i++) {
-		if (equal(u->kvs[i].key, *key)) {
+		if (equal(u->kvs[i].key, key)) {
 			u->kvs[i].value = v;
 			return;
 		}
@@ -109,7 +120,7 @@ void set_tabvalue(Table_t* u, const TValue_t* key, TValue_t v) {
 		}
 	}
 	if (first_null < UINT16_MAX) {
-		u->kvs[first_null].key = *key;
+		u->kvs[first_null].key = key;
 		u->kvs[first_null].value = v;
 		return;
 	}
@@ -120,9 +131,9 @@ void set_tabvalue(Table_t* u, const TValue_t* key, TValue_t v) {
 	}
 }
 
-TValue_t get_tabvalue(Table_t* u, const TValue_t* key) {
+TValue_t get_tabvalue(Table_t* u, TValue_t key) {
 	for(uint16_t i=0; i<u->len; i++) {
-		if (equal(u->kvs[i].key, *key)) {
+		if (equal(u->kvs[i].key, key)) {
 			return u->kvs[i].value;
 		}
 	}
