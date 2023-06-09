@@ -149,7 +149,12 @@ TValue_t _invert_sign(TValue_t a) {
 	return TNUM(fix32_invert_sign(a.num)); // TODO assert
 }
 
-bool _bool(TValue_t a) {
+#define _bool(x) _Generic((x), TValue_t: __bool, bool: __mbool)(x)
+
+bool __mbool(bool b) {
+	return b;
+}
+bool __bool(TValue_t a) {
 	if(a.tag == NUM)
 		return a.num.i != 0 || a.num.f != 0;
 	if(a.tag == STR)
