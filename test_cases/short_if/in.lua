@@ -1,4 +1,4 @@
-function main()
+function __main()
   test = false
   if (test) return 5
   if (test) return 5 else a = 1
@@ -10,7 +10,7 @@ function main()
   print(d)
 
 if (test) then
-    print("this should not be visible")
+--    print("this should not be visible")
 end
 return 0
 end
