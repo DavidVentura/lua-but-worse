@@ -7,8 +7,8 @@ TValue_t __main();
 
 TValue_t __main() {
   a = TTAB(make_table(4));
-  set_tabvalue(a.table, TSTR("__index"), a) = a; // ?
-  method = __a_method;
+  set_tabvalue(a.table, TSTR("__index"), a);
+  set_tabvalue(a.table, TSTR("method"), TFUN(__a_method));
   b = TTAB(make_table(4));
   setmetatable(b, a);
   get_tabvalue(b.table, TSTR("method")).fun(b, (TValue_t[]){});
@@ -20,7 +20,7 @@ TValue_t __main() {
 }
 
 TValue_t __a_method(TValue_t self, TValue_t *function_arguments) {
-  set_tabvalue(self.table, TSTR("x"), TNUM16(5)) = TNUM16(5); // ?
+  set_tabvalue(self.table, TSTR("x"), TNUM16(5));
   return T_NULL;
 }
 

@@ -7,7 +7,7 @@ TValue_t d;
 TValue_t c;
 TValue_t b;
 TValue_t a;
-void __preinit();
+TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
@@ -24,7 +24,7 @@ TValue_t __main() {
   u = TTAB(make_table(4));
   set_tabvalue(u.table, TSTR("a"), TNUM16(1));
   ;
-  get_tabvalue(o.table, TSTR("a")) = get_tabvalue(u.table, TSTR("a")); // ?
+  set_tabvalue(o.table, TSTR("a"), get_tabvalue(u.table, TSTR("a")));
   t = TNUM16(7);
   t = get_tabvalue(TTAB(make_table(4)); set_tabvalue(T_IDK.table, TNUM16(7), TNUM16(8)); set_tabvalue(T_IDK.table, TNUM16(8), TNUM16(7));
                        .table, t); // ?
@@ -36,4 +36,4 @@ TValue_t __main() {
   return TNUM16(0);
 }
 
-void __preinit() {}
+TValue_t __preinit() {}
