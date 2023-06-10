@@ -15,7 +15,7 @@ struct TValue_s {
 	union {
 		char* str;
 		fix32_t num;
-		void* fun;
+		TValue_t (*fun)(TValue_t, TValue_t*);
 		Table_t* table;
 	};
 };
@@ -44,8 +44,9 @@ TValue_t _tvalue_from_table_p(Table_t* t) {
 #define TNUM(x)    ((TValue_t){.tag = NUM,  .num = (x)})
 #define TNUM8(x)   ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
 #define TNUM16(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
-#define TSTR(x)   ((TValue_t){.tag = STR,  .str = (x)})
-#define TBOOL(x)  ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
+#define TSTR(x)    ((TValue_t){.tag = STR,  .str = (x)})
+#define TBOOL(x)   ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
+#define TFUN(x)    ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)  	_Generic(x, Table_t: _tvalue_from_table, Table_t*: _tvalue_from_table_p)(x)
 
 /*
