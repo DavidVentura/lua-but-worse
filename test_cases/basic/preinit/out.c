@@ -1,11 +1,11 @@
 #include "lua.c"
 TValue_t a;
-void __preinit();
-void __main();
+TValue_t __preinit();
+TValue_t __main();
 
-void __main() { print(a); }
+TValue_t __main() { print(a); }
 
-void __preinit() {
+TValue_t __preinit() {
   a = TNUM16(5);
   _pluseq(&a, TNUM16(1));
 

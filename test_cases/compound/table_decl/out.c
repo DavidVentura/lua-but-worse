@@ -3,10 +3,10 @@ TValue_t literals;
 TValue_t empty;
 TValue_t member;
 TValue_t squares;
-void __preinit();
-void __main();
+TValue_t __preinit();
+TValue_t __main();
 
-void __main() {
+TValue_t __main() {
   squares = TTAB(make_table(4));
   set_tabvalue(squares.table, TNUM16(1), TNUM16(1));
   set_tabvalue(squares.table, TNUM16(2), TNUM16(4));
@@ -33,4 +33,4 @@ void __main() {
   print(get_tabvalue(member.table, empty));
 }
 
-void __preinit() {}
+TValue_t __preinit() {}

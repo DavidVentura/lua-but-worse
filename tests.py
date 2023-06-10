@@ -22,11 +22,13 @@ def _compile_and_run(transformed_src: str, dest_dir: Path):
     return s.decode().strip().splitlines()
 
 def find_case_pairs():
-    return os.listdir('test_cases')
+    basic = [pytest.param('test_cases/basic', d, marks=pytest.mark.basic) for d in os.listdir('test_cases/basic')]
+    compound = [pytest.param('test_cases/compound', d, marks=pytest.mark.compound) for d in os.listdir('test_cases/compound')]
+    return basic+compound
 
-@pytest.mark.parametrize("test_case", find_case_pairs())
-def test_cases(test_case: str, monkeypatch):
-    in_f, expected_f, stdout_f = (Path(f'test_cases/{test_case}/in.lua'), Path(f'test_cases/{test_case}/out.c'), Path(f'test_cases/{test_case}/expected_stdout'))
+@pytest.mark.parametrize("test_dir, test_case", find_case_pairs())
+def test_cases(test_dir, test_case: str):
+    in_f, expected_f, stdout_f = (Path(f'{test_dir}/{test_case}/in.lua'), Path(f'{test_dir}/{test_case}/out.c'), Path(f'{test_dir}/{test_case}/expected_stdout'))
     with in_f.open() as fd:
         i = fd.read()
 

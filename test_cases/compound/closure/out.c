@@ -1,7 +1,7 @@
 #include "lua.c"
 TValue_t a;
 TValue_t captured;
-void __preinit();
+TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
@@ -10,12 +10,12 @@ TValue_t __main() {
     TValue x = get_with_default(args, 0);
     return _mult(x, captured);
   });
-  print(a({TNUM16(5)}));
+  print(a(TNUM16(5), (TValue_t[]){}));
 
-  void b() { captured = TNUM16(1); }
+  TValue_t b() { captured = TNUM16(1); }
   b();
-  print(a({TNUM16(5)}));
+  print(a(TNUM16(5), (TValue_t[]){}));
   return TNUM16(0);
 }
 
-void __preinit() {}
+TValue_t __preinit() {}

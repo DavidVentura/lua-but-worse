@@ -1,7 +1,7 @@
 #include "lua.c"
 TValue_t b;
 TValue_t a;
-void __preinit();
+TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
@@ -12,4 +12,4 @@ TValue_t __main() {
   return TNUM16(0);
 }
 
-void __preinit() {}
+TValue_t __preinit() {}
