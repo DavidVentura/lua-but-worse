@@ -5,7 +5,6 @@ import textwrap
 
 from luaparser import ast
 from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node
-from typing import Optional
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -139,12 +138,56 @@ def flatten_nested_tables(tree):
         _key = "idk_key"
         idx, _closest_block = _find_index_at_closest_block(_pt)
         for f in _pt.fields:
-            if n == f.value:
-                if isinstance(f.key, String):
-                    _key = _name_prefix + f.key.s
-                _closest_block.body.insert(idx, Assign([Name(_key)], [f.value]))
-                f.value = Name(_key)
-                break
+            if n != f.value:
+                continue
+            if isinstance(f.key, String):
+                _key = _name_prefix + f.key.s
+            _closest_block.body.insert(idx, Assign([Name(_key)], [f.value], parent=_closest_block))
+            f.value = Name(_key)
+            break
+
+
+def transform_literal_tables_to_assignments(tree):
+    """
+    Rewrite literal tables `a = {x=5, y=6}` into
+    ```
+    a = {}
+    SetTabValue(a, "x", 5)
+    SetTabValue(a, "y", 6)
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Table):
+            continue
+        print("table!", n)
+        if not n.parent:
+            print("had no parent!", n.parent, n.fields)
+            continue
+        if not isinstance(n.parent, Assign):
+            print("Was not assign!", n.parent)
+            continue
+        _assign = n.parent
+        if n not in _assign.values:
+            print("no target")
+            continue
+        assert len(_assign.targets) == 1
+        assert len(_assign.values) == 1
+        # some day
+
+        # assuming Assign can only happen in Block
+        assert isinstance(_assign.parent, Block)
+        _assign_idx = _assign.parent.body.index(_assign)
+        for f in n.fields[::-1]:
+            key = f.key
+            if isinstance(key, Name):
+                key = String(key.id)
+            settabvalue = SetTabValue(_assign.targets[0], key, f.value, parent=_assign.parent)
+            _assign.parent.body.insert(_assign_idx+1, settabvalue)
+        n.fields = []  # clear content of the table
+
 
 
 def transform_index_assign(tree):
@@ -266,8 +309,10 @@ def find_static_table_accesses(tree):
 
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
+    #print(ast.to_pretty_str(tree))
     rename_stdlib_calls(tree)
     flatten_nested_tables(tree)
+    transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
     transform_methods(tree)
     move_to_preinit(tree)

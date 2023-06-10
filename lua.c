@@ -192,7 +192,9 @@ bool __bool(TValue_t a) {
 }
 
 Table_t* make_table(uint16_t size) {
-	KV_t* kvs = calloc(sizeof(KV_t), size);
+	KV_t* kvs = NULL;
+	if (size > 0)
+		kvs = calloc(sizeof(KV_t), size);
 	Table_t* ret = malloc(sizeof(Table_t));
 	ret->kvs = kvs;
 	ret->len = size;

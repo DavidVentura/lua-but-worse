@@ -15,14 +15,13 @@ TValue_t __main() {
   _pluseq(&x, TNUM16(2));
   a = TNUM16(1);
   b = TNUM16(2);
-  c = flr(TNUM(fix32_from_float(1.5f))); // ?
-  d = flr(TNUM(fix32_from_float(2.5f))); // ?
+  c = flr(TNUM(fix32_from_float(1.5f))); // unknown type
+  d = flr(TNUM(fix32_from_float(2.5f))); // unknown type
   e = TNUM16(1);
   e = TNUM16(2);
-  o = TTAB(make_table(4));
-  u = TTAB(make_table(4));
+  o = TTAB(make_table(0));
+  u = TTAB(make_table(1));
   set_tabvalue(u.table, TSTR("a"), TNUM16(123));
-  ;
   set_tabvalue(o.table, TSTR("a"), TNUM16(333));
   print(_mult(a, c));
   print(_mult(b, d));

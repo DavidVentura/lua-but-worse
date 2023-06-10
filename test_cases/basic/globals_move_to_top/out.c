@@ -8,7 +8,7 @@ TValue_t __main() {
   TValue_t a;
   a = TNUM16(5);
   b = TNUM16(7);
-  c = _mult(a, b); // ?
+  c = _mult(a, b); // unknown type
   print(c);
   return TNUM16(0);
 }
