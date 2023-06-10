@@ -4,7 +4,7 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Method, Invoke, Block
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -85,6 +85,42 @@ def move_to_preinit(tree):
 
     _preinit = Function(Name("__preinit"), [], Block(moved_nodes))
     tree.body.body.append(_preinit)
+
+def transform_index_assign(tree):
+    """
+    Rewrite methods Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not n.parent:
+            continue
+        if not isinstance(n, Index):
+            continue
+        if not isinstance(n.parent, Assign):
+            continue
+        _assign = n.parent
+        if n not in _assign.targets:
+            continue
+        assert len(_assign.targets) == 1
+        assert len(_assign.values) == 1
+        # some day
+
+        _key = None
+        if n.notation == IndexNotation.DOT:
+            # DOT notation (a.b) is always a string (a["b"])
+            _key = f'TSTR("{n.idx.dump()}")'
+        else:
+            if isinstance(n.idx, String):
+                # bracket notation could either be a string (a["b"])
+                _key = f"TSTR({n.idx.dump()})"
+            else:
+                # or a name (a[var]) or number (a[5])
+                _key = n.idx.dump()
+        assert _key
+        settabvalue = SetTabValue(n.value, _key, _assign.values[0])
+        _assign.parent.replace_child(_assign, settabvalue)
 
 def transform_methods(tree):
     """
@@ -170,7 +206,8 @@ def find_static_table_accesses(tree):
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     rename_stdlib_calls(tree)
-    transform_methods(tree)  # after move_to_preinit
+    transform_index_assign(tree)
+    transform_methods(tree)
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
