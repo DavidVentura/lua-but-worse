@@ -19,13 +19,13 @@ void __main() {
   ;
   empty = TTAB(make_table(4));
   literals = TTAB(make_table(4));
-  set_tabvalue(literals.table, TSTR("" top ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
+  set_tabvalue(literals.table, "top", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
                set_tabvalue(T_IDK.table, TSTR("y"), _invert_sign(TNUM16(68))););
-  set_tabvalue(literals.table, TSTR("" bottom ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
+  set_tabvalue(literals.table, "bottom", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
                set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(68)););
-  set_tabvalue(literals.table, TSTR("" left ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), _invert_sign(TNUM16(68)));
+  set_tabvalue(literals.table, "left", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), _invert_sign(TNUM16(68)));
                set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
-  set_tabvalue(literals.table, TSTR("" right ""), TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(68));
+  set_tabvalue(literals.table, "right", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(68));
                set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
   ;
   print(get_tabvalue(get_tabvalue(literals.table, TSTR("top")).table, TSTR("y")));
