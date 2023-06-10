@@ -88,7 +88,7 @@ def move_to_preinit(tree):
 
 def transform_index_assign(tree):
     """
-    Rewrite methods Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
+    Rewrite Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -107,17 +107,17 @@ def transform_index_assign(tree):
         assert len(_assign.values) == 1
         # some day
 
-        _key = None
+        _key = n.idx
         if n.notation == IndexNotation.DOT:
             # DOT notation (a.b) is always a string (a["b"])
-            _key = f'TSTR("{n.idx.dump()}")'
+            _key = String(n.idx.id)
         else:
             if isinstance(n.idx, String):
                 # bracket notation could either be a string (a["b"])
-                _key = f"TSTR({n.idx.dump()})"
+                _key = n.idx
             else:
                 # or a name (a[var]) or number (a[5])
-                _key = n.idx.dump()
+                _key = n.idx
         assert _key
         settabvalue = SetTabValue(n.value, _key, _assign.values[0])
         _assign.parent.replace_child(_assign, settabvalue)
