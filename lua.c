@@ -49,6 +49,8 @@ TValue_t _tvalue_from_table_p(Table_t* t) {
 #define TFUN(x)    ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)  	_Generic(x, Table_t: _tvalue_from_table, Table_t*: _tvalue_from_table_p)(x)
 
+#define print(x)	_Generic(x, TValue_t: print_tvalue, char*: print_str)(x)
+
 /*
  * Multiplying by 100k gives accurate measurements down to 0x0001,
  * though it requires spilling to 64bit values. Will revisit
@@ -67,7 +69,11 @@ const fix32_t _one  = (fix32_t){.i=1, .f=0};
 TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
 TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
-void print(TValue_t v) {
+void print_str(char* c) {
+	printf("%s\n", c);
+}
+
+void print_tvalue(TValue_t v) {
 	switch(v.tag) {
 		case NUM:
 			if(v.num.f == 0) {
@@ -192,4 +198,8 @@ Table_t* make_table(uint16_t size) {
 	ret->len = size;
 	ret->metatable = NULL;
 	return ret;
+}
+
+TValue_t flr(TValue_t f) {
+	return TNUM(fix32_flr(f.num));
 }
