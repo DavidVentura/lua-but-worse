@@ -4,7 +4,8 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node
+from typing import Optional
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -85,6 +86,66 @@ def move_to_preinit(tree):
 
     _preinit = Function(Name("__preinit"), [], Block(moved_nodes))
     tree.body.body.append(_preinit)
+
+def _find_index_at_closest_block(t: Node) -> tuple[int, Block]:
+    if t.parent is None:
+        raise ValueError("Did not find a block while going up")
+    if isinstance(t.parent, Block):
+        if t in t.parent.body:
+            return t.parent.body.index(t), t.parent
+    return _find_index_at_closest_block(t.parent)
+
+def _parent_table(t: Node):
+    if t.parent is None:
+        return None
+    if isinstance(t.parent, Table):
+        return t.parent
+    return _parent_table(t.parent)
+
+def flatten_nested_tables(tree):
+    """
+    Flattens nested tables:
+    ```
+    a = {x=5,
+         y={5=7},
+        }
+    ```
+
+    =>
+    __a_subtable_y = {5=7}
+    a = {x=5, y=__a_subtable_y}
+    """
+
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not n.parent:
+            continue
+        if not isinstance(n, Table):
+            continue
+        _pt = _parent_table(n)
+        if _pt is None:
+            continue
+
+        _name_prefix = "idk_good_name_prefix"
+        if isinstance(_pt.parent, Assign):
+            assert _pt not in _pt.parent.targets, "a Table can never be an assignment target"
+            assert len(_pt.parent.targets) == 1, "Sad, can't handle multi values"
+            _name_prefix = _pt.parent.targets[0].id
+
+        _name_prefix = f'__subtable_{_name_prefix}_'
+
+        _key = "idk_key"
+        idx, _closest_block = _find_index_at_closest_block(_pt)
+        for f in _pt.fields:
+            if n == f.value:
+                if isinstance(f.key, String):
+                    _key = _name_prefix + f.key.s
+                _closest_block.body.insert(idx, Assign([Name(_key)], [f.value]))
+                f.value = Name(_key)
+                break
+
 
 def transform_index_assign(tree):
     """
@@ -206,6 +267,7 @@ def find_static_table_accesses(tree):
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     rename_stdlib_calls(tree)
+    flatten_nested_tables(tree)
     transform_index_assign(tree)
     transform_methods(tree)
     move_to_preinit(tree)

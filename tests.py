@@ -5,8 +5,7 @@ import subprocess
 
 import pytest
 
-from a import transform, Function
-from luaparser.astnodes import Type
+from a import transform
 
 here = Path(__file__).parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)

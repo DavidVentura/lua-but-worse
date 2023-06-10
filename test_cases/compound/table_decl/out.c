@@ -1,36 +1,37 @@
 #include "lua.c"
 TValue_t literals;
-TValue_t empty;
-TValue_t member;
-TValue_t squares;
+TValue_t __subtable_literals_right;
+TValue_t __subtable_literals_left;
+TValue_t __subtable_literals_bottom;
+TValue_t __subtable_literals_top;
 TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  squares = TTAB(make_table(4));
-  set_tabvalue(squares.table, TNUM16(1), TNUM16(1));
-  set_tabvalue(squares.table, TNUM16(2), TNUM16(4));
-  set_tabvalue(squares.table, TNUM16(3), TNUM16(9));
-  set_tabvalue(squares.table, TNUM16(4), TNUM16(16));
-  set_tabvalue(squares.table, TNUM16(5), TNUM16(25));
+  __subtable_literals_top = TTAB(make_table(4));
+  set_tabvalue(__subtable_literals_top.table, TSTR("x"), TNUM16(0));
+  set_tabvalue(__subtable_literals_top.table, TSTR("y"), _invert_sign(TNUM16(68)));
   ;
-  member = TTAB(make_table(4));
-  set_tabvalue(member.table, TSTR("x"), TNUM16(1));
+  __subtable_literals_bottom = TTAB(make_table(4));
+  set_tabvalue(__subtable_literals_bottom.table, TSTR("x"), TNUM16(0));
+  set_tabvalue(__subtable_literals_bottom.table, TSTR("y"), TNUM16(68));
   ;
-  empty = TTAB(make_table(4));
+  __subtable_literals_left = TTAB(make_table(4));
+  set_tabvalue(__subtable_literals_left.table, TSTR("x"), _invert_sign(TNUM16(68)));
+  set_tabvalue(__subtable_literals_left.table, TSTR("y"), TNUM16(0));
+  ;
+  __subtable_literals_right = TTAB(make_table(4));
+  set_tabvalue(__subtable_literals_right.table, TSTR("x"), TNUM16(68));
+  set_tabvalue(__subtable_literals_right.table, TSTR("y"), TNUM16(0));
+  ;
   literals = TTAB(make_table(4));
-  set_tabvalue(literals.table, "top", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
-               set_tabvalue(T_IDK.table, TSTR("y"), _invert_sign(TNUM16(68))););
-  set_tabvalue(literals.table, "bottom", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(0));
-               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(68)););
-  set_tabvalue(literals.table, "left", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), _invert_sign(TNUM16(68)));
-               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
-  set_tabvalue(literals.table, "right", TTAB(make_table(4)); set_tabvalue(T_IDK.table, TSTR("x"), TNUM16(68));
-               set_tabvalue(T_IDK.table, TSTR("y"), TNUM16(0)););
+  set_tabvalue(literals.table, TSTR("top"), __subtable_literals_top);
+  set_tabvalue(literals.table, TSTR("bottom"), __subtable_literals_bottom);
+  set_tabvalue(literals.table, TSTR("left"), __subtable_literals_left);
+  set_tabvalue(literals.table, TSTR("right"), __subtable_literals_right);
   ;
   print(get_tabvalue(get_tabvalue(literals.table, TSTR("top")).table, TSTR("y")));
-  set_tabvalue(member.table, empty, TNUM16(5)) = TNUM16(5); // ?
-  print(get_tabvalue(member.table, empty));
+  print(get_tabvalue(get_tabvalue(literals.table, TSTR("right")).table, TSTR("x")));
 }
 
 TValue_t __preinit() {}
