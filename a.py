@@ -1,11 +1,10 @@
-import string
 import logging
 import subprocess
 import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Number, Method, Invoke, Block
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Type, Call, String, Name, IndexNotation, Method, Invoke, Block
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -89,12 +88,17 @@ def move_to_preinit(tree):
 
 def transform_methods(tree):
     """
-    Rewrite methods (`function tab:method() ... end`) into an assignment of lambda into a table
+    Rewrite methods (`function tab:method() ... end`) into:
     ```
-    tab["method"] = lambda(...)
+    function __tab_method(...) ... end
+    tab["method"] = __tab_method
     ```
 
-    And method calls (`tab:method()`) into table calls with a self-argument (`tab['method'](tab)`)
+    And method calls (`tab:method(arg)`) into table calls with a self-argument and an argument array:
+
+    ```
+    tab['method'](tab, {arg})
+    ```
 
     Further passes will optimize this access into a fast-field access.
     """
@@ -102,13 +106,18 @@ def transform_methods(tree):
     tree_visitor.visit(tree)
 
     for n in tree_visitor.nodes:
+        if not n.parent:
+            continue
         if isinstance(n, Method):
-            replacement = n.replace_with_assign()
+            replacement_f, assign = n.replace_with_function_and_assign()
             idx = n.parent.body.index(n)
-            n.parent.body[idx] = replacement
+            n.parent.body[idx] = assign
+            tree.body.body.append(replacement_f)  # extract the lambda to be a normal function
+            # which must be at the root of the tree
         if isinstance(n, Invoke):
             replacement = n.replace_with_idx_call()
-            n.parent.replace_child(n, replacement)
+            n.parent.replace_child_multi(n, [replacement])
+            #n.parent.replace_child(n, replacement)
 
 
 def _is_inside(node, what):
@@ -161,7 +170,7 @@ def find_static_table_accesses(tree):
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     rename_stdlib_calls(tree)
-    transform_methods(tree)
+    transform_methods(tree)  # after move_to_preinit
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
