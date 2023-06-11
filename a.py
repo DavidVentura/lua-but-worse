@@ -4,7 +4,9 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment
+from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
+        AnonymousFunction, FunctionReference, Declaration, ArrayIndex, Number, NumberType, Type
+        )
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -142,8 +144,8 @@ def flatten_nested_tables(tree):
                 continue
             if isinstance(f.key, String):
                 _key = _name_prefix + f.key.s
-            _closest_block.body.insert(idx, Assign([Name(_key)], [f.value], parent=_closest_block,
-                                                   first_token=n.first_token, last_token=n.last_token))
+            _closest_block.body.insert(idx, LocalAssign([Name(_key)], [f.value], parent=_closest_block,
+                                                        first_token=n.first_token, last_token=n.last_token))
             f.value = Name(_key)
             break
 
@@ -163,16 +165,12 @@ def transform_literal_tables_to_assignments(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Table):
             continue
-        print("table!", n)
         if not n.parent:
-            print("had no parent!", n.parent, n.fields)
             continue
         if not isinstance(n.parent, Assign):
-            print("Was not assign!", n.parent)
             continue
         _assign = n.parent
         if n not in _assign.values:
-            print("no target")
             continue
         assert len(_assign.targets) == 1
         assert len(_assign.values) == 1
@@ -229,6 +227,73 @@ def transform_index_assign(tree):
         assert _key
         settabvalue = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
         _assign.parent.replace_child(_assign, settabvalue)
+
+def transform_anonymous_functions(tree):
+    """
+    Rewrite AnonymousFunction (`a = function() ... end`) into:
+    ```
+    function __anonymous_function_a_1(...) ... end
+    a = TFUN(__anonymous_function_a_1)
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not isinstance(n, AnonymousFunction):
+            continue
+        if not n.parent:
+            print("NO PARENT??")
+            continue
+        #import pudb
+        #pudb.set_trace()
+        _lambda_gen_name = "__anonymous_function"
+        if isinstance(n.parent, Assign):
+            assert len(n.parent.targets) == 1
+            _lambda_gen_name += f'_{n.parent.targets[0].id}'
+        n.parent.replace_child(n, FunctionReference(Name(_lambda_gen_name)))
+        # extract the lambda to be a normal function
+        tree.body.body.append(Function(Name(_lambda_gen_name), n.args, n.body, is_dyncalled=True))
+        # TODO:
+        # - Read/Write _enclosed_ variables from UpValue table
+        #   - How to know when it's an UpValue ???
+
+def transform_functions_that_are_dyncalled(tree):
+    """
+    Move function arguments to be read from a table argument if the function is dyncalled
+    ```
+    table.key = function(a,b,c) ... end
+    ```
+    =>
+    (the lambda extraction happens at `transform_anonymous_functions`)
+    ```
+    function __anonymous_function__table_key(Table_t* args)
+      a = args[0]
+      b = args[1]
+      c = args[2]
+      ...
+    end
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Function):
+            continue
+        if not n.is_dyncalled:
+            continue
+
+        #for arg in n.args:
+        #    n.body.body.insert(0, Declaration(arg, Type.UNKNOWN));
+
+        # after args declaration, assign the index value
+        for arg in n.args[::-1]:
+            idx = n.args.index(arg)
+            aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'))
+            n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
+
+        n.args = []
 
 def transform_methods(tree):
     """
@@ -315,10 +380,12 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
     #print(ast.to_pretty_str(tree))
     rename_stdlib_calls(tree)
+    transform_anonymous_functions(tree)
     flatten_nested_tables(tree)
     transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
     transform_methods(tree)
+    transform_functions_that_are_dyncalled(tree)
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
