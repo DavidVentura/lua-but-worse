@@ -5,7 +5,7 @@ import textwrap
 
 from luaparser import ast
 from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
-        AnonymousFunction, FunctionReference, Declaration, ArrayIndex, Number, NumberType, Type
+        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type
         )
 
 # TODO: broken parsing when declaring local variables with no value:
@@ -15,6 +15,27 @@ from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, Stri
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
+def free_local_tables(tree):
+    """
+    Call `free_table` for every LocalAssign
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+    for n in tree_visitor.nodes:
+        if not isinstance(n, LocalAssign):
+            continue
+        _assign_scope = _first_parent_of_type(n, (Block,))
+        assert len(n.targets) == len(n.values)
+        for i in range(0, len(n.targets)):
+            target = n.targets[i]
+            value = n.values[i]
+            if not isinstance(value, Table):
+                continue
+            # TODO: This is len-1 as it includes the "free" return at the end of the function
+            # what happens when there are multiple return paths though?
+            _call = Call(Name("free_tvalue"), [target], parent=_assign_scope)
+            _assign_scope.body.insert(len(_assign_scope.body)-1, _call)
 
 def add_decls(tree):
     """
@@ -163,7 +184,8 @@ def flatten_nested_tables(tree):
                 anon_table_count += 1
 
         _closest_block.body.insert(idx, LocalAssign([Name(_key)], [table_to_replace], parent=_closest_block,
-                                                    first_token=n.first_token, last_token=n.last_token))
+                                                    first_token=n.first_token, last_token=n.last_token,
+                                                    ))
 
 
 def transform_literal_tables_to_assignments(tree):
@@ -419,6 +441,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
+    free_local_tables(tree)
     #static_table_fields = find_static_table_accesses(tree)
     #static_table_fields = [] # FIXME LATER
 
