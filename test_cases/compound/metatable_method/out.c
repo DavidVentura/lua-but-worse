@@ -6,10 +6,12 @@ TValue_t __a_method(TValue_t self, TValue_t *function_arguments);
 TValue_t __main();
 
 TValue_t __main() {
-  a = TTAB(make_table(4));
+  a = TTAB(make_table(0));
+  // Fields for table a
   set_tabvalue(a.table, TSTR("__index"), a);
   set_tabvalue(a.table, TSTR("method"), TFUN(__a_method));
-  b = TTAB(make_table(4));
+  b = TTAB(make_table(0));
+  // Fields for table b
   setmetatable(b, a);
   get_tabvalue(b.table, TSTR("method")).fun(b, (TValue_t[]){});
   print(get_tabvalue(a.table, TSTR("x")));

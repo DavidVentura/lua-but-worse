@@ -7,6 +7,7 @@ TValue_t __main();
 
 TValue_t __main() {
   a = TTAB(make_table(0));
+  // Fields for table a
   set_tabvalue(a.table, TSTR("method"), TFUN(__a_method));
   print(get_tabvalue(a.table, TSTR("x")));
   get_tabvalue(a.table, TSTR("method")).fun(a, (TValue_t[]){TNUM16(5)});

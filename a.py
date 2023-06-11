@@ -4,7 +4,7 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node
+from luaparser.astnodes import Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment
 
 # TODO: broken parsing when declaring local variables with no value:
 # ```
@@ -142,7 +142,8 @@ def flatten_nested_tables(tree):
                 continue
             if isinstance(f.key, String):
                 _key = _name_prefix + f.key.s
-            _closest_block.body.insert(idx, Assign([Name(_key)], [f.value], parent=_closest_block))
+            _closest_block.body.insert(idx, Assign([Name(_key)], [f.value], parent=_closest_block,
+                                                   first_token=n.first_token, last_token=n.last_token))
             f.value = Name(_key)
             break
 
@@ -179,13 +180,16 @@ def transform_literal_tables_to_assignments(tree):
 
         # assuming Assign can only happen in Block
         assert isinstance(_assign.parent, Block)
+
         _assign_idx = _assign.parent.body.index(_assign)
         for f in n.fields[::-1]:
             key = f.key
             if isinstance(key, Name):
                 key = String(key.id)
-            settabvalue = SetTabValue(_assign.targets[0], key, f.value, parent=_assign.parent)
+            settabvalue = SetTabValue(_assign.targets[0], key, f.value, parent=_assign.parent,
+                                      first_token=n.first_token, last_token=n.last_token)
             _assign.parent.body.insert(_assign_idx+1, settabvalue)
+        _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}"))
         n.fields = []  # clear content of the table
 
 
@@ -223,7 +227,7 @@ def transform_index_assign(tree):
                 # or a name (a[var]) or number (a[5])
                 _key = n.idx
         assert _key
-        settabvalue = SetTabValue(n.value, _key, _assign.values[0])
+        settabvalue = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
         _assign.parent.replace_child(_assign, settabvalue)
 
 def transform_methods(tree):

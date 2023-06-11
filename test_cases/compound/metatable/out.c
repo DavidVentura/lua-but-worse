@@ -5,10 +5,12 @@ TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  a = TTAB(make_table(4));
+  a = TTAB(make_table(1));
+  // Fields for table a
   set_tabvalue(a.table, TSTR("x"), TNUM16(5));
   set_tabvalue(a.table, TSTR("__index"), a);
-  b = TTAB(make_table(4));
+  b = TTAB(make_table(0));
+  // Fields for table b
   setmetatable(b, a);
   print(get_tabvalue(b.table, TSTR("x")));
   NOT_USED_set_tabvalue(b.table, FIELD_X, TNUM16(5));

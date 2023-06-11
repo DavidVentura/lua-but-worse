@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,6 +124,7 @@ void grow_table(Table_t* t) {
 }
 
 void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
+	assert(u != NULL);
 	uint16_t first_null = UINT16_MAX;
 	for(uint16_t i=0; i<u->len; i++) {
 		if (equal(u->kvs[i].key, key)) {
@@ -146,6 +148,7 @@ void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 }
 
 TValue_t get_tabvalue(Table_t* u, TValue_t key) {
+	if(u == NULL) return T_NULL;
 	for(uint16_t i=0; i<u->len; i++) {
 		if (equal(u->kvs[i].key, key)) {
 			return u->kvs[i].value;
