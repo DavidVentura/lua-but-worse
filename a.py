@@ -96,12 +96,12 @@ def _find_index_at_closest_block(t: Node) -> tuple[int, Block]:
             return t.parent.body.index(t), t.parent
     return _find_index_at_closest_block(t.parent)
 
-def _parent_table(t: Node):
+def _first_parent_of_type(t: Node, valid: tuple):
     if t.parent is None:
         return None
-    if isinstance(t.parent, Table):
+    if isinstance(t.parent, valid):
         return t.parent
-    return _parent_table(t.parent)
+    return _first_parent_of_type(t.parent, valid)
 
 def flatten_nested_tables(tree):
     """
@@ -120,34 +120,50 @@ def flatten_nested_tables(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
+    anon_table_count = 0
     for n in tree_visitor.nodes:
-        if not n.parent:
-            continue
         if not isinstance(n, Table):
             continue
-        _pt = _parent_table(n)
+        if not n.parent:
+            continue
+        if isinstance(n.parent, Assign):
+            # Regular table creation
+            continue
+
+        _pt = _first_parent_of_type(n, (Table, Index))  # TODO Call Block ?
         if _pt is None:
             continue
 
         _name_prefix = "idk_good_name_prefix"
-        if isinstance(_pt.parent, Assign):
-            assert _pt not in _pt.parent.targets, "a Table can never be an assignment target"
-            assert len(_pt.parent.targets) == 1, "Sad, can't handle multi values"
-            _name_prefix = _pt.parent.targets[0].id
+        if isinstance(_pt, Assign):
+            assert _pt not in _pt.targets, "a Table can never be an assignment target"
+            assert len(_pt.targets) == 1, "Sad, can't handle multi values"
+            _name_prefix = _pt.targets[0].id
 
         _name_prefix = f'__subtable_{_name_prefix}_'
 
         _key = "idk_key"
         idx, _closest_block = _find_index_at_closest_block(_pt)
-        for f in _pt.fields:
-            if n != f.value:
-                continue
-            if isinstance(f.key, String):
-                _key = _name_prefix + f.key.s
-            _closest_block.body.insert(idx, LocalAssign([Name(_key)], [f.value], parent=_closest_block,
-                                                        first_token=n.first_token, last_token=n.last_token))
-            f.value = Name(_key)
-            break
+        table_to_replace = None
+        if isinstance(_pt, Table):
+            # On nested tables, the value must be replaced
+            for f in _pt.fields:
+                if n != f.value:
+                    continue
+                if isinstance(f.key, String):
+                    _key = _name_prefix + f.key.s
+                table_to_replace = f.value
+                f.value = Name(_key)
+                break
+        elif isinstance(_pt, Index):
+            if _pt.value == n:  # Anonymous table, being indexed by _pt.idx
+                table_to_replace = _pt.value
+                _key = f"_anonymous_table_{anon_table_count}"
+                _pt.value = Name(_key)
+                anon_table_count += 1
+
+        _closest_block.body.insert(idx, LocalAssign([Name(_key)], [table_to_replace], parent=_closest_block,
+                                                    first_token=n.first_token, last_token=n.last_token))
 
 
 def transform_literal_tables_to_assignments(tree):
@@ -187,7 +203,8 @@ def transform_literal_tables_to_assignments(tree):
             settabvalue = SetTabValue(_assign.targets[0], key, f.value, parent=_assign.parent,
                                       first_token=n.first_token, last_token=n.last_token)
             _assign.parent.body.insert(_assign_idx+1, settabvalue)
-        _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}"))
+        if len(n.fields) > 0:
+            _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}"))
         n.fields = []  # clear content of the table
 
 
@@ -374,9 +391,24 @@ def find_static_table_accesses(tree):
             logger.debug("Not optimizing non-string/constant value", getattr(n.idx, 'id', getattr(n.idx, 'n', n.id)))
     return sorted(values)
 
+def set_parent_on_children(tree):
+    """
+    When the tree is constructed top-down, some Nodes do not know
+    who they will be until they parse their children
+
+    Those children cannot be passed `parent`
+    """
+
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        n.set_parent_on_children()
+
 def transform(src, pretty=True, dump_ast=False, testing=False):
     tree = ast.parse(src)
-    #print(ast.to_pretty_str(tree))
+    set_parent_on_children(tree)
+
     rename_stdlib_calls(tree)
     transform_anonymous_functions(tree)
     transform_methods(tree)
