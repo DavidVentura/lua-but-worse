@@ -131,6 +131,7 @@ void grow_table(Table_t* t) {
 
 void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	assert(u != NULL);
+	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
 	for(uint16_t i=0; i<u->len; i++) {
 		if (equal(u->kvs[i].key, key)) {
@@ -209,6 +210,12 @@ Table_t* make_table(uint16_t size) {
 	ret->len = size;
 	ret->metatable = NULL;
 	return ret;
+}
+
+void free_table(Table_t* table) {
+	if (table == NULL) return;
+	if(table->kvs) free(table->kvs);
+	free(table);
 }
 
 TValue_t flr(TValue_t f) {
