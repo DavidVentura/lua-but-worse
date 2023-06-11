@@ -122,10 +122,14 @@ bool equal(TValue_t a, TValue_t b) {
 void grow_table(Table_t* t) {
 	uint16_t new_len = t->len * 2;
 	new_len = (t->len == 0) ? 2 : new_len;
-	t->kvs = realloc(t->kvs, new_len * sizeof(KV_t));
-
+	//t->kvs = realloc(t->kvs, new_len * sizeof(KV_t));
 	// this sets key->tag to 0 (NUL) for all new spaces in KVs
-	memset(t->kvs + t->len, 0, (new_len-(t->len))* sizeof(KV_t));
+	KV_t* new_kvs = calloc(sizeof(KV_t), new_len);
+	if(t->len) {
+		memcpy(new_kvs, t->kvs, sizeof(KV_t) * t->len);
+	}
+	free(t->kvs);
+	t->kvs = new_kvs;
 	t->len = new_len;
 }
 
@@ -150,6 +154,7 @@ void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	if (first_null == UINT16_MAX) {
 		// did not find a matching key nor any NULs
 		grow_table(u);
+		// cannot fail
 		return set_tabvalue(u, key, v);
 	}
 }
@@ -212,10 +217,13 @@ Table_t* make_table(uint16_t size) {
 	return ret;
 }
 
-void free_table(Table_t* table) {
-	if (table == NULL) return;
-	if(table->kvs) free(table->kvs);
-	free(table);
+void free_tvalue(TValue_t tv) {
+	if(tv.tag != TAB) return;
+	if(tv.table == NULL) return;
+	if(tv.table->kvs != NULL) {
+		free(tv.table->kvs);
+	}
+	free(tv.table);
 }
 
 TValue_t flr(TValue_t f) {
