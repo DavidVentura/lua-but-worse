@@ -16,7 +16,7 @@ struct TValue_s {
 	union {
 		char* str;
 		fix32_t num;
-		TValue_t (*fun)(TValue_t, TValue_t*);
+		TValue_t (*fun)(TValue_t*);
 		Table_t* table;
 	};
 };
@@ -91,6 +91,9 @@ void print_tvalue(TValue_t v) {
 			break;
 		case NUL:
 			printf("NULL\n");
+			break;
+		case STR:
+			printf("%s\n", v.str);
 			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);

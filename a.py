@@ -253,19 +253,18 @@ def transform_anonymous_functions(tree):
             _lambda_gen_name += f'_{n.parent.targets[0].id}'
         n.parent.replace_child(n, FunctionReference(Name(_lambda_gen_name)))
         # extract the lambda to be a normal function
-        tree.body.body.append(Function(Name(_lambda_gen_name), n.args, n.body, is_dyncalled=True))
+        tree.body.body.append(Function(Name(_lambda_gen_name), n.args, n.body))
         # TODO:
         # - Read/Write _enclosed_ variables from UpValue table
         #   - How to know when it's an UpValue ???
 
-def transform_functions_that_are_dyncalled(tree):
+def transform_functions_to_vec_args(tree):
     """
-    Move function arguments to be read from a table argument if the function is dyncalled
+    Move function arguments to be read from a table argument
     ```
-    table.key = function(a,b,c) ... end
+    function(a,b,c) ... end
     ```
     =>
-    (the lambda extraction happens at `transform_anonymous_functions`)
     ```
     function __anonymous_function__table_key(Table_t* args)
       a = args[0]
@@ -281,19 +280,16 @@ def transform_functions_that_are_dyncalled(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Function):
             continue
-        if not n.is_dyncalled:
+        if n.name.id in ["main", "__main"]:
             continue
-
-        #for arg in n.args:
-        #    n.body.body.insert(0, Declaration(arg, Type.UNKNOWN));
-
         # after args declaration, assign the index value
         for arg in n.args[::-1]:
             idx = n.args.index(arg)
             aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'))
-            n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
+            #n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
+            n.body.body.insert(0, LocalAssign([arg], [aidx], parent=n.body))
 
-        n.args = []
+        n.args = [Name('function_arguments', type=Type.UNK_PTR)]
 
 def transform_methods(tree):
     """
@@ -318,9 +314,12 @@ def transform_methods(tree):
         if not n.parent:
             continue
         if isinstance(n, Method):
-            replacement_f, assign = n.replace_with_function_and_assign()
-            idx = n.parent.body.index(n)
-            n.parent.body[idx] = assign
+            _args = [Name('self', type=Type.UNKNOWN)] + n.args
+            replacement_f = Function(Name(f'__{n.source.id}_{n.name.id}'), _args, n.body)
+            assign = SetTabValue(n.source, String(n.name.id), FunctionReference(replacement_f.name))
+            assign.parent = n.parent
+
+            n.parent.replace_child(n, assign)
             tree.body.body.append(replacement_f)  # extract the lambda to be a normal function
             # which must be at the root of the tree
         if isinstance(n, Invoke):
@@ -343,7 +342,6 @@ def add_signatures(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    seen = []
     for n in tree_visitor.nodes:
         if not isinstance(n, Function):
             continue
@@ -381,11 +379,11 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     #print(ast.to_pretty_str(tree))
     rename_stdlib_calls(tree)
     transform_anonymous_functions(tree)
+    transform_methods(tree)
+    transform_functions_to_vec_args(tree) # this transforms methods as well
     flatten_nested_tables(tree)
     transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
-    transform_methods(tree)
-    transform_functions_that_are_dyncalled(tree)
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
