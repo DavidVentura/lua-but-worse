@@ -1,4 +1,5 @@
 #include "lua.c"
+TValue_t adder;
 TValue_t empty;
 TValue_t member;
 TValue_t squares;
@@ -21,6 +22,21 @@ TValue_t __main() {
   print(get_tabvalue(squares.table, TNUM16(2)));
   print(get_tabvalue(member.table, TSTR("x")));
   print(get_tabvalue(member.table, TSTR("y")));
+  adder = TTAB(make_table(0));
+  set_tabvalue(adder.table, TSTR("a"), TNUM16(1));
+  print(get_tabvalue(adder.table, TSTR("a")));
+  set_tabvalue(adder.table, TSTR("b"), TNUM16(2));
+  print(get_tabvalue(adder.table, TSTR("a")));
+  print(get_tabvalue(adder.table, TSTR("b")));
+  set_tabvalue(adder.table, TSTR("c"), TNUM16(3));
+  print(get_tabvalue(adder.table, TSTR("a")));
+  print(get_tabvalue(adder.table, TSTR("b")));
+  print(get_tabvalue(adder.table, TSTR("c")));
+  set_tabvalue(adder.table, TSTR("d"), TNUM16(4));
+  print(get_tabvalue(adder.table, TSTR("a")));
+  print(get_tabvalue(adder.table, TSTR("b")));
+  print(get_tabvalue(adder.table, TSTR("c")));
+  print(get_tabvalue(adder.table, TSTR("d")));
 }
 
 TValue_t __preinit() {}

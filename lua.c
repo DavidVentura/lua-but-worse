@@ -121,8 +121,11 @@ bool equal(TValue_t a, TValue_t b) {
 
 void grow_table(Table_t* t) {
 	uint16_t new_len = t->len * 2;
-	new_len = new_len == 0 ? 1 : new_len;
+	new_len = (t->len == 0) ? 2 : new_len;
 	t->kvs = realloc(t->kvs, new_len * sizeof(KV_t));
+
+	// this sets key->tag to 0 (NUL) for all new spaces in KVs
+	memset(t->kvs + t->len, 0, (new_len-(t->len))* sizeof(KV_t));
 	t->len = new_len;
 }
 
@@ -200,7 +203,7 @@ bool __bool(TValue_t a) {
 Table_t* make_table(uint16_t size) {
 	KV_t* kvs = NULL;
 	if (size > 0)
-		kvs = calloc(sizeof(KV_t), size);
+		kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
 	Table_t* ret = malloc(sizeof(Table_t));
 	ret->kvs = kvs;
 	ret->len = size;
