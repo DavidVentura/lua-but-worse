@@ -20,7 +20,6 @@ TValue_t __main() {
   e = TNUM16(1);
   e = TNUM16(2);
   o = TTAB(make_table(0));
-  // Fields for table o
   u = TTAB(make_table(1));
   // Fields for table u
   set_tabvalue(u.table, TSTR("a"), TNUM16(123));

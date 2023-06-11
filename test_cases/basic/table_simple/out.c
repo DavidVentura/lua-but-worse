@@ -18,7 +18,6 @@ TValue_t __main() {
   set_tabvalue(member.table, TSTR("x"), _invert_sign(TNUM(fix32_from_float(1.5f))));
   set_tabvalue(member.table, TSTR("y"), TNUM16(66));
   empty = TTAB(make_table(0));
-  // Fields for table empty
   print(get_tabvalue(squares.table, TNUM16(2)));
   print(get_tabvalue(member.table, TSTR("x")));
   print(get_tabvalue(member.table, TSTR("y")));
