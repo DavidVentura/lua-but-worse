@@ -55,22 +55,27 @@ end
 
 Output
 
-```cpp
-#include "header.h"
-TValue empty;
-TValue member;
-TValue squares;
-void main();
+```c
+#include "lua.c"
+TValue_t empty;
+TValue_t member;
+TValue_t squares;
+TValue_t __main();
 
-void main() {
-  squares = new SpecialTable({{1,  new TValue(1)},
-                              {2,  new TValue(4)},
-                              {3,  new TValue(9)},
-                              {4,  new TValue(16)},
-                              {5,  new TValue(25)}});
-  member = new SpecialTable({{"x", new TValue(1)}});
-  empty = new SpecialTable();
-  (*(*member.t)[empty]) = 5;
-  print((*(*member.t)[empty]));
+TValue_t __main() {
+  squares = TTAB(make_table(5));
+  set_tabvalue(squares.table, TNUM16(1), TNUM16(1));
+  set_tabvalue(squares.table, TNUM16(2), TNUM16(4));
+  set_tabvalue(squares.table, TNUM16(3), TNUM16(9));
+  set_tabvalue(squares.table, TNUM16(4), TNUM16(16));
+  set_tabvalue(squares.table, TNUM16(5), TNUM16(25));
+
+  member = TTAB(make_table(1));
+  set_tabvalue(member.table, TSTR("x"), TNUM16(1));
+
+  empty = TTAB(make_table(0));
+  set_tabvalue(member.table, empty, TNUM16(5));
+
+  print(get_tabvalue(member.table, empty));
 }
 ```
