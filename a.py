@@ -279,20 +279,27 @@ def transform_anonymous_functions(tree):
     tree_visitor.visit(tree)
 
     for n in tree_visitor.nodes:
-        if not isinstance(n, AnonymousFunction):
+        if not isinstance(n, (Function, AnonymousFunction)):
             continue
         if not n.parent:
             print("NO PARENT??")
             continue
+        if not _is_inside(n, Function):
+            continue
         #import pudb
         #pudb.set_trace()
-        _lambda_gen_name = "__anonymous_function"
-        if isinstance(n.parent, Assign):
-            assert len(n.parent.targets) == 1
-            _lambda_gen_name += f'_{n.parent.targets[0].id}'
-        n.parent.replace_child(n, FunctionReference(Name(_lambda_gen_name)))
+        if isinstance(n, AnonymousFunction):
+            _callable_name = "__anonymous_function"
+            if isinstance(n.parent, Assign):
+                assert len(n.parent.targets) == 1
+                _callable_name += f'_{n.parent.targets[0].id}'
+            n.parent.replace_child(n, FunctionReference(Name(_callable_name)))
+        else:
+            _callable_name = f"__nested_func_{n.name.id}" # FIXME: should include parent's name
+            n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))]))
+
         # extract the lambda to be a normal function
-        tree.body.body.append(Function(Name(_lambda_gen_name), n.args, n.body))
+        tree.body.body.append(Function(Name(_callable_name), n.args, n.body))
         # TODO:
         # - Read/Write _enclosed_ variables from UpValue table
         #   - How to know when it's an UpValue ???
