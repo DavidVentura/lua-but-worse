@@ -50,7 +50,7 @@ TValue_t _tvalue_from_table_p(Table_t* t) {
 #define TFUN(x)    ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)  	_Generic(x, Table_t: _tvalue_from_table, Table_t*: _tvalue_from_table_p)(x)
 
-#define print(x)	_Generic(x, TValue_t: print_tvalue, char*: print_str)(x)
+#define print(x)	_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 
 /*
  * Multiplying by 100k gives accurate measurements down to 0x0001,
@@ -70,6 +70,13 @@ const fix32_t _one  = (fix32_t){.i=1, .f=0};
 TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
 TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
+void print_bool(bool b) {
+	if(b) {
+		printf("true\n");
+	} else {
+		printf("false\n");
+	}
+}
 void print_str(char* c) {
 	printf("%s\n", c);
 }
@@ -90,7 +97,7 @@ void print_tvalue(TValue_t v) {
 			}
 			break;
 		case NUL:
-			printf("NULL\n");
+			printf("nil\n");
 			break;
 		case STR:
 			printf("%s\n", v.str);
@@ -116,6 +123,9 @@ bool equal(TValue_t a, TValue_t b) {
 			printf("IDK how to compare type %d\n", a.tag);
 			return false;
 	}
+}
+bool _equal(TValue_t a, TValue_t b) {
+	return equal(a, b);
 }
 
 
@@ -228,4 +238,16 @@ void free_tvalue(TValue_t tv) {
 
 TValue_t flr(TValue_t f) {
 	return TNUM(fix32_flr(f.num));
+}
+
+TValue_t getmetatable(TValue_t t) {
+	if(t.tag != TAB) return T_NULL;
+	if(t.table->metatable == NULL) return T_NULL;
+	return TTAB(t.table->metatable);
+}
+
+void setmetatable(TValue_t t, TValue_t meta) {
+	assert(t.tag == TAB);
+	assert(meta.tag == TAB);
+	t.table->metatable = meta.table;
 }
