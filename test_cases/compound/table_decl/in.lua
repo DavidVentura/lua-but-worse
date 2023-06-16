@@ -7,4 +7,5 @@ function main()
 	}
 	print(literals.top.y)
 	print(literals.right.x)
+	return 0
 end

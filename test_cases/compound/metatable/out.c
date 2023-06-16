@@ -10,7 +10,7 @@ TValue_t __main() {
   set_tabvalue(a.table, TSTR("x"), TNUM16(5));
   set_tabvalue(a.table, TSTR("__index"), a);
   b = TTAB(make_table(0));
-  setmetatable.fun((TValue_t[]){b, a});
+  setmetatable(b, a);
   print(get_tabvalue(b.table, TSTR("x")));
   NOT_USED_set_tabvalue(b.table, FIELD_X, TNUM16(5));
   print(get_tabvalue(b.table, TSTR("x")));

@@ -10,7 +10,7 @@ TValue_t __main() {
   set_tabvalue(a.table, TSTR("__index"), a);
   set_tabvalue(a.table, TSTR("method"), TFUN(__a_method));
   b = TTAB(make_table(0));
-  setmetatable.fun((TValue_t[]){b, a});
+  setmetatable(b, a);
   get_tabvalue(b.table, TSTR("method")).fun((TValue_t[]){b});
   print(get_tabvalue(a.table, TSTR("x")));
   print(get_tabvalue(b.table, TSTR("x")));

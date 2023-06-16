@@ -32,6 +32,11 @@ TValue_t __main() {
   set_tabvalue(literals.table, TSTR("right"), __subtable_idk_good_name_prefix_right);
   print(get_tabvalue(get_tabvalue(literals.table, TSTR("top")).table, TSTR("y")));
   print(get_tabvalue(get_tabvalue(literals.table, TSTR("right")).table, TSTR("x")));
+  free_tvalue(__subtable_idk_good_name_prefix_top);
+  free_tvalue(__subtable_idk_good_name_prefix_bottom);
+  free_tvalue(__subtable_idk_good_name_prefix_left);
+  free_tvalue(__subtable_idk_good_name_prefix_right);
+  return TNUM16(0);
 }
 
 TValue_t __preinit() {}

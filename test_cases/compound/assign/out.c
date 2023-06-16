@@ -37,6 +37,7 @@ TValue_t __main() {
   print(e);
   print(get_tabvalue(o.table, TSTR("a")));
   print(t);
+  free_tvalue(_anonymous_table_0);
   return TNUM16(0);
 }
 
