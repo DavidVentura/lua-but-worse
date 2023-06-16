@@ -30,6 +30,7 @@ struct Table_s {
 	Table_t* metatable;
 	KV_t* kvs;
 	uint16_t len;
+	TValue_t* __index;
 };
 
 Table_t* ENV;
@@ -147,9 +148,14 @@ void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	assert(u != NULL);
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
+	bool is_index = equal(key, TSTR("__index"));
+
 	for(uint16_t i=0; i<u->len; i++) {
 		if (equal(u->kvs[i].key, key)) {
 			u->kvs[i].value = v;
+			if(is_index) {
+				u->__index = &(u->kvs[i].value);
+			}
 			return;
 		}
 		if(u->kvs[i].key.tag == NUL && first_null == UINT16_MAX) {
@@ -159,6 +165,9 @@ void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	if (first_null < UINT16_MAX) {
 		u->kvs[first_null].key = key;
 		u->kvs[first_null].value = v;
+		if(is_index) {
+			u->__index = &(u->kvs[first_null].value);
+		}
 		return;
 	}
 	if (first_null == UINT16_MAX) {
@@ -175,6 +184,10 @@ TValue_t get_tabvalue(Table_t* u, TValue_t key) {
 		if (equal(u->kvs[i].key, key)) {
 			return u->kvs[i].value;
 		}
+	}
+	if(u->__index != NULL) {
+		if(u->__index->tag == TAB) return get_tabvalue(u->__index->table, key);
+		assert(false); // FIXME: should call function passing u, key or die otherwise
 	}
 	return T_NULL;
 }
@@ -224,6 +237,7 @@ Table_t* make_table(uint16_t size) {
 	ret->kvs = kvs;
 	ret->len = size;
 	ret->metatable = NULL;
+	ret->__index = NULL;
 	return ret;
 }
 
