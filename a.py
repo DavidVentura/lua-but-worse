@@ -5,7 +5,7 @@ import textwrap
 
 from luaparser import ast
 from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
-        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
+        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab, Return
         )
 
 # TODO: broken parsing when declaring local variables with no value:
@@ -35,7 +35,10 @@ def free_local_tables(tree):
             # TODO: This is len-1 as it includes the "free" return at the end of the function
             # what happens when there are multiple return paths though?
             _call = Call(Name("free_tvalue"), [target], parent=_assign_scope)
-            _assign_scope.body.insert(len(_assign_scope.body)-1, _call)
+            if isinstance(_assign_scope.body[-1], Return):
+                _assign_scope.body.insert(len(_assign_scope.body)-1, _call)
+            else:
+                _assign_scope.body.append(_call)
 
 def add_decls(tree):
     """
