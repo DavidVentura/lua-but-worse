@@ -6,7 +6,7 @@ TValue_t __main();
 
 TValue_t __main() {
   b = TFUN(__nested_func_b); // unknown type
-  b.fun((TValue_t[]){});
+  CALL((b), ((TValue_t[]){}));
 }
 
 TValue_t __nested_func_b(TValue_t *function_arguments) { print(TNUM16(5)); }

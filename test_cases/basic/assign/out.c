@@ -22,13 +22,13 @@ TValue_t __main() {
   o = TTAB(make_table(0));
   u = TTAB(make_table(1));
   // Fields for table u
-  set_tabvalue(u.table, TSTR("a"), TNUM16(123));
-  set_tabvalue(o.table, TSTR("a"), TNUM16(333));
+  set_tabvalue(u, TSTR("a"), TNUM16(123));
+  set_tabvalue(o, TSTR("a"), TNUM16(333));
   print(_mult(a, c));
   print(_mult(b, d));
   print(e);
-  print(get_tabvalue(u.table, TSTR("a")));
-  print(get_tabvalue(o.table, TSTR("a")));
+  print(get_tabvalue(u, TSTR("a")));
+  print(get_tabvalue(o, TSTR("a")));
   return TNUM16(0);
 }
 
