@@ -70,7 +70,7 @@ TArena_t _tables = {.tables=NULL, .len=0, .used=0};
  * >>> hex((0xFFFF * 10_000))
  * '0x270fd8f0'
  */
-#define FIX32_DEC_AS_INT(x) (((uint32_t)x) * 100000) >> 16
+#define FIX32_DEC_AS_INT(x) (((uint64_t)x) * 100000) >> 16
 
 TValue_t T_NULL = {.tag = NUL};
 const fix32_t _zero = (fix32_t){.i=0, .f=0};
@@ -234,6 +234,18 @@ TValue_t _add(TValue_t a, TValue_t b) {
 	return TNUM(fix32_add(a.num, b.num));
 }
 
+TValue_t _div(TValue_t a, TValue_t b) {
+	return TNUM(fix32_div(a.num, b.num));
+}
+
+TValue_t _sqr(TValue_t a) {
+	return TNUM(fix32_mul(a.num, a.num));
+}
+
+TValue_t _sqrt(TValue_t a) {
+	return TNUM(fix32_sqrt(a.num));
+}
+
 void _pluseq(TValue_t* a, TValue_t b) {
 	fix32_pluseq(&a->num, b.num); // TODO assert
 }
@@ -314,6 +326,13 @@ void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	assert(v.tag == NUM); //TODO not true, tables can override this
 	TValue_t newval = _add(get_tabvalue(t, key), v);
+	set_tabvalue(t, key, newval);
+}
+
+void idiv_tab(TValue_t t, TValue_t key, TValue_t v) {
+	assert(t.tag == TAB);
+	assert(v.tag == NUM); //TODO not true, tables can override this
+	TValue_t newval = _div(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
 }
 
