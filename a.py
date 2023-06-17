@@ -297,6 +297,35 @@ def transform_index_assign(tree):
             new_assign_elem = _map[n.parent.op](n.value, _key, _assign.value, first_token=n.first_token, last_token=n.last_token)
         _assign.parent.replace_child(_assign, new_assign_elem)
 
+def transform_table_functions(tree):
+    """
+    Rewrite table-based functions (`function tab.fn() ... end`) into:
+    ```
+    function __table_function_tab_fn(...) ... end
+    tab.fn = TFUN(__table_function_tab_fn)
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not isinstance(n, (Function)):
+            continue
+        if not n.parent:
+            print("NO PARENT??")
+            continue
+        if not isinstance(n.name, Index):
+            continue
+
+        _callable_name = f"__table_func_{n.name.value.id}_{n.name.idx.id}"
+        n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))]))
+
+        # extract the lambda to be a normal function
+        tree.body.body.append(Function(Name(_callable_name), n.args, n.body))
+        # TODO:
+        # - Read/Write _enclosed_ variables from UpValue table
+        #   - How to know when it's an UpValue ???
+
 def transform_anonymous_functions(tree):
     """
     Rewrite AnonymousFunction (`a = function() ... end`) into:
@@ -470,6 +499,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
 
     rename_stdlib_calls(tree)
     transform_anonymous_functions(tree)
+    transform_table_functions(tree)
     transform_methods(tree)
     transform_functions_to_vec_args(tree) # this transforms methods as well
     transform_anonymous_tables(tree)
