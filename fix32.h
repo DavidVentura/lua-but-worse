@@ -48,6 +48,24 @@ fix32_t fix32_mul(fix32_t a, fix32_t b) {
 	return fix32_from_bits(res);
 }
 
+fix32_t fix32_div(fix32_t a, fix32_t b) {
+	uint32_t _a = fix32_to_bits(a);
+	uint32_t _b = fix32_to_bits(b);
+
+	// This special case ensures 0x8000/0x1 = 0x8000, not 0x8000.0001
+	if (_b == 0x10000) return a;
+
+	if (_b) {
+		int64_t result = ((int64_t)_a) * 0x10000 / _b;
+		int64_t pos_result = result & 0x7fffffffu; // drop sign bit
+		if (pos_result <= 0x7fffffffu)
+			return fix32_from_bits(((int32_t)result));
+	}
+	// Return 0x8000.0001 (not 0x8000.0000) for -Inf, just like PICO-8
+	return fix32_from_bits((_a ^ _b) >= 0 ? 0x7fffffffu : 0x80000001u);
+}
+
+
 bool fix32_equals(fix32_t a, fix32_t b) {
 	return a.i == b.i && a.f == b.f;
 }
@@ -67,4 +85,23 @@ bool fix32_lt(fix32_t a, fix32_t b) {
 	if( a.i > b.i ) return false;
 	if( a.i == b.i && a.f >= b.f ) return false;
 	return true;
+}
+
+fix32_t fix32_sqrt(fix32_t v) {
+    // from fpsqrt.c, sqrt_fx16_16_to_fx16_16
+    uint32_t t, q, b, r;
+    r = fix32_to_bits(v);
+    b = 0x40000000;
+    q = 0;
+    while( b > 0x40 ) {
+        t = q + b;
+        if( r >= t ) {
+            r -= t;
+            q = t + b; // equivalent to q += 2*b
+        }
+        r <<= 1;
+        b >>= 1;
+    }
+    q >>= 8;
+    return fix32_from_bits(q);
 }
