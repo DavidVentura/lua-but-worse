@@ -14,7 +14,7 @@ TValue_t __main() {
   set_tabvalue(squares, TNUM16(3), TNUM16(9));
   set_tabvalue(squares, TNUM16(4), TNUM16(16));
   set_tabvalue(squares, TNUM16(5), TNUM16(25));
-  member = TTAB(make_table(2));
+  member = TTAB(make_table(4));
   // Fields for table member
   set_tabvalue(member, TSTR("x"), _invert_sign(TNUM(fix32_from_float(1.5f))));
   set_tabvalue(member, TSTR("y"), TNUM16(66));
@@ -22,7 +22,7 @@ TValue_t __main() {
   print(get_tabvalue(squares, TNUM16(2)));
   print(get_tabvalue(member, TSTR("x")));
   print(get_tabvalue(member, TSTR("y")));
-  adder = TTAB(make_table(0));
+  adder = TTAB(make_table(4));
   set_tabvalue(adder, TSTR("a"), TNUM16(1));
   print(get_tabvalue(adder, TSTR("a")));
   set_tabvalue(adder, TSTR("b"), TNUM16(2));

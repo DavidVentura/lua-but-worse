@@ -19,7 +19,7 @@ TValue_t __table_func_vector_new(TValue_t *function_arguments) {
   TValue_t x;
   x = function_arguments[0]; // unknown type
   y = function_arguments[1]; // unknown type
-  o = TTAB(make_table(2));
+  o = TTAB(make_table(4));
   // Fields for table o
   set_tabvalue(o, TSTR("x"), x);
   set_tabvalue(o, TSTR("y"), y);
@@ -29,6 +29,6 @@ TValue_t __table_func_vector_new(TValue_t *function_arguments) {
 }
 
 TValue_t __preinit() {
-  vector = TTAB(make_table(0));
+  vector = TTAB(make_table(1));
   set_tabvalue(vector, TSTR("new"), TFUN(__table_func_vector_new));
 }

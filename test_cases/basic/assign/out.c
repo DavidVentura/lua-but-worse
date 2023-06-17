@@ -19,8 +19,8 @@ TValue_t __main() {
   d = flr(TNUM(fix32_from_float(2.5f))); // unknown type
   e = TNUM16(1);
   e = TNUM16(2);
-  o = TTAB(make_table(0));
-  u = TTAB(make_table(1));
+  o = TTAB(make_table(1));
+  u = TTAB(make_table(2));
   // Fields for table u
   set_tabvalue(u, TSTR("a"), TNUM16(123));
   set_tabvalue(o, TSTR("a"), TNUM16(333));

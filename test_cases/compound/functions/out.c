@@ -17,7 +17,7 @@ TValue_t __main() {
   print(CALL((a), ((TValue_t[]){TNUM16(5)})));
   b = TFUN(__anonymous_function_b);
   print(CALL((b), ((TValue_t[]){TNUM16(5), TNUM16(6)})));
-  c = TTAB(make_table(0));
+  c = TTAB(make_table(2));
   set_tabvalue(c, TSTR("f"), TFUN(__anonymous_function_f));
   print(CALL((get_tabvalue(c, TSTR("f"))), ((TValue_t[]){})));
   v = TSTR("index");

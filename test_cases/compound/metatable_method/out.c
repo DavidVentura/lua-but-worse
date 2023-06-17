@@ -6,7 +6,7 @@ TValue_t __a_method(TValue_t *function_arguments);
 TValue_t __main();
 
 TValue_t __main() {
-  a = TTAB(make_table(0));
+  a = TTAB(make_table(2));
   set_tabvalue(a, TSTR("__index"), a);
   set_tabvalue(a, TSTR("method"), TFUN(__a_method));
   b = TTAB(make_table(0));

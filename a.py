@@ -245,6 +245,36 @@ def transform_literal_tables_to_assignments(tree):
 
 
 
+def ensure_table_fields(tree):
+    """
+    Ensure that every Table is created with sufficient capacity for known keys
+    ```
+    a = {}
+    a.b = 5
+    ```
+    =>
+    ```
+    a = make_table(1) // 1 as field b is known statically
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not n.parent:
+            continue
+        if not isinstance(n, SetTabValue):
+            continue
+        for s in n.parent.body:
+            if not isinstance(s, Assign):
+                continue
+            if n.table.id not in [t.id for t in s.targets]:
+                continue
+            assert len(s.targets) == 1
+            if not isinstance(s.values[0], Table):
+                # TODO ?? what's ArrayIndex doing
+                continue
+            s.values[0].field_names.add(n.key.dump())
 def transform_index_assign(tree):
     """
     Rewrite Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
@@ -506,6 +536,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     transform_anonymous_tables(tree)
     transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
+    ensure_table_fields(tree)
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)

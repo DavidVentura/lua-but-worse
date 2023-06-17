@@ -5,7 +5,7 @@ TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  member = TTAB(make_table(1));
+  member = TTAB(make_table(3));
   // Fields for table member
   set_tabvalue(member, TSTR("x"), TNUM16(1));
   empty = TTAB(make_table(0));
