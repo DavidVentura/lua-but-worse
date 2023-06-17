@@ -5,7 +5,7 @@ import textwrap
 
 from luaparser import ast
 from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
-        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type
+        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab,
         )
 
 # TODO: broken parsing when declaring local variables with no value:
@@ -124,9 +124,19 @@ def _first_parent_of_type(t: Node, valid: tuple):
         return t.parent
     return _first_parent_of_type(t.parent, valid)
 
-def flatten_nested_tables(tree):
+def transform_anonymous_tables(tree):
     """
-    Flattens nested tables:
+    Creates local variables for anonymous tables
+    ```
+    func({a=1})
+    ```
+    =>
+    ```
+    __anonymous_table_0 = {a=1}
+    func(__anonymous_table_0)
+    ```
+
+    Which also flattens nested tables:
     ```
     a = {x=5,
          y={5=7},
@@ -134,8 +144,11 @@ def flatten_nested_tables(tree):
     ```
 
     =>
+    ```
     __a_subtable_y = {5=7}
     a = {x=5, y=__a_subtable_y}
+    ```
+
     """
 
     tree_visitor = ast.WalkVisitor()
@@ -234,6 +247,7 @@ def transform_literal_tables_to_assignments(tree):
 def transform_index_assign(tree):
     """
     Rewrite Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
+    Rewrite Index-IAssign `a.b += 5` into `AddTabValue(a, "b", 5)`
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -243,14 +257,22 @@ def transform_index_assign(tree):
             continue
         if not isinstance(n, Index):
             continue
-        if not isinstance(n.parent, Assign):
+        if not isinstance(n.parent, (IAssign, Assign)):
             continue
-        _assign = n.parent
-        if n not in _assign.targets:
-            continue
-        assert len(_assign.targets) == 1
-        assert len(_assign.values) == 1
-        # some day
+
+        if isinstance(n.parent, Assign):
+            _assign = n.parent
+            if n not in _assign.targets:
+                continue
+            assert len(_assign.targets) == 1
+            assert len(_assign.values) == 1
+            # some day
+        elif isinstance(n.parent, IAssign):
+            _assign = n.parent
+            if n != _assign.target:
+                continue
+        else:
+            assert False, "Only Assign and IAssign supported"
 
         _key = n.idx
         if n.notation == IndexNotation.DOT:
@@ -264,8 +286,16 @@ def transform_index_assign(tree):
                 # or a name (a[var]) or number (a[5])
                 _key = n.idx
         assert _key
-        settabvalue = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
-        _assign.parent.replace_child(_assign, settabvalue)
+        if isinstance(n.parent, Assign):
+            new_assign_elem = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
+        if isinstance(n.parent, IAssign):
+            _map = {InplaceOp.ADD: IAddTab,
+                    #InplaceOp.SUB: ISubTab,
+                    #InplaceOp.MUL: IMulTab,
+                    #InplaceOp.DIV: IDivTab,
+                    }
+            new_assign_elem = _map[n.parent.op](n.value, _key, _assign.value, first_token=n.first_token, last_token=n.last_token)
+        _assign.parent.replace_child(_assign, new_assign_elem)
 
 def transform_anonymous_functions(tree):
     """
@@ -442,7 +472,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     transform_anonymous_functions(tree)
     transform_methods(tree)
     transform_functions_to_vec_args(tree) # this transforms methods as well
-    flatten_nested_tables(tree)
+    transform_anonymous_tables(tree)
     transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
     move_to_preinit(tree)
