@@ -5,7 +5,7 @@ import textwrap
 
 from luaparser import ast
 from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
-        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab,
+        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
         )
 
 # TODO: broken parsing when declaring local variables with no value:
@@ -290,9 +290,9 @@ def transform_index_assign(tree):
             new_assign_elem = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
         if isinstance(n.parent, IAssign):
             _map = {InplaceOp.ADD: IAddTab,
-                    #InplaceOp.SUB: ISubTab,
-                    #InplaceOp.MUL: IMulTab,
-                    #InplaceOp.DIV: IDivTab,
+                    InplaceOp.SUB: ISubTab,
+                    InplaceOp.MUL: IMulTab,
+                    InplaceOp.DIV: IDivTab,
                     }
             new_assign_elem = _map[n.parent.op](n.value, _key, _assign.value, first_token=n.first_token, last_token=n.last_token)
         _assign.parent.replace_child(_assign, new_assign_elem)
