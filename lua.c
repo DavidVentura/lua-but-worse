@@ -185,8 +185,8 @@ TValue_t get_tabvalue(Table_t* u, TValue_t key) {
 			return u->kvs[i].value;
 		}
 	}
-	if(u->__index != NULL) {
-		if(u->__index->tag == TAB) return get_tabvalue(u->__index->table, key);
+	if(u->metatable != NULL && u->metatable->__index != NULL) {
+		if(u->metatable->__index->tag == TAB) return get_tabvalue(u->metatable->__index->table, key);
 		assert(false); // FIXME: should call function passing u, key or die otherwise
 	}
 	return T_NULL;
