@@ -6,6 +6,7 @@ function vector:len()
 end
 
 function vector:normal()
+	self.a = self:len()
 	self.x /= self:len()
 	self.y /= self:len()
 end
