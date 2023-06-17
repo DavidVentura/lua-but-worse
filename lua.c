@@ -10,15 +10,16 @@ enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
 typedef struct Table_s Table_t;
+typedef TValue_t (*Func_t)(TValue_t*);
 
 struct TValue_s {
-	enum typetag_t tag; // 3 bits used only
 	union {
 		char* str;
 		fix32_t num;
-		TValue_t (*fun)(TValue_t*);
-		Table_t* table;
+		Func_t fun;
+		uint16_t table_idx;
 	};
+	enum typetag_t tag; // 3 bits used only
 };
 
 typedef struct KV_s {
@@ -27,31 +28,35 @@ typedef struct KV_s {
 } KV_t;
 
 struct Table_s {
-	Table_t* metatable;
 	KV_t* kvs;
-	uint16_t len;
 	TValue_t* __index;
+	uint16_t metatable_idx;
+	uint16_t len;
 };
 
 Table_t* ENV;
 
-TValue_t _tvalue_from_table(Table_t t) {
-	return ((TValue_t){.tag = TAB, .table = &t});
-}
+typedef struct TArena_s {
+	Table_t* tables;
+	uint16_t len;
+	uint16_t used;
+} TArena_t;
 
-TValue_t _tvalue_from_table_p(Table_t* t) {
-	return ((TValue_t){.tag = TAB, .table = t});
-}
+TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 
-#define TNUM(x)    ((TValue_t){.tag = NUM,  .num = (x)})
-#define TNUM8(x)   ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
-#define TNUM16(x)  ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
-#define TSTR(x)    ((TValue_t){.tag = STR,  .str = (x)})
-#define TBOOL(x)   ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
-#define TFUN(x)    ((TValue_t){.tag = FUN,  .fun = (x)})
-#define TTAB(x)  	_Generic(x, Table_t: _tvalue_from_table, Table_t*: _tvalue_from_table_p)(x)
+#define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
+#define TNUM8(x)       ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
+#define TNUM16(x)      ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
+#define TSTR(x)        ((TValue_t){.tag = STR,  .str = (x)})
+#define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
+#define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
+#define GETTAB(x)      (&_tables.tables[(x).table_idx])
+#define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
-#define print(x)	_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
+#define set_tabvalue(x,y,z)	_Generic(z, TValue_t*: _set_tabvalue_ptr, TValue_t: _set_tabvalue)(x,y,z)
+#define CALL(x, y)     _Generic(x, TValue_t: __call, 			TValue_t*: __call_ptr)(x)(y)
+#define print(x)	   _Generic(x, TValue_t*: print_tvalue_ptr, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 
 /*
  * Multiplying by 100k gives accurate measurements down to 0x0001,
@@ -71,6 +76,13 @@ const fix32_t _one  = (fix32_t){.i=1, .f=0};
 TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
 TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
+
+Func_t __call(TValue_t t) {
+	return t.fun;
+}
+Func_t __call_ptr(TValue_t* t) {
+	return t->fun;
+}
 void print_bool(bool b) {
 	if(b) {
 		printf("true\n");
@@ -108,6 +120,9 @@ void print_tvalue(TValue_t v) {
 			break;
 	}
 }
+void print_tvalue_ptr(TValue_t* v) {
+	print_tvalue(*v);
+}
 
 bool equal(TValue_t a, TValue_t b) {
 	if(a.tag != b.tag) return false;
@@ -119,7 +134,7 @@ bool equal(TValue_t a, TValue_t b) {
 		case NUL:
 			return true;
 		case TAB:
-			return a.table == b.table;
+			return a.table_idx == b.table_idx;
 		default:
 			printf("IDK how to compare type %d\n", a.tag);
 			return false;
@@ -130,7 +145,8 @@ bool _equal(TValue_t a, TValue_t b) {
 }
 
 
-void grow_table(Table_t* t) {
+void grow_table(uint16_t idx) {
+	Table_t* t = &_tables.tables[idx];
 	uint16_t new_len = t->len * 2;
 	new_len = (t->len == 0) ? 2 : new_len;
 	//t->kvs = realloc(t->kvs, new_len * sizeof(KV_t));
@@ -144,7 +160,10 @@ void grow_table(Table_t* t) {
 	t->len = new_len;
 }
 
-void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
+
+void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
+	assert(t.tag == TAB);
+	Table_t* u = GETTAB(t);
 	assert(u != NULL);
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
@@ -172,21 +191,24 @@ void set_tabvalue(Table_t* u, TValue_t key, TValue_t v) {
 	}
 	if (first_null == UINT16_MAX) {
 		// did not find a matching key nor any NULs
-		grow_table(u);
+		grow_table(t.table_idx);
 		// cannot fail
-		return set_tabvalue(u, key, v);
+		return _set_tabvalue(t, key, v);
 	}
 }
+void _set_tabvalue_ptr(TValue_t t, TValue_t key, TValue_t* v) {
+	_set_tabvalue(t, key, *v);
+}
 
-TValue_t get_tabvalue(Table_t* u, TValue_t key) {
-	if(u == NULL) return T_NULL;
-	for(uint16_t i=0; i<u->len; i++) {
-		if (equal(u->kvs[i].key, key)) {
-			return u->kvs[i].value;
+TValue_t get_tabvalue(TValue_t u, TValue_t key) {
+	Table_t* t = GETTAB(u);
+	for(uint16_t i=0; i<t->len; i++) {
+		if (equal(t->kvs[i].key, key)) {
+			return t->kvs[i].value;
 		}
 	}
-	if(u->metatable != NULL && u->metatable->__index != NULL) {
-		if(u->metatable->__index->tag == TAB) return get_tabvalue(u->metatable->__index->table, key);
+	if(t->metatable_idx != UINT16_MAX && GETMETATAB(*t).__index != NULL) {
+		if(GETMETATAB(*t).__index->tag == TAB) return get_tabvalue(TTAB(GETMETATAB(*t).__index->table_idx), key);
 		assert(false); // FIXME: should call function passing u, key or die otherwise
 	}
 	return T_NULL;
@@ -229,25 +251,37 @@ bool __bool(TValue_t a) {
 	return false;
 }
 
-Table_t* make_table(uint16_t size) {
+uint16_t make_table(uint16_t size) {
+	if(_tables.len == _tables.used) {
+		uint16_t new_len = _tables.len == 0 ? 16 : _tables.len*2;
+		if (_tables.tables == NULL) {
+			_tables.tables = calloc(new_len, sizeof(Table_t));
+		} else {
+			_tables.tables = realloc(_tables.tables, new_len*sizeof(Table_t));
+		}
+		_tables.len = new_len;
+	}
+
 	KV_t* kvs = NULL;
 	if (size > 0)
 		kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
-	Table_t* ret = malloc(sizeof(Table_t));
-	ret->kvs = kvs;
-	ret->len = size;
-	ret->metatable = NULL;
-	ret->__index = NULL;
-	return ret;
+
+	Table_t ret = {
+		.kvs = kvs,
+		.len = size,
+		.metatable_idx = UINT16_MAX,
+		.__index = NULL,
+	};
+
+	_tables.used++;
+	_tables.tables[_tables.used] = ret;
+	return _tables.used;
 }
 
 void free_tvalue(TValue_t tv) {
 	if(tv.tag != TAB) return;
-	if(tv.table == NULL) return;
-	if(tv.table->kvs != NULL) {
-		free(tv.table->kvs);
-	}
-	free(tv.table);
+	if(tv.table_idx == UINT16_MAX) return;
+	//assert(false); // need to dec refcount
 }
 
 TValue_t flr(TValue_t f) {
@@ -256,12 +290,19 @@ TValue_t flr(TValue_t f) {
 
 TValue_t getmetatable(TValue_t t) {
 	if(t.tag != TAB) return T_NULL;
-	if(t.table->metatable == NULL) return T_NULL;
-	return TTAB(t.table->metatable);
+	if(GETTAB(t)->metatable_idx == UINT16_MAX) return T_NULL;
+	return TTAB(GETTAB(t)->metatable_idx);
 }
 
 void setmetatable(TValue_t t, TValue_t meta) {
 	assert(t.tag == TAB);
 	assert(meta.tag == TAB);
-	t.table->metatable = meta.table;
+	GETTAB(t)->metatable_idx = meta.table_idx;
+}
+
+void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
+	assert(t.tag == TAB);
+	assert(v.tag == NUM); //TODO not true
+	TValue_t newval = _add(get_tabvalue(t, key), v);
+	set_tabvalue(t, key, newval);
 }
