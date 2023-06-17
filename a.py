@@ -241,7 +241,6 @@ def transform_literal_tables_to_assignments(tree):
             _assign.parent.body.insert(_assign_idx+1, settabvalue)
         if len(n.fields) > 0:
             _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}"))
-        n.fields = []  # clear content of the table
 
 
 
@@ -524,7 +523,7 @@ def set_parent_on_children(tree):
     for n in tree_visitor.nodes:
         n.set_parent_on_children()
 
-def transform(src, pretty=True, dump_ast=False, testing=False):
+def transform(src, pretty=True, dump_ast=False, testing_params=None):
     tree = ast.parse(src)
     set_parent_on_children(tree)
 
@@ -540,6 +539,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
+    # must be the last one
     free_local_tables(tree)
     #static_table_fields = find_static_table_accesses(tree)
     #static_table_fields = [] # FIXME LATER
@@ -560,7 +560,7 @@ def transform(src, pretty=True, dump_ast=False, testing=False):
     gen = '#include "lua.c"\n'
     ret = gen
     ret += tree.body.dump()
-    if testing:
+    if testing_params != None:
         ret += textwrap.dedent('''
         int main() {
             __preinit();
