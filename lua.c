@@ -29,7 +29,7 @@ typedef struct KV_s {
 
 struct Table_s {
 	KV_t* kvs;
-	TValue_t* __index;
+	TValue_t __index;
 	uint16_t metatable_idx;
 	uint16_t len;
 };
@@ -55,8 +55,9 @@ TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
 #define set_tabvalue(x,y,z)	_Generic(z, TValue_t*: _set_tabvalue_ptr, TValue_t: _set_tabvalue)(x,y,z)
-#define CALL(x, y)     _Generic(x, TValue_t: __call, 			TValue_t*: __call_ptr)(x)(y)
-#define print(x)	   _Generic(x, TValue_t*: print_tvalue_ptr, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
+#define CALL(x, y)     		_Generic(x, TValue_t: __call, 			TValue_t*: __call_ptr)(x)(y)
+#define print(x)	   		_Generic(x, TValue_t*: print_tvalue_ptr, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
+#define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 /*
  * Multiplying by 100k gives accurate measurements down to 0x0001,
@@ -158,6 +159,7 @@ void grow_table(uint16_t idx) {
 	free(t->kvs);
 	t->kvs = new_kvs;
 	t->len = new_len;
+	// t->count does not change
 }
 
 
@@ -173,7 +175,7 @@ void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 		if (equal(u->kvs[i].key, key)) {
 			u->kvs[i].value = v;
 			if(is_index) {
-				u->__index = &(u->kvs[i].value);
+				u->__index = u->kvs[i].value;
 			}
 			return;
 		}
@@ -184,8 +186,9 @@ void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	if (first_null < UINT16_MAX) {
 		u->kvs[first_null].key = key;
 		u->kvs[first_null].value = v;
+		u->count++;
 		if(is_index) {
-			u->__index = &(u->kvs[first_null].value);
+			u->__index = u->kvs[first_null].value;
 		}
 		return;
 	}
@@ -193,6 +196,7 @@ void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 		// did not find a matching key nor any NULs
 		grow_table(t.table_idx);
 		// cannot fail
+		// TODO: assign straight into old_len+1
 		return _set_tabvalue(t, key, v);
 	}
 }
@@ -270,7 +274,7 @@ uint16_t make_table(uint16_t size) {
 		.kvs = kvs,
 		.len = size,
 		.metatable_idx = UINT16_MAX,
-		.__index = NULL,
+		.__index = T_NULL,
 	};
 
 	_tables.used++;
