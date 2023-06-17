@@ -10,10 +10,10 @@ TValue_t __main();
 TValue_t __main() {
   captured = TNUM16(7);
   a = TFUN(__anonymous_function_a);
-  print(a.fun((TValue_t[]){TNUM16(5)}));
+  print(CALL((a), ((TValue_t[]){TNUM16(5)})));
   b = TFUN(__nested_func_b); // unknown type
-  b.fun((TValue_t[]){});
-  print(a.fun((TValue_t[]){TNUM16(5)}));
+  CALL((b), ((TValue_t[]){}));
+  print(CALL((a), ((TValue_t[]){TNUM16(5)})));
   return TNUM16(0);
 }
 

@@ -7,16 +7,16 @@ TValue_t __main();
 TValue_t __main() {
   a = TTAB(make_table(1));
   // Fields for table a
-  set_tabvalue(a.table, TSTR("x"), TNUM16(5));
-  set_tabvalue(a.table, TSTR("__index"), a);
+  set_tabvalue(a, TSTR("x"), TNUM16(5));
+  set_tabvalue(a, TSTR("__index"), a);
   b = TTAB(make_table(0));
   setmetatable(b, a);
-  print(get_tabvalue(b.table, TSTR("x")));
-  NOT_USED_set_tabvalue(b.table, FIELD_X, TNUM16(5));
-  print(get_tabvalue(b.table, TSTR("x")));
-  print(get_tabvalue(b.table, TSTR("y")));
-  set_tabvalue(a.table, TSTR("y"), TNUM16(7));
-  print(get_tabvalue(b.table, TSTR("y")));
+  print(get_tabvalue(b, TSTR("x")));
+  iadd_tab(b, TSTR("x"), TNUM16(5));
+  print(get_tabvalue(b, TSTR("x")));
+  print(get_tabvalue(b, TSTR("y")));
+  set_tabvalue(a, TSTR("y"), TNUM16(7));
+  print(get_tabvalue(b, TSTR("y")));
   return TNUM16(0);
 }
 

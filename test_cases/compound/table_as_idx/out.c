@@ -7,10 +7,10 @@ TValue_t __main();
 TValue_t __main() {
   member = TTAB(make_table(1));
   // Fields for table member
-  set_tabvalue(member.table, TSTR("x"), TNUM16(1));
+  set_tabvalue(member, TSTR("x"), TNUM16(1));
   empty = TTAB(make_table(0));
-  set_tabvalue(member.table, empty, TNUM16(5));
-  print(get_tabvalue(member.table, empty));
+  set_tabvalue(member, empty, TNUM16(5));
+  print(get_tabvalue(member, empty));
 }
 
 TValue_t __preinit() {}
