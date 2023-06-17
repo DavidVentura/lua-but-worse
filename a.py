@@ -73,7 +73,7 @@ def rename_stdlib_calls(tree):
     """
     Rewrites certain function calls to not use C stdlib names, like
 
-    `sin` -> `fix32::sin`
+    `sqr` -> `_sqr`
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -81,10 +81,8 @@ def rename_stdlib_calls(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Call):
             continue
-        if n.func.id in ['sin', 'cos']:
-            n.func.id = f'fix32::{n.func.id}'
-        if n.func.id in ['sqrt', 'atan2']:
-            n.func.id = f'{n.func.id}f'
+        if n.func.id in ['sqr', 'sqrt']:
+            n.func.id = f'_{n.func.id}'
 
 def move_to_preinit(tree):
     """
@@ -429,7 +427,7 @@ def transform_methods(tree):
             # which must be at the root of the tree
         if isinstance(n, Invoke):
             replacement = n.replace_with_idx_call()
-            n.parent.replace_child_multi(n, [replacement])
+            n.parent.replace_child(n, replacement)
             #n.parent.replace_child(n, replacement)
 
 
