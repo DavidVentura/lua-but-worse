@@ -55,9 +55,9 @@ TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 #define GETTAB(x)      (&_tables.tables[(x).table_idx])
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
-#define set_tabvalue(x,y,z)	_Generic(z, TValue_t*: _set_tabvalue_ptr, TValue_t: _set_tabvalue)(x,y,z)
-#define CALL(x, y)     		_Generic(x, TValue_t: __call, 			TValue_t*: __call_ptr)(x)(y)
-#define print(x)	   		_Generic(x, TValue_t*: print_tvalue_ptr, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
+#define set_tabvalue(x,y,z)	_Generic(z, TValue_t: _set_tabvalue)(x,y,z)
+#define CALL(x, y)     		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y)
+#define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 /*
@@ -78,6 +78,10 @@ const fix32_t _one  = (fix32_t){.i=1, .f=0};
 TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
 TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
+
+Func_t __direct_call(Func_t f) {
+	return f;
+}
 
 Func_t __call(TValue_t t) {
 	return t.fun;
