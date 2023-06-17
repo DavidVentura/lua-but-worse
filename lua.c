@@ -151,11 +151,13 @@ bool _equal(TValue_t a, TValue_t b) {
 }
 
 
-void grow_table(uint16_t idx) {
+void grow_table(uint16_t idx)  {
+#ifdef NO_GROW_TABLE
+	assert(false);
+#else
 	Table_t* t = &_tables.tables[idx];
 	uint16_t new_len = t->len * 2;
 	new_len = (t->len == 0) ? 2 : new_len;
-	//t->kvs = realloc(t->kvs, new_len * sizeof(KV_t));
 	// this sets key->tag to 0 (NUL) for all new spaces in KVs
 	KV_t* new_kvs = calloc(sizeof(KV_t), new_len);
 	if(t->len) {
@@ -165,6 +167,7 @@ void grow_table(uint16_t idx) {
 	t->kvs = new_kvs;
 	t->len = new_len;
 	// t->count does not change
+#endif
 }
 
 
