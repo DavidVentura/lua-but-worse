@@ -32,6 +32,7 @@ struct Table_s {
 	TValue_t __index;
 	uint16_t metatable_idx;
 	uint16_t len;
+	uint16_t count;
 };
 
 Table_t* ENV;
@@ -211,9 +212,16 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 			return t->kvs[i].value;
 		}
 	}
-	if(t->metatable_idx != UINT16_MAX && GETMETATAB(*t).__index != NULL) {
-		if(GETMETATAB(*t).__index->tag == TAB) return get_tabvalue(TTAB(GETMETATAB(*t).__index->table_idx), key);
-		assert(false); // FIXME: should call function passing u, key or die otherwise
+	if(t->metatable_idx != UINT16_MAX) {
+		TValue_t __index = GETMETATAB(*t).__index;
+		switch(__index.tag) {
+			case TAB:
+				return get_tabvalue(TTAB(__index.table_idx), key);
+			case FUN:
+				return CALL(__index, ((TValue_t[]){key}));
+			default:
+				assert(false);
+		}
 	}
 	return T_NULL;
 }
@@ -237,8 +245,6 @@ bool _lt(TValue_t a, TValue_t b) {
 TValue_t _invert_sign(TValue_t a) {
 	return TNUM(fix32_invert_sign(a.num)); // TODO assert
 }
-
-#define _bool(x) _Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 bool __mbool(bool b) {
 	return b;
@@ -306,7 +312,12 @@ void setmetatable(TValue_t t, TValue_t meta) {
 
 void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
-	assert(v.tag == NUM); //TODO not true
+	assert(v.tag == NUM); //TODO not true, tables can override this
 	TValue_t newval = _add(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
+}
+
+TValue_t count(TValue_t t) {
+	assert(t.tag == TAB);
+	return TNUM(GETTAB(t)->count);
 }
