@@ -112,7 +112,11 @@ void print_tvalue(TValue_t v) {
 					dec_part /= 10;
 					leading_zeroes--;
 				}
-				printf("%d.%0*d\n", v.num.i, leading_zeroes, dec_part);
+				if(v.num.i < 0) {
+					printf("%d.%0*d\n", v.num.i+1, leading_zeroes, dec_part);
+				} else {
+					printf("%d.%0*d\n", v.num.i, leading_zeroes, dec_part);
+				}
 			}
 			break;
 		case NUL:
