@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #define FIX32_DEC_AS_INT(x) (((uint64_t)x) * 100000) >> 16
 
 const fix32_t MINUS_TWO 	= (fix32_t){.i=-2, .f=0};
@@ -10,7 +11,7 @@ const fix32_t MINUS_ONE 	= (fix32_t){.i=-1, .f=0};
 const fix32_t ONE_EIGHTH 		= (fix32_t){.i=0, .f=0x2000};
 const fix32_t TWO_EIGHTHS 		= (fix32_t){.i=0, .f=0x4000};
 const fix32_t HALF 				= (fix32_t){.i=0, .f=0x8000};
-const fix32_t THREE_QUARTERS	= (fix32_t){.i=0, .f=0xb000};
+const fix32_t THREE_QUARTERS	= (fix32_t){.i=0, .f=0xC000};
 
 const fix32_t ZERO 	= (fix32_t){.i=0, .f=0};
 const fix32_t ONE 	= (fix32_t){.i=1, .f=0};
@@ -40,6 +41,22 @@ void print_fix32(fix32_t num, char* buf) {
 	sprintf(buf, "%d.%0*d", num.i, leading_zeroes, dec_part);
 }
 
+void assert_very_close(fix32_t got, fix32_t expected) {
+	fix32_t epsilon = (fix32_t){.i=0, .f=1};
+	fix32_t delta = fix32_abs(fix32_sub(got, expected));
+	if (fix32_gt(delta, epsilon)) {
+		char num_a[10] = {0};
+		char num_b[10] = {0};
+		char num_d[10] = {0};
+		print_fix32(got, num_a);
+		print_fix32(expected, num_b);
+		print_fix32(delta, num_d);
+		printf("Expected ~%s but got %s (delta %s)\n", num_b, num_a, num_d);
+		fflush(stdout);
+		assert(fix32_equals(got, expected));
+	}
+}
+
 void assert_eq(fix32_t got, fix32_t expected) {
 	if (!fix32_equals(got, expected)) {
 		char num_a[10] = {0};
@@ -48,10 +65,16 @@ void assert_eq(fix32_t got, fix32_t expected) {
 		print_fix32(expected, num_b);
 		printf("Expected %s but got %s\n", num_b, num_a);
 		fflush(stdout);
-		//assert(fix32_equals(got, expected));
-	} else {
-		//printf("good\n");
+		assert(fix32_equals(got, expected));
 	}
+}
+
+void test_invert_sign() {
+	assert_eq(fix32_invert_sign(fix32_from_float(0.25f)), fix32_from_float(-0.25f));
+	assert_eq(fix32_invert_sign(MINUS_ONE), ONE);
+	assert_eq(fix32_invert_sign(ONE), MINUS_ONE);
+	assert_eq(fix32_invert_sign(fix32_from_float(1.5f)), (fix32_t){.i=-2, .f=0x8000});
+	printf("invert sign ok\n");
 }
 
 void test_abs() {
@@ -64,7 +87,6 @@ void test_sub() {
 	printf("SUB ok\n");
 }
 void test_mul() {
-	/*
 	assert_eq(fix32_mul(TWO, TWO), FOUR);
 	assert_eq(fix32_mul((fix32_t){.i=2, .f=0x8000}, TWO), FIVE);
 	assert_eq(fix32_mul(TWO, MINUS_ONE), MINUS_TWO);
@@ -73,8 +95,7 @@ void test_mul() {
 
 	assert_eq(fix32_mul(fix32_from_float(-4.f), MINUS_ONE), FOUR);
 	assert_eq(fix32_mul(MINUS_ONE, fix32_from_float(-4.f)), FOUR);
-*/
-	// -4 * -0.25 = death
+
 	assert_eq(fix32_mul(fix32_invert_sign(TWO_EIGHTHS), fix32_from_float(-4.f)), ONE);
 	printf("MUL ok\n");
 }
@@ -84,19 +105,51 @@ void test_sqrt() {
 	assert_eq(fix32_sqrt((fix32_t){.i=16, .f=0}), FOUR);
 	printf("SQRT ok\n");
 }
+
+void test_cos_matches_fpcos() {
+    int32_t max = 0, min = 0;
+    for(uint16_t i = 0; i < UINT16_MAX; ++i) {
+        int32_t fp_cos = lround(4096*cosf(2*M_PI * i / UINT16_MAX));
+        fix32_t _fixed_cos = fix32_cos(fix32_from_float(-1.f*i / UINT16_MAX));
+		int16_t fixed_cos = fix32_to_int32(fix32_mul((fix32_t){.i=4096, .f=0}, _fixed_cos));
+        int32_t err = fp_cos - fixed_cos;
+        if(err > max)
+            max = err;
+        if(err < min)
+            min = err;
+    }
+	// output is scaled up to (-4096..4096)
+	// an error of 7/8192 is 0.085%
+	assert(min > -6);
+	assert(max < 7);
+}
+
+void test_cos() {
+	assert_eq(fix32_cos(ZERO 	),  		ONE);
+	assert_very_close(fix32_cos(ONE_EIGHTH 	),  	(fix32_t){.i=0, .f=0xb532});
+	assert_eq(fix32_cos(TWO_EIGHTHS	), 		ZERO);
+	assert_eq(fix32_cos(HALF 		), 		MINUS_ONE);
+	assert_eq(fix32_cos(THREE_QUARTERS), 	ZERO);
+	assert_eq(fix32_cos(ONE), 				ONE);
+	printf("COS ok\n");
+}
 void test_sin() {
-	assert_eq(fix32_sin(ONE_EIGHTH 	),  MINUS_ONE); // -0.7
-	assert_eq(fix32_sin(TWO_EIGHTHS	), MINUS_ONE);
-	assert_eq(fix32_sin(HALF 		), ZERO);
+	assert_eq(fix32_sin(ZERO 	),  	ZERO);
+	assert_very_close(fix32_sin(ONE_EIGHTH 	),   fix32_invert_sign((fix32_t){.i=0, .f=0xb534}));
+	assert_eq(fix32_sin(TWO_EIGHTHS	), 	MINUS_ONE);
+	assert_eq(fix32_sin(HALF 		), 	ZERO);
 	assert_eq(fix32_sin(THREE_QUARTERS), ONE);
+	assert_eq(fix32_sin(ONE), 			ZERO);
 	printf("SIN ok\n");
 }
+
 int main() {
+	test_invert_sign();
 	test_abs();
 	test_sub();
 	test_mul();
 	test_sqrt();
-	printf("SIN\n");
+	test_cos_matches_fpcos();
+	test_cos();
 	test_sin();
-	fflush(stdout);
 }
