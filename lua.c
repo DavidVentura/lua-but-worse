@@ -6,15 +6,20 @@
 #include <string.h>
 #include "fix32.h"
 
-enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
+enum __attribute__((__packed__)) typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
-typedef struct Table_s Table_t;
 typedef TValue_t (*Func_t)(TValue_t*);
 
 struct TValue_s {
+	// no size advantage on replacing the two pointers (str, num)
+	// with u16 indexes -- on embedded targets, the pointers are 32 bits
+	// same as the fix32_t type.
 	union {
+		/*
 		char* str;
+		*/
+		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
 		Func_t fun;
 		uint16_t table_idx;
@@ -22,18 +27,22 @@ struct TValue_s {
 	enum typetag_t tag; // 3 bits used only
 };
 
+_Static_assert(sizeof(TValue_t) <= 64, "too big");
+_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit
+												   // 8 for padding. could be 1 with packed attr
+
 typedef struct KV_s {
 	TValue_t key;
 	TValue_t value;
 } KV_t;
 
-struct Table_s {
+typedef struct Table_s {
 	KV_t* kvs;
 	TValue_t __index;
 	uint16_t metatable_idx;
 	uint16_t len;
 	uint16_t count;
-};
+} Table_t;
 
 Table_t* ENV;
 
@@ -43,25 +52,39 @@ typedef struct TArena_s {
 	uint16_t used;
 } TArena_t;
 
+typedef struct Str_s {
+	uint8_t* data;
+	uint16_t len;
+} Str_t;
+
+typedef struct SArena_s {
+	Str_t* strings;
+	uint16_t len;
+	uint16_t used;
+} SArena_t;
+
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
+SArena_t _strings = {.strings=NULL, .len=0, .used=0};
+Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
+
 
 #define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
 #define TNUM8(x)       ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
 #define TNUM16(x)      ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
-#define TSTR(x)        ((TValue_t){.tag = STR,  .str = (x)})
+#define TSTR(x)        ((TValue_t){.tag = STR,  .str_idx = (make_str(x))})
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
+#define GETSTR(x)      (_strings.strings[(x).str_idx])
 #define GETTAB(x)      (&_tables.tables[(x).table_idx])
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
-#define set_tabvalue(x,y,z)	_Generic(z, TValue_t: _set_tabvalue)(x,y,z)
 #define CALL(x, y)     		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y)
 #define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 /*
- * Multiplying by 100k gives accurate measurements down to 0x0001,
+ * Multiplying by 100k gives accurate representation down to 0x0001,
  * though it requires spilling to 64bit values. Will revisit
  * if it's a performance concern
  *
@@ -123,7 +146,7 @@ void print_tvalue(TValue_t v) {
 			printf("nil\n");
 			break;
 		case STR:
-			printf("%s\n", v.str);
+			printf("%.*s\n", GETSTR(v).len, GETSTR(v).data);
 			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);
@@ -134,13 +157,21 @@ void print_tvalue_ptr(TValue_t* v) {
 	print_tvalue(*v);
 }
 
+bool _streq(Str_t a, Str_t b) {
+	if(a.len != b.len) return false;
+	for(uint16_t i=0; i<a.len; i++) {
+		if (a.data[i] != b.data[i]) return false;
+	}
+	return true;
+}
+
 bool equal(TValue_t a, TValue_t b) {
 	if(a.tag != b.tag) return false;
 	switch(a.tag) {
 		case NUM:
 			return fix32_equals(a.num, b.num);
 		case STR:
-			return strncmp(a.str, b.str, UINT8_MAX) == 0;
+			return _streq(GETSTR(a), GETSTR(b));
 		case NUL:
 			return true;
 		case TAB:
@@ -175,13 +206,13 @@ void grow_table(uint16_t idx)  {
 }
 
 
-void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
+void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	Table_t* u = GETTAB(t);
 	assert(u != NULL);
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
-	bool is_index = equal(key, TSTR("__index"));
+	bool is_index = key.tag == STR && _streq(GETSTR(key), STR__INDEX);
 
 	for(uint16_t i=0; i<u->len; i++) {
 		if (equal(u->kvs[i].key, key)) {
@@ -209,11 +240,8 @@ void _set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 		grow_table(t.table_idx);
 		// cannot fail
 		// TODO: assign straight into old_len+1
-		return _set_tabvalue(t, key, v);
+		return set_tabvalue(t, key, v);
 	}
-}
-void _set_tabvalue_ptr(TValue_t t, TValue_t key, TValue_t* v) {
-	_set_tabvalue(t, key, *v);
 }
 
 TValue_t get_tabvalue(TValue_t u, TValue_t key) {
@@ -276,7 +304,7 @@ bool __bool(TValue_t a) {
 	if(a.tag == NUM)
 		return a.num.i != 0 || a.num.f != 0;
 	if(a.tag == STR)
-		return a.str != NULL;
+		return GETSTR(a).len > 0;
 	if(a.tag == NUL)
 		return false;
 	if(a.tag == BOOL)
@@ -350,4 +378,76 @@ void idiv_tab(TValue_t t, TValue_t key, TValue_t v) {
 TValue_t count(TValue_t t) {
 	assert(t.tag == TAB);
 	return TNUM(GETTAB(t)->count);
+}
+
+uint16_t _find_str_index(Str_t s) {
+	for(uint16_t i=0; i<_strings.used; i++) {
+		if (_streq(_strings.strings[i], s)) {
+			return i;
+		}
+	}
+	return UINT16_MAX;
+}
+
+uint16_t _store_str(Str_t s) {
+	if(_strings.len == _strings.used) {
+		uint16_t new_len = _strings.len == 0 ? 16 : _strings.len*2;
+		if (_strings.strings == NULL) {
+			_strings.strings = calloc(new_len, sizeof(Str_t));
+		} else {
+			_strings.strings = realloc(_strings.strings, new_len*sizeof(Str_t));
+		}
+		_strings.len = new_len;
+	}
+	uint16_t ret = _strings.used;
+	_strings.strings[_strings.used] = s;
+	_strings.used++;
+	return ret;
+}
+
+uint16_t make_str(char c[]) {
+	Str_t s = (Str_t){.len=strlen(c), .data=(uint8_t*)c};
+	uint16_t strindex = _find_str_index(s);
+	if (strindex == UINT16_MAX) {
+		strindex = _store_str(s);
+	}
+	return strindex;
+}
+
+TValue_t _concat(TValue_t a, TValue_t b) {
+	assert(a.tag == STR);
+	assert(b.tag == STR);
+
+	uint16_t alen = GETSTR(a).len;
+	uint16_t blen = GETSTR(b).len;
+	uint8_t* data = malloc(alen+blen);
+
+	memcpy(data, 		GETSTR(a).data, alen);
+	memcpy(data+alen, 	GETSTR(b).data, blen);
+	Str_t ret = (Str_t){.len=alen+blen, .data=data};
+	uint16_t strindex = _find_str_index(ret);
+	if (strindex == UINT16_MAX) {
+		strindex = _store_str(ret);
+	} else {
+		free(data);
+	}
+
+	return (TValue_t){.tag=STR, .str_idx=strindex};
+}
+
+TValue_t __internal_debug_str_len() {
+	return TNUM(_strings.len);
+}
+
+TValue_t __internal_debug_str_used() {
+	return TNUM(_strings.used);
+}
+
+void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
+	bool eq = _equal(got, expected);
+	if (eq) return;
+	printf("Expected: ");
+	print(expected);
+	printf("Got: ");
+	print(got);
 }
