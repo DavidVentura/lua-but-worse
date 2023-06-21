@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct fix32_s {
 	int16_t i;
@@ -156,4 +157,37 @@ fix32_t fix32_sin(fix32_t n) {
 
 	n = fix32_invert_sign(n); // pico8 inverts the sign
 	return fix32_cos(fix32_sub(n, (fix32_t){.i=0, .f=0x4000})); // sub 0.25 (1/4 of a turn)
+}
+
+/*
+ * Multiplying by 100k gives accurate representation down to 0x0001,
+ * though it requires spilling to 64bit values. Will revisit
+ * if it's a performance concern
+ *
+ * >>> hex((0xFFFF * 100_000))
+ * '0x1869e7960'
+ * >>> hex((0xFFFF * 10_000))
+ * '0x270fd8f0'
+ */
+#define FIX32_DEC_AS_INT(x) (((uint64_t)x) * 100000) >> 16
+// TODO: no sprintf
+void print_fix32(fix32_t num, char* buf) {
+	if(num.f == 0) {
+		sprintf(buf, "%d", num.i);
+		return;
+	}
+
+	if(num.i < 0) {
+		buf[0] = '-';
+		print_fix32((fix32_t){.i=(int16_t)(-num.i-1), .f=(uint16_t)(0xFFFF-num.f+1)}, buf+1);
+		return;
+	}
+
+	uint32_t dec_part = FIX32_DEC_AS_INT(num.f);
+	uint8_t leading_zeroes = 5;
+	while (dec_part % 10 == 0) {
+		dec_part /= 10;
+		leading_zeroes--;
+	}
+	sprintf(buf, "%d.%0*d", num.i, leading_zeroes, dec_part);
 }

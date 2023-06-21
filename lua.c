@@ -83,18 +83,6 @@ Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
-/*
- * Multiplying by 100k gives accurate representation down to 0x0001,
- * though it requires spilling to 64bit values. Will revisit
- * if it's a performance concern
- *
- * >>> hex((0xFFFF * 100_000))
- * '0x1869e7960'
- * >>> hex((0xFFFF * 10_000))
- * '0x270fd8f0'
- */
-#define FIX32_DEC_AS_INT(x) (((uint64_t)x) * 100000) >> 16
-
 TValue_t T_NULL = {.tag = NUL};
 const fix32_t _zero = (fix32_t){.i=0, .f=0};
 const fix32_t _one  = (fix32_t){.i=1, .f=0};
@@ -126,21 +114,9 @@ void print_str(char* c) {
 void print_tvalue(TValue_t v) {
 	switch(v.tag) {
 		case NUM:
-			if(v.num.f == 0) {
-				printf("%d\n", v.num.i);
-			} else {
-				uint32_t dec_part = FIX32_DEC_AS_INT(v.num.f);
-				uint8_t leading_zeroes = 5;
-				while (dec_part % 10 == 0) {
-					dec_part /= 10;
-					leading_zeroes--;
-				}
-				if(v.num.i < 0) {
-					printf("%d.%0*d\n", v.num.i+1, leading_zeroes, dec_part);
-				} else {
-					printf("%d.%0*d\n", v.num.i, leading_zeroes, dec_part);
-				}
-			}
+			char buf[12] = {0};
+			print_fix32(v.num, buf);
+			printf("%s\n", buf);
 			break;
 		case NUL:
 			printf("nil\n");
