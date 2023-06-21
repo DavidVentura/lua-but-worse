@@ -392,6 +392,12 @@ uint16_t make_str(char c[]) {
 
 TValue_t _concat(TValue_t a, TValue_t b) {
 	assert(a.tag == STR);
+	if(b.tag == NUM) {
+		char* buf = calloc(12, 1);
+		// FIXME: this leaks
+		print_fix32(b.num, buf);
+		b = TSTR(buf);
+	}
 	assert(b.tag == STR);
 
 	uint16_t alen = GETSTR(a).len;
