@@ -6,6 +6,36 @@
 #include <string.h>
 #include "fix32.h"
 
+
+#ifdef DEBUG
+ #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
+#else
+#define DEBUG_PRINT(...) do{ } while ( false )
+#endif
+
+
+/* Pending optimizations:
+ *
+ * Fast table access:
+ * For known table indexes, like in the case of 
+ * a = {x: 5, y: 6}
+ * a.z = 7
+ *
+ * instead of using `get_tabvalue(a, "x")`, a direct index can be assigned for both
+ * set & get.
+ * This would always bypass key lookup on `get`; and _can_ bypass the current
+ * linear lookup for a free slot for `set`; though that will be diminished with the
+ * pool bitmap
+ *
+ * Bitmap for "free table slot"
+ * Instead of iterating over the entire `tables` array to find a free slot,
+ * keep a 32-bit bitmap that represents the availability of the first 32 entries.
+ * Allocations will continue to be slow when there are >32 live tables.
+ * Using `__cntlz` (`nsau`) should make the lookup only cost 1 instruction.
+ *
+ * Fix32 to_bits and from_bits could return the internal representation of a 32-bit value
+ * which saves some masking & shifting
+ */
 enum __attribute__((__packed__)) typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
@@ -16,9 +46,6 @@ struct TValue_s {
 	// with u16 indexes -- on embedded targets, the pointers are 32 bits
 	// same as the fix32_t type.
 	union {
-		/*
-		char* str;
-		*/
 		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
 		Func_t fun;
@@ -28,8 +55,9 @@ struct TValue_s {
 };
 
 _Static_assert(sizeof(TValue_t) <= 64, "too big");
-_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit
-												   // 8 for padding. could be 1 with packed attr
+_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 8 for padding. could be 1 with packed attr
+												   // 8 total size on 32bit
+//_Static_assert(sizeof(TValue_t) == 8, "too big"); // 8 for pointer on 64bit
 
 typedef struct KV_s {
 	TValue_t key;
@@ -42,7 +70,15 @@ typedef struct Table_s {
 	uint16_t metatable_idx;
 	uint16_t len;
 	uint16_t count;
+	uint8_t refcount;
 } Table_t;
+// 8 on pointer 				(4 on 32bit)
+// 16 on TValue_t __idnex 		(8 on 32bit)
+// 7 on count/refcount/len/metatable_idx
+// 1 on padding
+_Static_assert(sizeof(Table_t) <= 32, "too big");
+// 20 on 32bit
+// _Static_assert(sizeof(Table_t) <= 20, "too big");
 
 Table_t* ENV;
 
@@ -55,16 +91,16 @@ typedef struct TArena_s {
 typedef struct Str_s {
 	uint8_t* data;
 	uint16_t len;
+	uint8_t refcount;
 } Str_t;
 
 typedef struct SArena_s {
 	Str_t* strings;
 	uint16_t len;
-	uint16_t used;
 } SArena_t;
 
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
-SArena_t _strings = {.strings=NULL, .len=0, .used=0};
+SArena_t _strings = {.strings=NULL, .len=0};
 Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 
 
@@ -75,6 +111,7 @@ Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
+#define GETSTRP(x)     (&_strings.strings[(x).str_idx])
 #define GETSTR(x)      (_strings.strings[(x).str_idx])
 #define GETTAB(x)      (&_tables.tables[(x).table_idx])
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
@@ -83,11 +120,11 @@ Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
-TValue_t T_NULL = {.tag = NUL};
+const TValue_t T_NULL = {.tag = NUL};
 const fix32_t _zero = (fix32_t){.i=0, .f=0};
 const fix32_t _one  = (fix32_t){.i=1, .f=0};
-TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
-TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
+const TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
+const TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
 
 
 Func_t __direct_call(Func_t f) {
@@ -357,7 +394,7 @@ TValue_t count(TValue_t t) {
 }
 
 uint16_t _find_str_index(Str_t s) {
-	for(uint16_t i=0; i<_strings.used; i++) {
+	for(uint16_t i=0; i<_strings.len; i++) {
 		if (_streq(_strings.strings[i], s)) {
 			return i;
 		}
@@ -366,38 +403,102 @@ uint16_t _find_str_index(Str_t s) {
 }
 
 uint16_t _store_str(Str_t s) {
-	if(_strings.len == _strings.used) {
+	uint16_t ret = UINT16_MAX;
+	for(uint16_t i = 0; i<_strings.len; i++) {
+		if (_strings.strings[i].len == 0) {
+			ret = i;
+			break;
+		}
+	}
+	if(ret == UINT16_MAX) {
+		uint16_t old_len = _strings.len;
 		uint16_t new_len = _strings.len == 0 ? 16 : _strings.len*2;
 		if (_strings.strings == NULL) {
 			_strings.strings = calloc(new_len, sizeof(Str_t));
+			// this calloc sets `len` to 0
+			// and we also set `len` to 0 when ref_count=0
 		} else {
 			_strings.strings = realloc(_strings.strings, new_len*sizeof(Str_t));
 		}
 		_strings.len = new_len;
+		ret = old_len + 1;
 	}
-	uint16_t ret = _strings.used;
-	_strings.strings[_strings.used] = s;
-	_strings.used++;
+	DEBUG_PRINT("Allocating a str for '%.*s' at %d\n", s.len, s.data, ret);
+	_strings.strings[ret] = s;
 	return ret;
 }
 
-uint16_t make_str(char c[]) {
-	Str_t s = (Str_t){.len=strlen(c), .data=(uint8_t*)c};
+uint16_t make_str(char* c) {
+	uint16_t len = strlen(c);
+	uint8_t* data = malloc(len);
+	memcpy(data, c, len);
+	Str_t s = (Str_t){.len=len, .data=data};
 	uint16_t strindex = _find_str_index(s);
 	if (strindex == UINT16_MAX) {
 		strindex = _store_str(s);
+	} else {
+		// TODO: less disgusting way of finding temp strings
+		free(data);
 	}
 	return strindex;
 }
 
-TValue_t _concat(TValue_t a, TValue_t b) {
-	assert(a.tag == STR);
-	if(b.tag == NUM) {
-		char* buf = calloc(12, 1);
-		// FIXME: this leaks
-		print_fix32(b.num, buf);
-		b = TSTR(buf);
+void _decref(TValue_t v) {
+	switch(v.tag) {
+		case NUL:
+		case NUM:
+		case FUN:
+		case BOOL:
+			// these are value types
+			break;
+		case TAB:
+			assert(GETTAB(v)->refcount > 0);
+			GETTAB(v)->refcount--;
+			break;
+		case STR:
+			assert(GETSTRP(v)->refcount > 0);
+			GETSTRP(v)->refcount--;
+			if(GETSTRP(v)->refcount==0) {
+				DEBUG_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
+				GETSTRP(v)->len = 0;
+				free(GETSTRP(v)->data);
+			}
+			break;
 	}
+}
+void _incref(TValue_t v) {
+	switch(v.tag) {
+		case NUL:
+		case NUM:
+		case FUN:
+		case BOOL:
+			// these are value types
+			break;
+		case TAB:
+			GETTAB(v)->refcount++;
+			break;
+		case STR:
+			DEBUG_PRINT("added refc on '%.*s'\n", GETSTRP(v)->len, GETSTRP(v)->data);
+			GETSTRP(v)->refcount++;
+			break;
+	}
+}
+
+void _set(TValue_t* dst, TValue_t src) {
+	_incref(src); // if dst == src, doing _decref first
+				  // may end up freeing a value, which 
+				  // immediately gets _incref'd
+	_decref(*dst);
+	memcpy(dst, &src, sizeof(TValue_t));
+}
+
+TValue_t _concat(TValue_t a, TValue_t b) {
+	// FIXME: this is bugged:
+	// when a string is "", its length is 0
+	// making it overwritable
+	// TODO: how to prevent unnecessary allocation
+	// when the key exists?
+	assert(a.tag == STR);
 	assert(b.tag == STR);
 
 	uint16_t alen = GETSTR(a).len;
@@ -411,6 +512,7 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	if (strindex == UINT16_MAX) {
 		strindex = _store_str(ret);
 	} else {
+		// DEBUG_PRINT("Was an unnecessary allocation\n");
 		free(data);
 	}
 
@@ -422,9 +524,23 @@ TValue_t __internal_debug_str_len() {
 }
 
 TValue_t __internal_debug_str_used() {
-	return TNUM(_strings.used);
+	uint16_t ret = 0;
+	for(uint16_t i = 0; i<_strings.len; i++) {
+		if(_strings.strings[i].len != 0) ret++;
+	}
+	return TNUM(ret);
 }
 
+TValue_t tostring(TValue_t v) {
+	// TODO: use a static buff
+	TValue_t ret;
+	assert(v.tag == NUM);
+	char* buf = calloc(12, 1);
+	print_fix32(v.num, buf);
+	ret = TSTR(buf);
+	free(buf);
+	return ret;
+}
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	bool eq = _equal(got, expected);
 	if (eq) return;
