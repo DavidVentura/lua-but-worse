@@ -13,6 +13,7 @@
   #define DEBUG_PRINT(...) do{ } while ( false )
 #endif
 
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
 #define gc __attribute__((__cleanup__(__decref)))
 /* Pending optimizations:
@@ -40,7 +41,7 @@
 enum __attribute__((__packed__)) typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
-typedef TValue_t (*Func_t)(TValue_t*);
+typedef TValue_t (*Func_t)(uint8_t c, TValue_t*);
 
 struct TValue_s {
 	// no size advantage on replacing the two pointers (str, num)
@@ -117,7 +118,7 @@ Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define GETTAB(x)      (&_tables.tables[(x).table_idx])
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
-#define CALL(x, y)     		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y)
+#define CALL(x, y)     		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(COUNT_OF(y), y)
 #define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
@@ -477,6 +478,16 @@ void _decref(TValue_t v) {
 }
 
 void __decref(TValue_t* v) {
+	switch(v->tag) {
+		case NUL:
+		case NUM:
+		case FUN:
+		case BOOL:
+			// these are value types
+			return;
+		default:
+			break;
+	}
 	DEBUG_PRINT("End of scope for: \n");
 	_decref(*v);
 	DEBUG_PRINT("/End of scope for: \n");
@@ -563,4 +574,10 @@ void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	print(expected);
 	printf("Got: ");
 	print(got);
+}
+
+
+TValue_t __get_array_index_capped(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
+	if(idx >= arrlen) return T_NULL;
+	return arr[idx];
 }
