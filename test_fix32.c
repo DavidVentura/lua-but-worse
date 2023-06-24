@@ -20,26 +20,6 @@ const fix32_t THREE = (fix32_t){.i=3, .f=0};
 const fix32_t FOUR 	= (fix32_t){.i=4, .f=0};
 const fix32_t FIVE 	= (fix32_t){.i=5, .f=0};
 
-void print_fix32(fix32_t num, char* buf) {
-	if(num.f == 0) {
-		sprintf(buf, "%d", num.i);
-		return;
-	}
-
-	if(num.i < 0) {
-		buf[0] = '-';
-		print_fix32((fix32_t){.i=-(num.i+1), .f=(0xFFFF-num.f+1)}, buf+1);
-		return;
-	}
-
-	uint32_t dec_part = FIX32_DEC_AS_INT(num.f);
-	uint8_t leading_zeroes = 5;
-	while (dec_part % 10 == 0) {
-		dec_part /= 10;
-		leading_zeroes--;
-	}
-	sprintf(buf, "%d.%0*d", num.i, leading_zeroes, dec_part);
-}
 
 void assert_very_close(fix32_t got, fix32_t expected) {
 	fix32_t epsilon = (fix32_t){.i=0, .f=1};
