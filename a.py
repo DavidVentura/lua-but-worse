@@ -55,8 +55,9 @@ def add_decls(tree):
                     continue
                 key = id(t.scope())
                 seen.setdefault(key, [])
-                if t.id not in [a.id for _, a in seen[key]]:
-                    seen[key].append((t.scope(), t))
+                if t.id not in [a.id for _, a, _ in seen[key]]:
+                    # True = local-assign
+                    seen[key].append((t.scope(), t, True))
 
         elif isinstance(n, Assign):
             # global variables, always go to the root
@@ -65,12 +66,13 @@ def add_decls(tree):
                 if isinstance(t, Index):
                     continue
                 seen.setdefault(key, [])
-                if t.id not in [a.id for _, a in seen[key]]:
-                    seen[key].append((tree.body, t))
+                if t.id not in [a.id for _, a, _ in seen[key]]:
+                    # False = non-local-assign
+                    seen[key].append((tree.body, t, False))
 
     for names in seen.values():
-        for block, name in names:
-            block.add_declaration(name)
+        for block, name, is_local in names:
+            block.add_declaration(name, is_local)
 
 def rename_stdlib_calls(tree):
     """
