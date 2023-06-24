@@ -368,6 +368,16 @@ uint16_t make_str(char* c) {
 	return strindex;
 }
 
+void _tab_decref(Table_t* t, uint16_t cur_idx) {
+	t->refcount--;
+	if(t->refcount==0) {
+		DEBUG_PRINT("nuked table %d\n", cur_idx);
+	}
+	if(t->metatable_idx != UINT16_MAX) {
+		DEBUG_PRINT("now nuking its metatable %d\n", t->metatable_idx);
+		_tab_decref(&_tables.tables[t->metatable_idx], t->metatable_idx);
+	}
+}
 void _decref(TValue_t v) {
 	switch(v.tag) {
 		case NUL:
@@ -378,10 +388,7 @@ void _decref(TValue_t v) {
 			break;
 		case TAB:
 			assert(GETTAB(v)->refcount > 0);
-			GETTAB(v)->refcount--;
-			if(GETTAB(v)->refcount==0) {
-				DEBUG_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
-			}
+			_tab_decref(GETTAB(v), v.table_idx);
 			break;
 		case STR:
 			assert(GETSTRP(v)->refcount > 0);
@@ -408,7 +415,7 @@ void __decref(TValue_t* v) {
 	}
 	DEBUG_PRINT("End of scope for: \n");
 	_decref(*v);
-	DEBUG_PRINT("/End of scope for: \n");
+	DEBUG_PRINT("/End of scope\n");
 }
 void _incref(TValue_t v) {
 	switch(v.tag) {
@@ -419,6 +426,7 @@ void _incref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
+			//DEBUG_PRINT("added refc on tab '%d'\n", GETTAB(v)->, GETTAB(v)->data);
 			GETTAB(v)->refcount++;
 			break;
 		case STR:
@@ -447,16 +455,21 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 
 	uint16_t alen = GETSTR(a).len;
 	uint16_t blen = GETSTR(b).len;
+
+	if(alen==0) return b;
+	if(blen==0) return a;
+
 	uint8_t* data = malloc(alen+blen);
 
 	memcpy(data, 		GETSTR(a).data, alen);
 	memcpy(data+alen, 	GETSTR(b).data, blen);
 	Str_t ret = (Str_t){.len=alen+blen, .data=data};
+
 	uint16_t strindex = _find_str_index(ret);
 	if (strindex == UINT16_MAX) {
 		strindex = _store_str(ret);
 	} else {
-		// DEBUG_PRINT("Was an unnecessary allocation\n");
+		DEBUG_PRINT("Was an unnecessary allocation\n");
 		free(data);
 	}
 
