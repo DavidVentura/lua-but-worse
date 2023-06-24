@@ -10,10 +10,11 @@
 #ifdef DEBUG
  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
 #else
-#define DEBUG_PRINT(...) do{ } while ( false )
+  #define DEBUG_PRINT(...) do{ } while ( false )
 #endif
 
 
+#define gc __attribute__((__cleanup__(__decref)))
 /* Pending optimizations:
  *
  * Fast table access:
@@ -465,6 +466,10 @@ void _decref(TValue_t v) {
 			}
 			break;
 	}
+}
+
+void __decref(TValue_t* v) {
+	_decref(*v);
 }
 void _incref(TValue_t v) {
 	switch(v.tag) {
