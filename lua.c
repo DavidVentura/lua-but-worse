@@ -249,13 +249,12 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 		}
 		return;
 	}
-	if (first_null == UINT16_MAX) {
-		// did not find a matching key nor any NULs
-		grow_table(t.table_idx);
-		// cannot fail
-		// TODO: assign straight into old_len+1
-		return set_tabvalue(t, key, v);
-	}
+	assert(first_null == UINT16_MAX);
+	// did not find a matching key nor any NULs
+	grow_table(t.table_idx);
+	// cannot fail
+	// TODO(OPT): assign straight into old_len+1
+	return set_tabvalue(t, key, v);
 }
 
 TValue_t get_tabvalue(TValue_t u, TValue_t key) {
@@ -300,15 +299,20 @@ TValue_t _sqrt(TValue_t a) {
 }
 
 void _pluseq(TValue_t* a, TValue_t b) {
-	fix32_pluseq(&a->num, b.num); // TODO assert
+	assert(a->tag == NUM);
+	assert(b.tag == NUM);
+	fix32_pluseq(&a->num, b.num);
 }
 
 bool _lt(TValue_t a, TValue_t b) {
-	return fix32_lt(a.num, b.num); // TODO assert
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	return fix32_lt(a.num, b.num);
 }
 
 TValue_t _invert_sign(TValue_t a) {
-	return TNUM(fix32_invert_sign(a.num)); // TODO assert
+	assert(a.tag == NUM);
+	return TNUM(fix32_invert_sign(a.num));
 }
 
 bool __mbool(bool b) {
@@ -348,6 +352,7 @@ uint16_t make_table(uint16_t size) {
 		.__index = T_NULL,
 	};
 
+	// TODO(CORR): find correct index for table
 	_tables.used++;
 	_tables.tables[_tables.used] = ret;
 	return _tables.used;
@@ -377,14 +382,14 @@ void setmetatable(TValue_t t, TValue_t meta) {
 
 void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
-	assert(v.tag == NUM); //TODO not true, tables can override this
+	assert(v.tag == NUM); //TODO(CORR): tables can override this
 	TValue_t newval = _add(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
 }
 
 void idiv_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
-	assert(v.tag == NUM); //TODO not true, tables can override this
+	assert(v.tag == NUM); //TODO(CORR): tables can override this
 	TValue_t newval = _div(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
 }
@@ -438,7 +443,7 @@ uint16_t make_str(char* c) {
 	if (strindex == UINT16_MAX) {
 		strindex = _store_str(s);
 	} else {
-		// TODO: less disgusting way of finding temp strings
+		// TODO(OPT): less disgusting way of finding temp strings
 		free(data);
 	}
 	return strindex;
@@ -455,6 +460,9 @@ void _decref(TValue_t v) {
 		case TAB:
 			assert(GETTAB(v)->refcount > 0);
 			GETTAB(v)->refcount--;
+			if(GETTAB(v)->refcount==0) {
+				DEBUG_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
+			}
 			break;
 		case STR:
 			assert(GETSTRP(v)->refcount > 0);
@@ -469,7 +477,9 @@ void _decref(TValue_t v) {
 }
 
 void __decref(TValue_t* v) {
+	DEBUG_PRINT("End of scope for: \n");
 	_decref(*v);
+	DEBUG_PRINT("/End of scope for: \n");
 }
 void _incref(TValue_t v) {
 	switch(v.tag) {
@@ -501,7 +511,7 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	// FIXME: this is bugged:
 	// when a string is "", its length is 0
 	// making it overwritable
-	// TODO: how to prevent unnecessary allocation
+	// TODO(OPT): how to prevent unnecessary allocation
 	// when the key exists?
 	assert(a.tag == STR);
 	assert(b.tag == STR);
@@ -537,7 +547,7 @@ TValue_t __internal_debug_str_used() {
 }
 
 TValue_t tostring(TValue_t v) {
-	// TODO: use a static buff
+	// TODO(OPT): use a static buff
 	TValue_t ret;
 	assert(v.tag == NUM);
 	char* buf = calloc(12, 1);
