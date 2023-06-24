@@ -1,8 +1,10 @@
+#ifndef FIX32
+#define FIX32
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-typedef struct fix32_s {
+typedef struct __attribute__((__packed__))fix32_s {
 	int16_t i;
 	uint16_t f;
 } fix32_t;
@@ -191,3 +193,4 @@ void print_fix32(fix32_t num, char* buf) {
 	}
 	sprintf(buf, "%d.%0*d", num.i, leading_zeroes, dec_part);
 }
+#endif

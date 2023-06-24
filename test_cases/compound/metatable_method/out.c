@@ -1,15 +1,15 @@
-#include "lua.c"
-TValue_t b;
-TValue_t a;
+#include "pico8.h"
+TValue_t b = T_NULL;
+TValue_t a = T_NULL;
 TValue_t __preinit();
-TValue_t __a_method(TValue_t *function_arguments);
+TValue_t __a_method(uint8_t argc, TValue_t *function_arguments);
 TValue_t __main();
 
 TValue_t __main() {
-  a = TTAB(make_table(2));
+  _set(&a, TTAB(make_table(2)));
   set_tabvalue(a, TSTR("__index"), a);
   set_tabvalue(a, TSTR("method"), TFUN(__a_method));
-  b = TTAB(make_table(0));
+  _set(&b, TTAB(make_table(0)));
   setmetatable(b, a);
   CALL((get_tabvalue(b, TSTR("method"))), ((TValue_t[]){b}));
   print(get_tabvalue(a, TSTR("x")));
@@ -19,9 +19,9 @@ TValue_t __main() {
   print(get_tabvalue(b, TSTR("x")));
 }
 
-TValue_t __a_method(TValue_t *function_arguments) {
-  TValue_t self;
-  self = function_arguments[0]; // unknown type
+TValue_t __a_method(uint8_t argc, TValue_t *function_arguments) {
+  TValue_t gc self = T_NULL;
+  _set(&self, __get_array_index_capped(function_arguments, argc, 0)); // unknown type
   set_tabvalue(self, TSTR("x"), TNUM16(5));
   return T_NULL;
 }

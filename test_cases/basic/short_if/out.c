@@ -1,15 +1,15 @@
-#include "lua.c"
-TValue_t e;
-TValue_t d;
-TValue_t c;
-TValue_t b;
-TValue_t a;
-TValue_t test;
+#include "pico8.h"
+TValue_t e = T_NULL;
+TValue_t d = T_NULL;
+TValue_t c = T_NULL;
+TValue_t b = T_NULL;
+TValue_t a = T_NULL;
+TValue_t test = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  test = T_FALSE;
+  _set(&test, T_FALSE);
 
   if (_bool(test)) {
     return TNUM16(5);
@@ -18,20 +18,20 @@ TValue_t __main() {
   if (_bool(test)) {
     return TNUM16(5);
   } else {
-    a = TNUM16(1);
+    _set(&a, TNUM16(1));
   }
 
   if (_bool(test)) {
     return TNUM16(5);
   } else {
-    b = TNUM16(2);
-    c = TNUM16(3);
+    _set(&b, TNUM16(2));
+    _set(&c, TNUM16(3));
   }
 
   if (!_bool(test)) {
-    d = _invert_sign(TNUM16(4)); // unknown type
+    _set(&d, _invert_sign(TNUM16(4))); // unknown type
   } else {
-    e = TNUM16(0);
+    _set(&e, TNUM16(0));
   }
   print(a);
   print(b);

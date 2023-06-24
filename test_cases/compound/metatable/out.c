@@ -1,15 +1,15 @@
-#include "lua.c"
-TValue_t b;
-TValue_t a;
+#include "pico8.h"
+TValue_t b = T_NULL;
+TValue_t a = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  a = TTAB(make_table(4));
+  _set(&a, TTAB(make_table(4)));
   // Fields for table a
   set_tabvalue(a, TSTR("x"), TNUM16(5));
   set_tabvalue(a, TSTR("__index"), a);
-  b = TTAB(make_table(0));
+  _set(&b, TTAB(make_table(0)));
   setmetatable(b, a);
   print(get_tabvalue(b, TSTR("x")));
   iadd_tab(b, TSTR("x"), TNUM16(5));

@@ -559,7 +559,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     #gen = string.Template('''#include "lua.c"
     #        ''').substitute(field_to_idx=field_to_idx, var_init=var_init, idx_to_name=idx_to_name, ff_len=ff_len)
 
-    gen = '#include "lua.c"\n'
+    gen = '#include "pico8.h"\n'
     ret = gen
     ret += tree.body.dump()
     if testing_params != None:

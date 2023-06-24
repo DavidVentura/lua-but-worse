@@ -5,4 +5,5 @@ function main()
 	local twos = "22222222222222222222"
 	print(ones..twos)
 	print("a"..5)
+	print(""..5)
 end
