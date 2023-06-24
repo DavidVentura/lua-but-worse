@@ -422,11 +422,11 @@ def transform_functions_to_vec_args(tree):
         # after args declaration, assign the index value
         for arg in n.args[::-1]:
             idx = n.args.index(arg)
-            aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'))
+            aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'), Name('argc'))
             #n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
             n.body.body.insert(0, LocalAssign([arg], [aidx], parent=n.body))
 
-        n.args = [Name('function_arguments', type=Type.UNK_PTR)]
+        n.args = [Name('argc', type=Type.BARE_NUMBER), Name('function_arguments', type=Type.UNK_PTR)]
 
 def transform_methods(tree):
     """
