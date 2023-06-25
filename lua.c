@@ -65,9 +65,9 @@ void print_str(char* c) {
 }
 
 void print_tvalue(TValue_t v) {
+	char buf[12] = {0};
 	switch(v.tag) {
 		case NUM:
-			char buf[12] = {0};
 			print_fix32(v.num, buf);
 			printf("%s\n", buf);
 			break;
@@ -185,7 +185,7 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 			case TAB:
 				return get_tabvalue(TTAB(__index.table_idx), key);
 			case FUN:
-				return CALL(__index, ((TValue_t[]){key}));
+				return CALL(__index, 1, ((TValue_t[]){key}));
 			default:
 				assert(false);
 		}

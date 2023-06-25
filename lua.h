@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "fix32.h"
 
-enum __attribute__((__packed__)) typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
+enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
 typedef TValue_t (*Func_t)(uint8_t c, TValue_t*);
@@ -81,16 +81,18 @@ const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define GETTAB(x)      (&_tables.tables[(x).table_idx])
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
-#define CALL(x, y)     		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(COUNT_OF(y), y)
+#define CALL(x, y, z)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y, z)
 #define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
-const TValue_t T_NULL = {.tag = NUL};
-const fix32_t _zero = (fix32_t){.i=0, .f=0};
-const fix32_t _one  = (fix32_t){.i=1, .f=0};
-const TValue_t T_TRUE =  {.tag = BOOL, .num = _one};
-const TValue_t T_FALSE = {.tag = BOOL, .num = _zero};
+// Declaring this as a `const TValue_t` still raises warnings
+// the warnings are solved by making the enum const (wtf?)
+// but that raises other warnings
+#define T_NULL ((TValue_t){.tag = NUL})
+const fix32_t _zero = {.i=0, .f=0};
+const fix32_t _one  = {.i=1, .f=0};
+const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
+const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 
-#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 #define gc __attribute__((__cleanup__(__decref)))
 #endif
