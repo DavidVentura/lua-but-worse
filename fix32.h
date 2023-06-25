@@ -1,6 +1,7 @@
 #ifndef FIX32
 #define FIX32
 #include <stdint.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -16,6 +17,11 @@ int32_t fix32_to_int32(fix32_t f) {
 
 fix32_t fix32_from_int16(int16_t i) {
 	return (fix32_t){.i = i, .f = 0};
+}
+
+fix32_t fix32_from_uint16(uint16_t i) {
+	assert(i <= INT16_MAX);
+	return (fix32_t){.i = (int16_t)i, .f = 0};
 }
 
 fix32_t fix32_from_int8(int8_t i) {
@@ -50,6 +56,10 @@ fix32_t fix32_sub(fix32_t a, fix32_t b) {
 	int32_t _a = fix32_to_bits(a);
 	int32_t _b = fix32_to_bits(b);
 	return fix32_from_bits(_a - _b);
+}
+
+fix32_t fix32_ceil(fix32_t a) {
+	return (fix32_t){.i=(int16_t)(a.i+1), .f=0};
 }
 
 fix32_t fix32_add(fix32_t a, fix32_t b) {
