@@ -11,6 +11,8 @@ TValue_t __main();
 
 TValue_t __main() {
   TValue_t gc x = T_NULL;
+  TValue_t gc y = T_NULL;
+
   _set(&x, TNUM16(1));
   _pluseq(&x, TNUM16(2));
   _set(&a, TNUM16(1));
@@ -29,6 +31,7 @@ TValue_t __main() {
   print(e);
   print(get_tabvalue(u, TSTR("a")));
   print(get_tabvalue(o, TSTR("a")));
+  print(y);
   return TNUM16(0);
 }
 

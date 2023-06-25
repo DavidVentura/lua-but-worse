@@ -1,4 +1,5 @@
 function main()
+	local y -- not assigned anything
     local x = 1
     x += 2
     a, b = 1, 2
@@ -14,5 +15,6 @@ function main()
     print(e)
     print(u.a)
     print(o.a)
+	print(y)
     return 0
 end
