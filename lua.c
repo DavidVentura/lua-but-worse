@@ -77,6 +77,13 @@ void print_tvalue(TValue_t v) {
 		case STR:
 			printf("%.*s\n", GETSTR(v).len, GETSTR(v).data);
 			break;
+		case BOOL:
+			if(v.num.i == 0) {
+				printf("false\n");
+			} else {
+				printf("true\n");
+			}
+			break;
 		default:
 			printf("idk how to print with tag %d\n", v.tag);
 			break;
@@ -238,15 +245,21 @@ bool __mbool(bool b) {
 	return b;
 }
 bool __bool(TValue_t a) {
-	if(a.tag == NUM)
-		return a.num.i != 0 || a.num.f != 0;
-	if(a.tag == STR)
-		return GETSTR(a).len > 0;
 	if(a.tag == NUL)
 		return false;
 	if(a.tag == BOOL)
 		return a.num.i != 0;
-	return false;
+	return true;
+}
+
+TValue_t _or(TValue_t a, TValue_t b) {
+	// TODO: short-cut evaluation for function calls
+	return __bool(a) ? a : b;
+}
+
+TValue_t _and(TValue_t a, TValue_t b) {
+	// TODO: short-cut evaluation for function calls
+	return __bool(a) && __bool(b) ? b : a;
 }
 
 uint16_t make_table(uint16_t size) {
