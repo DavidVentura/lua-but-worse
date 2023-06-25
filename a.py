@@ -49,6 +49,8 @@ def add_decls(tree):
 
     seen = {}
     for n in tree_visitor.nodes:
+        if not isinstance(n, (Assign, LocalAssign)):
+            continue
         if isinstance(n, LocalAssign):
             for t in n.targets:
                 if isinstance(t, Index):
@@ -58,13 +60,18 @@ def add_decls(tree):
                 if t.id not in [a.id for _, a, _ in seen[key]]:
                     # True = local-assign
                     seen[key].append((t.scope(), t, True))
-
         elif isinstance(n, Assign):
             # global variables, always go to the root
             key = id(tree.body)
             for t in n.targets:
                 if isinstance(t, Index):
                     continue
+                local_key = id(t.scope())
+                if t.id in [a.id for _, a, _ in seen.get(local_key, [])]:
+                    # a LocalAssign (local var = ..) has been seen in the same scope
+                    # as this variable; do not create a global
+                    continue
+
                 seen.setdefault(key, [])
                 if t.id not in [a.id for _, a, _ in seen[key]]:
                     # False = non-local-assign
