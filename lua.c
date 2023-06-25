@@ -117,8 +117,8 @@ bool equal(TValue_t a, TValue_t b) {
 			return false;
 	}
 }
-bool _equal(TValue_t a, TValue_t b) {
-	return equal(a, b);
+TValue_t _equal(TValue_t a, TValue_t b) {
+	return TBOOL(equal(a, b));
 }
 
 
@@ -180,6 +180,7 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 }
 
 TValue_t get_tabvalue(TValue_t u, TValue_t key) {
+	if(key.tag == NUL) return T_NULL;
 	Table_t* t = GETTAB(u);
 	for(uint16_t i=0; i<t->len; i++) {
 		if (equal(t->kvs[i].key, key)) {
@@ -195,6 +196,20 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 				return CALL(__index, 1, ((TValue_t[]){key}));
 			default:
 				assert(false);
+		}
+	}
+	return T_NULL;
+}
+
+TValue_t del_tabvalue(TValue_t u, TValue_t key) {
+	if(key.tag == NUL) return T_NULL;
+	Table_t* t = GETTAB(u);
+	for(uint16_t i=0; i<t->len; i++) {
+		if (equal(t->kvs[i].key, key)) {
+			TValue_t ret = t->kvs[i].value;
+			t->kvs[i].key = T_NULL;
+			t->kvs[i].value = T_NULL;
+			return ret;
 		}
 	}
 	return T_NULL;
@@ -230,15 +245,49 @@ void _pluseq(TValue_t* a, TValue_t b) {
 	fix32_pluseq(&a->num, b.num);
 }
 
-bool _lt(TValue_t a, TValue_t b) {
+void _minuseq(TValue_t* a, TValue_t b) {
+	assert(a->tag == NUM);
+	assert(b.tag == NUM);
+	fix32_minuseq(&a->num, b.num);
+}
+
+TValue_t _geq(TValue_t a, TValue_t b) {
 	assert(a.tag == NUM);
 	assert(b.tag == NUM);
-	return fix32_lt(a.num, b.num);
+	return TBOOL(fix32_geq(a.num, b.num));
+}
+
+TValue_t _gt(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	return TBOOL(fix32_gt(a.num, b.num));
+}
+
+TValue_t _leq(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	return TBOOL(fix32_leq(a.num, b.num));
+}
+
+TValue_t _lt(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	return TBOOL(fix32_lt(a.num, b.num));
 }
 
 TValue_t _invert_sign(TValue_t a) {
 	assert(a.tag == NUM);
 	return TNUM(fix32_invert_sign(a.num));
+}
+
+TValue_t _notequal(TValue_t a, TValue_t b) {
+	return TBOOL(!equal(a, b));
+}
+
+TValue_t _mod(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	return (TValue_t){.tag=BOOL, .num=(fix32_mod(a.num, b.num))};
 }
 
 bool __mbool(bool b) {
@@ -316,6 +365,13 @@ void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	assert(v.tag == NUM); //TODO(CORR): tables can override this
 	TValue_t newval = _add(get_tabvalue(t, key), v);
+	set_tabvalue(t, key, newval);
+}
+
+void isub_tab(TValue_t t, TValue_t key, TValue_t v) {
+	assert(t.tag == TAB);
+	assert(v.tag == NUM); //TODO(CORR): tables can override this
+	TValue_t newval = _sub(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
 }
 
@@ -512,7 +568,7 @@ TValue_t tostring(TValue_t v) {
 	return ret;
 }
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
-	bool eq = _equal(got, expected);
+	bool eq = equal(got, expected);
 	if (eq) return;
 	printf("Expected: ");
 	printh(expected);
@@ -562,4 +618,14 @@ fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default) 
 	if(idx >= arrlen) return _default;
 	assert(arr[idx].tag == NUM);
 	return arr[idx].num;
+}
+
+Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
+	assert(idx < arrlen);
+	if(arr[idx].tag == STR) {
+		return GETSTRP(arr[idx]);
+	} else {
+		DEBUG_PRINT("Tried to __get_str a non-str: %d\n", arr[idx].tag);
+		return &_strings.strings[0];
+	}
 }
