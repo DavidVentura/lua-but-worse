@@ -8,37 +8,8 @@ from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, Stri
         AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab, Return
         )
 
-# TODO: broken parsing when declaring local variables with no value:
-# ```
-# local j
-# ```
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
-
-def free_local_tables(tree):
-    """
-    Call `free_table` for every LocalAssign
-    """
-    tree_visitor = ast.WalkVisitor()
-    tree_visitor.visit(tree)
-    for n in tree_visitor.nodes:
-        if not isinstance(n, LocalAssign):
-            continue
-        _assign_scope = _first_parent_of_type(n, (Block,))
-        assert len(n.targets) == len(n.values)
-        for i in range(0, len(n.targets)):
-            target = n.targets[i]
-            value = n.values[i]
-            if not isinstance(value, Table):
-                continue
-            # TODO: This is len-1 as it includes the "free" return at the end of the function
-            # what happens when there are multiple return paths though?
-            _call = Call(Name("free_tvalue"), [target], parent=_assign_scope)
-            if isinstance(_assign_scope.body[-1], Return):
-                _assign_scope.body.insert(len(_assign_scope.body)-1, _call)
-            else:
-                _assign_scope.body.append(_call)
 
 def add_decls(tree):
     """
@@ -548,8 +519,6 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
-    # must be the last one
-    free_local_tables(tree)
     #static_table_fields = find_static_table_accesses(tree)
     #static_table_fields = [] # FIXME LATER
 
