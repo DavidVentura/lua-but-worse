@@ -95,4 +95,11 @@ const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
 const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 
 #define gc __attribute__((__cleanup__(__decref)))
+
+int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default);
+int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default);
+fix32_t __get_num(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+bool __opt_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx, bool _default);
+bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx);
 #endif

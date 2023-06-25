@@ -512,3 +512,41 @@ TValue_t __get_array_index_capped(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
 	if(idx >= arrlen) return T_NULL;
 	return arr[idx];
 }
+
+int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
+	assert(idx < arrlen);
+	assert(arr[idx].tag == NUM);
+	assert(arr[idx].num.f == 0);
+	return arr[idx].num.i;
+}
+
+int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default) {
+	if(idx >= arrlen) return _default;
+	assert(arr[idx].tag == NUM);
+	assert(arr[idx].num.f == 0);
+	return arr[idx].num.i;
+}
+
+bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
+	assert(idx < arrlen);
+	assert(arr[idx].tag == BOOL);
+	return __bool(arr[idx]);
+}
+
+bool __opt_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx, bool _default) {
+	if(idx >= arrlen) return _default;
+	assert(arr[idx].tag == BOOL);
+	return __bool(arr[idx]);
+}
+
+fix32_t __get_num(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
+	assert(idx < arrlen);
+	assert(arr[idx].tag == NUM);
+	return arr[idx].num;
+}
+
+fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default) {
+	if(idx >= arrlen) return _default;
+	assert(arr[idx].tag == NUM);
+	return arr[idx].num;
+}
