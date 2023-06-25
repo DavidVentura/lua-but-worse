@@ -8,6 +8,10 @@ stdlib(map);
 stdlib(spr);
 stdlib(cls);
 
+TValue_t _printh(uint8_t argc, TValue_t* argv) {
+	assert(argc==1);
+	printh(argv[0]);
+}
 TValue_t rnd(TValue_t v) {
 	//_Static_assert(RAND_MAX >= UINT16_MAX, "Rand is not big enough to use trivially");
 	assert(v.tag == NUM); // TODO table
