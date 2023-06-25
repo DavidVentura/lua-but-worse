@@ -17,7 +17,7 @@ TValue_t _inner(uint8_t argc, TValue_t *function_arguments) {
 }
 
 TValue_t __main() {
-  CALL((_inner), ((TValue_t[]){}));
+  CALL((_inner), 0, NULL);
   __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(1));
 }
 

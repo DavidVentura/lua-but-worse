@@ -17,11 +17,11 @@ TValue_t f(uint8_t argc, TValue_t *function_arguments) {
 
 TValue_t __main() {
   print(TSTR("all"));
-  CALL((f), ((TValue_t[]){TNUM16(1), TNUM16(2), TNUM16(3)}));
+  CALL((f), 3, ((TValue_t[3]){TNUM16(1), TNUM16(2), TNUM16(3)}));
   print(TSTR("2 missing"));
-  CALL((f), ((TValue_t[]){TNUM16(1)}));
+  CALL((f), 1, ((TValue_t[1]){TNUM16(1)}));
   print(TSTR("all missing"));
-  CALL((f), ((TValue_t[]){}));
+  CALL((f), 0, NULL);
 }
 
 TValue_t __preinit() {}

@@ -10,8 +10,8 @@ TValue_t something(uint8_t argc, TValue_t *function_arguments) {
 }
 
 TValue_t __main() {
-  CALL((something), ((TValue_t[]){TNUM16(5)}));
-  print(CALL((something), ((TValue_t[]){TNUM16(6)})));
+  CALL((something), 1, ((TValue_t[1]){TNUM16(5)}));
+  print(CALL((something), 1, ((TValue_t[1]){TNUM16(6)})));
 }
 
 TValue_t __preinit() {}

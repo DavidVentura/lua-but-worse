@@ -14,15 +14,15 @@ TValue_t __main();
 TValue_t __main() {
   _set(&captured, TNUM16(7));
   _set(&a, TFUN(__anonymous_function_a));
-  print(CALL((a), ((TValue_t[]){TNUM16(5)})));
+  print(CALL((a), 1, ((TValue_t[1]){TNUM16(5)})));
   _set(&b, TFUN(__anonymous_function_b));
-  print(CALL((b), ((TValue_t[]){TNUM16(5), TNUM16(6)})));
+  print(CALL((b), 2, ((TValue_t[2]){TNUM16(5), TNUM16(6)})));
   _set(&c, TTAB(make_table(2)));
   set_tabvalue(c, TSTR("f"), TFUN(__anonymous_function_f));
-  print(CALL((get_tabvalue(c, TSTR("f"))), ((TValue_t[]){})));
+  print(CALL((get_tabvalue(c, TSTR("f"))), 0, NULL));
   _set(&v, TSTR("index"));
   set_tabvalue(c, v, TFUN(__anonymous_function_v));
-  print(CALL((get_tabvalue(c, v)), ((TValue_t[]){})));
+  print(CALL((get_tabvalue(c, v)), 0, NULL));
   return TNUM16(0);
 }
 

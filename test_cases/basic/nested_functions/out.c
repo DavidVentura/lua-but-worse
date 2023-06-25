@@ -6,7 +6,7 @@ TValue_t __main();
 
 TValue_t __main() {
   _set(&b, TFUN(__nested_func_b)); // unknown type
-  CALL((b), ((TValue_t[]){}));
+  CALL((b), 0, NULL);
 }
 
 TValue_t __nested_func_b(uint8_t argc, TValue_t *function_arguments) { print(TNUM16(5)); }

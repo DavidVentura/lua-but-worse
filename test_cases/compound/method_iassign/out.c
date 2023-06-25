@@ -9,10 +9,10 @@ TValue_t __main();
 TValue_t __main() {
   TValue_t gc one = T_NULL;
   TValue_t gc zero = T_NULL;
-  _set(&zero, CALL((get_tabvalue(vector, TSTR("new"))), ((TValue_t[]){TNUM16(0), TNUM16(0)}))); // unknown type
-  print(CALL((get_tabvalue(zero, TSTR("len"))), ((TValue_t[]){zero})));
-  _set(&one, CALL((get_tabvalue(vector, TSTR("new"))), ((TValue_t[]){TNUM16(1), TNUM16(1)}))); // unknown type
-  print(CALL((get_tabvalue(one, TSTR("len"))), ((TValue_t[]){one})));
+  _set(&zero, CALL((get_tabvalue(vector, TSTR("new"))), 2, ((TValue_t[2]){TNUM16(0), TNUM16(0)}))); // unknown type
+  print(CALL((get_tabvalue(zero, TSTR("len"))), 1, ((TValue_t[1]){zero})));
+  _set(&one, CALL((get_tabvalue(vector, TSTR("new"))), 2, ((TValue_t[2]){TNUM16(1), TNUM16(1)}))); // unknown type
+  print(CALL((get_tabvalue(one, TSTR("len"))), 1, ((TValue_t[1]){one})));
 }
 
 TValue_t __table_func_vector_new(uint8_t argc, TValue_t *function_arguments) {
@@ -38,9 +38,9 @@ TValue_t __vector_len(uint8_t argc, TValue_t *function_arguments) {
 TValue_t __vector_normal(uint8_t argc, TValue_t *function_arguments) {
   TValue_t gc self = T_NULL;
   _set(&self, __get_array_index_capped(function_arguments, argc, 0)); // unknown type
-  set_tabvalue(self, TSTR("a"), CALL((get_tabvalue(self, TSTR("len"))), ((TValue_t[]){self})));
-  idiv_tab(self, TSTR("x"), CALL((get_tabvalue(self, TSTR("len"))), ((TValue_t[]){self})));
-  idiv_tab(self, TSTR("y"), CALL((get_tabvalue(self, TSTR("len"))), ((TValue_t[]){self})));
+  set_tabvalue(self, TSTR("a"), CALL((get_tabvalue(self, TSTR("len"))), 1, ((TValue_t[1]){self})));
+  idiv_tab(self, TSTR("x"), CALL((get_tabvalue(self, TSTR("len"))), 1, ((TValue_t[1]){self})));
+  idiv_tab(self, TSTR("y"), CALL((get_tabvalue(self, TSTR("len"))), 1, ((TValue_t[1]){self})));
 }
 
 TValue_t __preinit() {
