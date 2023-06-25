@@ -11,6 +11,8 @@ typedef struct __attribute__((__packed__))fix32_s {
 } fix32_t;
 
 
+const fix32_t __ZERO = (fix32_t){.i=0, .f=0};
+
 int32_t fix32_to_int32(fix32_t f) {
 	return f.i;
 }
@@ -105,6 +107,16 @@ void fix32_pluseq(fix32_t* a, fix32_t b) {
 	*a = fix32_add(*a, b);
 }
 
+void fix32_minuseq(fix32_t* a, fix32_t b) {
+	*a = fix32_sub(*a, b);
+}
+
+bool fix32_geq(fix32_t a, fix32_t b) {
+	if( a.i < b.i ) return false;
+	if( a.i == b.i && a.f < b.f ) return false;
+	return true;
+}
+
 bool fix32_gt(fix32_t a, fix32_t b) {
 	if( a.i < b.i ) return false;
 	if( a.i == b.i && a.f <= b.f ) return false;
@@ -117,9 +129,23 @@ bool fix32_lt(fix32_t a, fix32_t b) {
 	return true;
 }
 
+bool fix32_leq(fix32_t a, fix32_t b) {
+	if( a.i > b.i ) return false;
+	if( a.i == b.i && a.f > b.f ) return false;
+	return true;
+}
+
 fix32_t fix32_abs(fix32_t v) {
 	if (v.i >= 0) return v;
 	return fix32_invert_sign(v);
+}
+
+fix32_t fix32_mod(fix32_t a, fix32_t b) {
+	// http://www.lua.org/manual/5.2/manual.html#3.4.1
+	// a % b == a - math.floor(a/b)*b
+	if(a.i==0 && a.f == 0) return a;
+	if(b.i==0 && b.f == 0) return a;
+	return fix32_sub(a, fix32_mul(fix32_flr(fix32_div(a, b)), b));
 }
 
 fix32_t fix32_sqrt(fix32_t v) {
