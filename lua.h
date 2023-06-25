@@ -96,6 +96,8 @@ const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 
 #define gc __attribute__((__cleanup__(__decref)))
 
+Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+
 int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default);
 int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx);
 fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default);
