@@ -9,9 +9,9 @@ function main()
   b = {}
   setmetatable(b, a)
   b:method()
-  print(a.x)
-  print(b.x)
+  printh(a.x)
+  printh(b.x)
   a:method()
-  print(a.x)
-  print(b.x)
+  printh(a.x)
+  printh(b.x)
 end

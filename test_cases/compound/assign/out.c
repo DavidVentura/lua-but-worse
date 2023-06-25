@@ -32,11 +32,11 @@ TValue_t __main() {
   set_tabvalue(_anonymous_table_0, TNUM16(7), TNUM16(8));
   set_tabvalue(_anonymous_table_0, TNUM16(8), TNUM16(7));
   _set(&t, get_tabvalue(_anonymous_table_0, t)); // unknown type
-  print(_mult(a, c));
-  print(_mult(b, d));
-  print(e);
-  print(get_tabvalue(o, TSTR("a")));
-  print(t);
+  printh(_mult(a, c));
+  printh(_mult(b, d));
+  printh(e);
+  printh(get_tabvalue(o, TSTR("a")));
+  printh(t);
   return TNUM16(0);
 }
 

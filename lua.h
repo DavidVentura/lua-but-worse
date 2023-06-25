@@ -82,7 +82,7 @@ const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
 #define CALL(x, y, z)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y, z)
-#define print(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
+#define printh(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 // Declaring this as a `const TValue_t` still raises warnings

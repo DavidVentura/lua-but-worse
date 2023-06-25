@@ -4,8 +4,8 @@ function main()
     u = {a=1} -- u is global, should not get freed
     t = ({[7]=8,[8]=7})[7] -- t uses an "anonymous table"
 						   -- which should be created locally and freed
-	print(o.key)
-	print(u.a)
-	print(t)
+	printh(o.key)
+	printh(u.a)
+	printh(t)
     return 0
 end

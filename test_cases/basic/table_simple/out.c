@@ -19,24 +19,24 @@ TValue_t __main() {
   set_tabvalue(member, TSTR("x"), _invert_sign(TNUM(fix32_from_float(1.5f))));
   set_tabvalue(member, TSTR("y"), TNUM16(66));
   _set(&empty, TTAB(make_table(0)));
-  print(get_tabvalue(squares, TNUM16(2)));
-  print(get_tabvalue(member, TSTR("x")));
-  print(get_tabvalue(member, TSTR("y")));
+  printh(get_tabvalue(squares, TNUM16(2)));
+  printh(get_tabvalue(member, TSTR("x")));
+  printh(get_tabvalue(member, TSTR("y")));
   _set(&adder, TTAB(make_table(4)));
   set_tabvalue(adder, TSTR("a"), TNUM16(1));
-  print(get_tabvalue(adder, TSTR("a")));
+  printh(get_tabvalue(adder, TSTR("a")));
   set_tabvalue(adder, TSTR("b"), TNUM16(2));
-  print(get_tabvalue(adder, TSTR("a")));
-  print(get_tabvalue(adder, TSTR("b")));
+  printh(get_tabvalue(adder, TSTR("a")));
+  printh(get_tabvalue(adder, TSTR("b")));
   set_tabvalue(adder, TSTR("c"), TNUM16(3));
-  print(get_tabvalue(adder, TSTR("a")));
-  print(get_tabvalue(adder, TSTR("b")));
-  print(get_tabvalue(adder, TSTR("c")));
+  printh(get_tabvalue(adder, TSTR("a")));
+  printh(get_tabvalue(adder, TSTR("b")));
+  printh(get_tabvalue(adder, TSTR("c")));
   set_tabvalue(adder, TSTR("d"), TNUM16(4));
-  print(get_tabvalue(adder, TSTR("a")));
-  print(get_tabvalue(adder, TSTR("b")));
-  print(get_tabvalue(adder, TSTR("c")));
-  print(get_tabvalue(adder, TSTR("d")));
+  printh(get_tabvalue(adder, TSTR("a")));
+  printh(get_tabvalue(adder, TSTR("b")));
+  printh(get_tabvalue(adder, TSTR("c")));
+  printh(get_tabvalue(adder, TSTR("d")));
 }
 
 TValue_t __preinit() {}

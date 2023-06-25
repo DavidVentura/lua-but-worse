@@ -2,5 +2,5 @@ function main()
 	member  = {x=1}
 	empty   = {}
 	member[empty] = 5
-	print(member[empty])
+	printh(member[empty])
 end

@@ -10,10 +10,10 @@ TValue_t __main();
 TValue_t __main() {
   _set(&captured, TNUM16(7));
   _set(&a, TFUN(__anonymous_function_a));
-  print(CALL((a), 1, ((TValue_t[1]){TNUM16(5)})));
+  printh(CALL((a), 1, ((TValue_t[1]){TNUM16(5)})));
   _set(&b, TFUN(__nested_func_b)); // unknown type
   CALL((b), 0, NULL);
-  print(CALL((a), 1, ((TValue_t[1]){TNUM16(5)})));
+  printh(CALL((a), 1, ((TValue_t[1]){TNUM16(5)})));
   return TNUM16(0);
 }
 

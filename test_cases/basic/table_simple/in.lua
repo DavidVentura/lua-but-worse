@@ -3,24 +3,24 @@ function main()
 	member  = {x=-1.5, y=66}
 	empty   = {}
 
-	print(squares[2])
-	print(member.x)
-	print(member["y"])
+	printh(squares[2])
+	printh(member.x)
+	printh(member["y"])
 
 	adder 	= {}
 	adder.a = 1
-	print(adder.a)
+	printh(adder.a)
 	adder.b = 2
-	print(adder.a)
-	print(adder.b)
+	printh(adder.a)
+	printh(adder.b)
 	adder.c = 3
-	print(adder.a)
-	print(adder.b)
-	print(adder.c)
+	printh(adder.a)
+	printh(adder.b)
+	printh(adder.c)
 	adder.d = 4
-	print(adder.a)
-	print(adder.b)
-	print(adder.c)
-	print(adder.d)
+	printh(adder.a)
+	printh(adder.b)
+	printh(adder.c)
+	printh(adder.d)
 
 end

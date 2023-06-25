@@ -10,17 +10,17 @@ TValue_t f(uint8_t argc, TValue_t *function_arguments) {
   _set(&a, __get_array_index_capped(function_arguments, argc, 0)); // unknown type
   _set(&b, __get_array_index_capped(function_arguments, argc, 1)); // unknown type
   _set(&c, __get_array_index_capped(function_arguments, argc, 2)); // unknown type
-  print(a);
-  print(b);
-  print(c);
+  printh(a);
+  printh(b);
+  printh(c);
 }
 
 TValue_t __main() {
-  print(TSTR("all"));
+  printh(TSTR("all"));
   CALL((f), 3, ((TValue_t[3]){TNUM16(1), TNUM16(2), TNUM16(3)}));
-  print(TSTR("2 missing"));
+  printh(TSTR("2 missing"));
   CALL((f), 1, ((TValue_t[1]){TNUM16(1)}));
-  print(TSTR("all missing"));
+  printh(TSTR("all missing"));
   CALL((f), 0, NULL);
 }
 

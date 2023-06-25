@@ -30,8 +30,8 @@ TValue_t __main() {
   set_tabvalue(literals, TSTR("bottom"), __subtable_idk_good_name_prefix_bottom);
   set_tabvalue(literals, TSTR("left"), __subtable_idk_good_name_prefix_left);
   set_tabvalue(literals, TSTR("right"), __subtable_idk_good_name_prefix_right);
-  print(get_tabvalue(get_tabvalue(literals, TSTR("top")), TSTR("y")));
-  print(get_tabvalue(get_tabvalue(literals, TSTR("right")), TSTR("x")));
+  printh(get_tabvalue(get_tabvalue(literals, TSTR("top")), TSTR("y")));
+  printh(get_tabvalue(get_tabvalue(literals, TSTR("right")), TSTR("x")));
   return TNUM16(0);
 }
 

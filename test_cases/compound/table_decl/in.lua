@@ -5,7 +5,7 @@ function main()
 		["left"] = {x=-68, y=0},
 		["right"] = {x=68, y=0}
 	}
-	print(literals.top.y)
-	print(literals.right.x)
+	printh(literals.top.y)
+	printh(literals.right.x)
 	return 0
 end

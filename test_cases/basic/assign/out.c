@@ -26,12 +26,12 @@ TValue_t __main() {
   // Fields for table u
   set_tabvalue(u, TSTR("a"), TNUM16(123));
   set_tabvalue(o, TSTR("a"), TNUM16(333));
-  print(_mult(a, c));
-  print(_mult(b, d));
-  print(e);
-  print(get_tabvalue(u, TSTR("a")));
-  print(get_tabvalue(o, TSTR("a")));
-  print(y);
+  printh(_mult(a, c));
+  printh(_mult(b, d));
+  printh(e);
+  printh(get_tabvalue(u, TSTR("a")));
+  printh(get_tabvalue(o, TSTR("a")));
+  printh(y);
   return TNUM16(0);
 }
 

@@ -12,11 +12,11 @@ TValue_t __main() {
   _set(&b, TTAB(make_table(0)));
   setmetatable(b, a);
   CALL((get_tabvalue(b, TSTR("method"))), 1, ((TValue_t[1]){b}));
-  print(get_tabvalue(a, TSTR("x")));
-  print(get_tabvalue(b, TSTR("x")));
+  printh(get_tabvalue(a, TSTR("x")));
+  printh(get_tabvalue(b, TSTR("x")));
   CALL((get_tabvalue(a, TSTR("method"))), 1, ((TValue_t[1]){a}));
-  print(get_tabvalue(a, TSTR("x")));
-  print(get_tabvalue(b, TSTR("x")));
+  printh(get_tabvalue(a, TSTR("x")));
+  printh(get_tabvalue(b, TSTR("x")));
 }
 
 TValue_t __a_method(uint8_t argc, TValue_t *function_arguments) {

@@ -10,9 +10,9 @@ TValue_t __main() {
   TValue_t gc one = T_NULL;
   TValue_t gc zero = T_NULL;
   _set(&zero, CALL((get_tabvalue(vector, TSTR("new"))), 2, ((TValue_t[2]){TNUM16(0), TNUM16(0)}))); // unknown type
-  print(CALL((get_tabvalue(zero, TSTR("len"))), 1, ((TValue_t[1]){zero})));
+  printh(CALL((get_tabvalue(zero, TSTR("len"))), 1, ((TValue_t[1]){zero})));
   _set(&one, CALL((get_tabvalue(vector, TSTR("new"))), 2, ((TValue_t[2]){TNUM16(1), TNUM16(1)}))); // unknown type
-  print(CALL((get_tabvalue(one, TSTR("len"))), 1, ((TValue_t[1]){one})));
+  printh(CALL((get_tabvalue(one, TSTR("len"))), 1, ((TValue_t[1]){one})));
 }
 
 TValue_t __table_func_vector_new(uint8_t argc, TValue_t *function_arguments) {

@@ -3,12 +3,12 @@ function main()
   a.__index = a
   b = {}
   setmetatable(b, a)
-  print(b.x)
+  printh(b.x)
   b.x += 5
-  print(b.x)
+  printh(b.x)
 
-  print(b.y)
+  printh(b.y)
   a.y = 7
-  print(b.y)
+  printh(b.y)
   return 0
 end

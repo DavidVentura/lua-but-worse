@@ -502,9 +502,9 @@ void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	bool eq = _equal(got, expected);
 	if (eq) return;
 	printf("Expected: ");
-	print(expected);
+	printh(expected);
 	printf("Got: ");
-	print(got);
+	printh(got);
 }
 
 

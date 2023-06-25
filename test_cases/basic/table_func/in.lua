@@ -9,6 +9,6 @@ end
 function main()
 	local zero = vector.new(0, 0)
 	local one = vector.new(1, 1)
-	print(zero.x)
-	print(one.x)
+	printh(zero.x)
+	printh(one.x)
 end

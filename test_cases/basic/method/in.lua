@@ -5,7 +5,7 @@ function main()
     return nil
   end
   
-  print(a.x)
+  printh(a.x)
   a:method(5)
-  print(a.x)
+  printh(a.x)
 end

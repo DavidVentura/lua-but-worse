@@ -11,12 +11,12 @@ TValue_t __main() {
   set_tabvalue(a, TSTR("__index"), a);
   _set(&b, TTAB(make_table(0)));
   setmetatable(b, a);
-  print(get_tabvalue(b, TSTR("x")));
+  printh(get_tabvalue(b, TSTR("x")));
   iadd_tab(b, TSTR("x"), TNUM16(5));
-  print(get_tabvalue(b, TSTR("x")));
-  print(get_tabvalue(b, TSTR("y")));
+  printh(get_tabvalue(b, TSTR("x")));
+  printh(get_tabvalue(b, TSTR("y")));
   set_tabvalue(a, TSTR("y"), TNUM16(7));
-  print(get_tabvalue(b, TSTR("y")));
+  printh(get_tabvalue(b, TSTR("y")));
   return TNUM16(0);
 }
 

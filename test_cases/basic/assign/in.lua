@@ -10,11 +10,11 @@ function main()
     u = {a=123}
     o.a = 333
 
-    print(a*c)
-    print(b*d)
-    print(e)
-    print(u.a)
-    print(o.a)
-	print(y)
+    printh(a*c)
+    printh(b*d)
+    printh(e)
+    printh(u.a)
+    printh(o.a)
+	printh(y)
     return 0
 end

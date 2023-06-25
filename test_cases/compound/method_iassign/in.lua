@@ -19,7 +19,7 @@ end
 
 function main()
 	local zero = vector.new(0, 0)
-	print(zero:len())
+	printh(zero:len())
 	local one = vector.new(1, 1)
-	print(one:len())
+	printh(one:len())
 end

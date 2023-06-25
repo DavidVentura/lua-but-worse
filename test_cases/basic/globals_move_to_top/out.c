@@ -9,7 +9,7 @@ TValue_t __main() {
   _set(&a, TNUM16(5));
   _set(&b, TNUM16(7));
   _set(&c, _mult(a, b)); // unknown type
-  print(c);
+  printh(c);
   return TNUM16(0);
 }
 

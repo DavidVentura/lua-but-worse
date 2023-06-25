@@ -1,9 +1,9 @@
 function main()
-	print("a")
-	print("a".."b")
+	printh("a")
+	printh("a".."b")
 	local ones = "11111111111111111111"
 	local twos = "22222222222222222222"
-	print(ones..twos)
-	print("a"..5)
-	print(""..5)
+	printh(ones..twos)
+	printh("a"..5)
+	printh(""..5)
 end

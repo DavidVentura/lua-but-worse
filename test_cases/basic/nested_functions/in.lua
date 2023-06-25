@@ -1,6 +1,6 @@
 function main()
 	function b()
-		print(5)
+		printh(5)
 	end
 	b()
 end

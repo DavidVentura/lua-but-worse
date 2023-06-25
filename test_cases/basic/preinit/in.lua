@@ -6,9 +6,9 @@ end
 
 --b = {}
 --function b:method()
---        print("method")
+--        printh("method")
 --end
 
 function main()
-  print(a)
+  printh(a)
 end

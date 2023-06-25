@@ -10,7 +10,7 @@ TValue_t __main() {
   set_tabvalue(member, TSTR("x"), TNUM16(1));
   _set(&empty, TTAB(make_table(0)));
   set_tabvalue(member, empty, TNUM16(5));
-  print(get_tabvalue(member, empty));
+  printh(get_tabvalue(member, empty));
 }
 
 TValue_t __preinit() {}

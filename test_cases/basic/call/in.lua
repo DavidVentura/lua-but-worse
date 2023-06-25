@@ -3,5 +3,5 @@ function something(arg)
 end
 function main()
 	something(5)
-	print(something(6))
+	printh(something(6))
 end

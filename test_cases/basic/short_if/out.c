@@ -33,10 +33,10 @@ TValue_t __main() {
   } else {
     _set(&e, TNUM16(0));
   }
-  print(a);
-  print(b);
-  print(c);
-  print(d);
+  printh(a);
+  printh(b);
+  printh(c);
+  printh(d);
 
   if (_bool(test)) {
   }

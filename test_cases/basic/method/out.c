@@ -7,9 +7,9 @@ TValue_t __main();
 TValue_t __main() {
   _set(&a, TTAB(make_table(1)));
   set_tabvalue(a, TSTR("method"), TFUN(__a_method));
-  print(get_tabvalue(a, TSTR("x")));
+  printh(get_tabvalue(a, TSTR("x")));
   CALL((get_tabvalue(a, TSTR("method"))), 2, ((TValue_t[2]){a, TNUM16(5)}));
-  print(get_tabvalue(a, TSTR("x")));
+  printh(get_tabvalue(a, TSTR("x")));
 }
 
 TValue_t __a_method(uint8_t argc, TValue_t *function_arguments) {

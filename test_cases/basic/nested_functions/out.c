@@ -9,6 +9,6 @@ TValue_t __main() {
   CALL((b), 0, NULL);
 }
 
-TValue_t __nested_func_b(uint8_t argc, TValue_t *function_arguments) { print(TNUM16(5)); }
+TValue_t __nested_func_b(uint8_t argc, TValue_t *function_arguments) { printh(TNUM16(5)); }
 
 TValue_t __preinit() {}

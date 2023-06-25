@@ -11,10 +11,10 @@ function main()
 
     t = 7
     t = ({[7]=8,[8]=7})[t]
-    print(a*c)
-    print(b*d)
-    print(e)
-    print(o.a)
-    print(t)
+    printh(a*c)
+    printh(b*d)
+    printh(e)
+    printh(o.a)
+    printh(t)
     return 0
 end
