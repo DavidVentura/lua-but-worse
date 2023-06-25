@@ -113,6 +113,18 @@ void test_cos() {
 	assert_eq(fix32_cos(ONE), 				ONE);
 	printf("COS ok\n");
 }
+void test_mod() {
+	assert_eq(fix32_mod(ZERO, ZERO), ZERO);
+	assert_eq(fix32_mod(ZERO, ONE), ZERO);
+	assert_eq(fix32_mod(ZERO, TWO), ZERO);
+
+	assert_eq(fix32_mod(ONE, ZERO), ONE);
+	assert_eq(fix32_mod(TWO, ZERO), TWO);
+
+	assert_eq(fix32_mod(TWO, ONE), ZERO);
+
+	assert_eq(fix32_mod(ONE, THREE_QUARTERS), TWO_EIGHTHS);
+}
 void test_sin() {
 	assert_eq(fix32_sin(ZERO 	),  	ZERO);
 	assert_very_close(fix32_sin(ONE_EIGHTH 	),   fix32_invert_sign((fix32_t){.i=0, .f=0xb534}));
@@ -125,6 +137,7 @@ void test_sin() {
 
 int main() {
 	test_invert_sign();
+	test_mod();
 	test_abs();
 	test_sub();
 	test_mul();
