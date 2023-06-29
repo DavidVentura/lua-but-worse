@@ -457,7 +457,10 @@ def transform_functions_to_vec_args(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Function):
             continue
-        if n.name.id in ["main", "__main"]:
+        if n.name.id in ["main", "__main", "_update", "_draw"]:
+            continue
+        if n.name.id == "_init":
+            n.name.id = "__init"  # _init clashes with an internal elf function
             continue
         # after args declaration, assign the index value
         for arg in n.args[::-1]:
