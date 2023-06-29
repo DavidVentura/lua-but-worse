@@ -102,6 +102,7 @@ void test_cos_matches_fpcos() {
 	// an error of 7/8192 is 0.085%
 	assert(min > -6);
 	assert(max < 7);
+	printf("COS-FPCOS ok\n");
 }
 
 void test_cos() {
@@ -124,7 +125,10 @@ void test_mod() {
 	assert_eq(fix32_mod(TWO, ONE), ZERO);
 
 	assert_eq(fix32_mod(ONE, THREE_QUARTERS), TWO_EIGHTHS);
+
+	printf("MOD ok\n");
 }
+
 void test_sin() {
 	assert_eq(fix32_sin(ZERO 	),  	ZERO);
 	assert_very_close(fix32_sin(ONE_EIGHTH 	),   fix32_invert_sign((fix32_t){.i=0, .f=0xb534}));
@@ -135,8 +139,28 @@ void test_sin() {
 	printf("SIN ok\n");
 }
 
+void test_cmp() {
+	assert(fix32_lt(ZERO, ONE));
+	assert(!fix32_lt(ONE, ZERO));
+	assert(!fix32_lt(ONE, ONE));
+
+	assert(!fix32_gt(ZERO, ONE));
+	assert(fix32_gt(ONE, ZERO));
+	assert(!fix32_gt(ONE, ONE));
+
+	assert(fix32_leq(ZERO, ONE));
+	assert(!fix32_leq(ONE, ZERO));
+	assert(fix32_leq(ONE, ONE));
+
+	assert(!fix32_geq(ZERO, ONE));
+	assert(fix32_geq(ONE, ZERO));
+	assert(fix32_geq(ONE, ONE));
+	printf("CMP ok\n");
+}
+
 int main() {
 	test_invert_sign();
+	test_cmp();
 	test_mod();
 	test_abs();
 	test_sub();
