@@ -4,13 +4,19 @@ import sys
 import textwrap
 
 from luaparser import ast
-from luaparser.astnodes import (Assign, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
-        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab, Return
+from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
+        AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
+        AndLoOp, OrLoOp, ULNotOp,
         )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+"""
+# TODO
+## Syntax
+print(3..a) dead
+"""
 def add_decls(tree):
     """
     Adds variable declarations in corresponding blocks. Globals are declared at the root chunk.
@@ -254,6 +260,62 @@ def ensure_table_fields(tree):
                 # TODO ?? what's ArrayIndex doing
                 continue
             s.values[0].field_names.add(n.key.dump())
+
+def transform_logical_operators(tree):
+    """
+    Rewrite logical operators into nested branches:
+
+    ```
+    a = false and func(13)
+    ```
+    into
+    ```
+    let and_result = false
+    if and_result then
+        and_result = func(13)
+    end
+    ```
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+    i = 0
+    j = 0
+    # TODO: Recursive somehow
+    # a = false or false or false or true
+    for n in tree_visitor.nodes:
+        if not n.parent:
+            continue
+        if not isinstance(n, (AndLoOp, OrLoOp)):
+            continue
+        if isinstance(n, (AndLoOp)):
+            _tempname = Name(f"__tmp_and_var_{i}")
+            i += 1
+            temp = LocalAssign([_tempname], [n.left], parent=n.parent)
+            _ifbody = Assign([_tempname], [n.right])
+            #_elsebody = Assign([_tempname], [n.left])
+            _if = If(_tempname, Block([_ifbody]), Block([]))
+
+            parent_block = _first_parent_of_type(n, (Block,))
+            idx = parent_block.body.index(n.parent)
+            parent_block.body.insert(idx, _if)
+            parent_block.body.insert(idx, temp)
+
+            n.parent.replace_child(n, _tempname)
+        elif isinstance(n, (OrLoOp)):
+            _tempname = Name(f"__tmp_or_var_{j}")
+            j += 1
+            temp = LocalAssign([_tempname], [n.left], parent=n.parent)
+            _ifbody = Assign([_tempname], [n.right])
+            #_elsebody = Assign([_tempname], [n.left])
+            _if = If(ULNotOp(_tempname), Block([_ifbody]), Block([]))
+
+            parent_block = _first_parent_of_type(n, (Block,))
+            idx = parent_block.body.index(n.parent)
+            parent_block.body.insert(idx, _if)
+            parent_block.body.insert(idx, temp)
+
+            n.parent.replace_child(n, _tempname)
+
 def transform_index_assign(tree):
     """
     Rewrite Index-Assign `a.b = 5` into `SetTabValue(a, "b", 5)`
@@ -515,6 +577,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     transform_anonymous_tables(tree)
     transform_literal_tables_to_assignments(tree)
     transform_index_assign(tree)
+    transform_logical_operators(tree)
     ensure_table_fields(tree)
     move_to_preinit(tree)
     add_signatures(tree)
