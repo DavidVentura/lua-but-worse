@@ -39,6 +39,8 @@ SArena_t _strings = {.strings=NULL, .len=0};
  *
  * Fix32 to_bits and from_bits could return the internal representation of a 32-bit value
  * which saves some masking & shifting
+ *
+ * Allocate all static strings, access them by index instead of lookup every time
  */
 
 
@@ -64,7 +66,7 @@ void print_str(char* c) {
 	printf("%s\n", c);
 }
 
-void print_tvalue(TValue_t v) {
+TValue_t print_tvalue(TValue_t v) {
 	char buf[12] = {0};
 	switch(v.tag) {
 		case NUM:
@@ -88,6 +90,7 @@ void print_tvalue(TValue_t v) {
 			printf("idk how to print with tag %d\n", v.tag);
 			break;
 	}
+	return v;
 }
 void print_tvalue_ptr(TValue_t* v) {
 	print_tvalue(*v);
