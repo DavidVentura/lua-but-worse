@@ -1,6 +1,7 @@
+import argparse
 import logging
+import os
 import subprocess
-import sys
 import textwrap
 
 from luaparser import ast
@@ -621,9 +622,31 @@ def prettify(src):
     return out.decode()
 
 
-if __name__ == '__main__':
-    with open(sys.argv[1]) as fd:
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--object-file", help="Output object file. Something like tennis_p8", required=False, default=None)
+    parser.add_argument("source", help="Lua source code. Not a cart.")
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    with open(args.source) as fd:
         src = fd.read()
 
-    t = transform(src, pretty=True, dump_ast=False)
-    print(t)
+    t = transform(src, pretty=args.object_file is None, dump_ast=False)
+    if not args.object_file:
+        print(t)
+        return
+    with open("tmp.c", "w") as fd:
+        fd.write(t)
+    subprocess.run(['gcc', 
+                    '-I.', '-I/home/david/git/PicoPico/src',
+                    '-fPIC', '-shared',
+                    '-g', '-O2',
+                    '-std=c11',
+                    '-o', args.object_file,
+                    'tmp.c',
+                    'fix32.c', os.path.expanduser('~/git/PicoPico/src/pico8.c'), 'lua.c'])
+    print(f"File at {args.object_file}")
+if __name__ == '__main__':
+    main()
