@@ -598,10 +598,9 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     #idx_to_name = f'const TValue* idx_to_name[{ff_len}] = {{' + ', '.join(f'new TValue("{var}")' for var in static_table_fields) + '};'
 
 
-    #gen = string.Template('''#include "lua.c"
-    #        ''').substitute(field_to_idx=field_to_idx, var_init=var_init, idx_to_name=idx_to_name, ff_len=ff_len)
-
-    gen = '#include "pico8.h"\n'
+    gen = '''#include "pico8.h"
+#include "lua.h"
+    '''
     ret = gen
     ret += tree.body.dump()
     if testing_params != None:

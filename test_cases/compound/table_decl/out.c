@@ -1,3 +1,4 @@
+#include "lua.h"
 #include "pico8.h"
 TValue_t literals = T_NULL;
 TValue_t __preinit();

@@ -17,7 +17,14 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
         fd.write(transformed_src)
 
 
-    flags = ['gcc', '-O0', '-std=c11', '-fsanitize=address', f'-I{here.absolute()}', str(_target_temp)]
+    flags = ['gcc', '-O0', '-std=c11', '-fsanitize=address',
+            f'-I{here.absolute()}',
+             '-I/home/david/git/PicoPico/src',
+             str(_target_temp),
+             f"{here.absolute()}/lua.c",
+             f"{here.absolute()}/fix32.c",
+             "/home/david/git/PicoPico/src/pico8.c"]
+    #flags = ['tcc', '-O0', '-std=c11', '-fsanitize=address', f'-I{here.absolute()}', str(_target_temp)]
     if testing_params.get('disable_grow_table'):
         flags += ["-DNO_GROW_TABLE"]
     s = subprocess.check_output(flags, cwd=dest_dir)

@@ -1,3 +1,4 @@
+#include "lua.h"
 #include "pico8.h"
 TValue_t __preinit();
 TValue_t __main();

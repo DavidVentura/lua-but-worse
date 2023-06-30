@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include "fix32.h"
 
+// It is important that NUL=0 -- a bunch of places have 
+// memset(0) or calloc() and those zeroes are abused to 
+// ensure the containers are full of T_NULL
+// The remaining values don't need to be in any particular order
 enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
@@ -66,7 +70,7 @@ typedef struct SArena_s {
 	uint16_t len;
 } SArena_t;
 
-const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
+static const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 
 
 #define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
@@ -76,32 +80,88 @@ const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
-#define GETSTRP(x)     (&_strings.strings[(x).str_idx])
-#define GETSTR(x)      (_strings.strings[(x).str_idx])
-#define GETTAB(x)      (&_tables.tables[(x).table_idx])
-#define GETMETATAB(x)  (_tables.tables[(x).metatable_idx])
 
 #define CALL(x, y, z)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y, z)
-#define printh(x)	   		_Generic(x, TValue_t: print_tvalue, char*: print_str, bool: print_bool)(x)
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 // Declaring this as a `const TValue_t` still raises warnings
 // the warnings are solved by making the enum const (wtf?)
 // but that raises other warnings
 #define T_NULL ((TValue_t){.tag = NUL})
-const fix32_t _zero = {.i=0, .f=0};
-const fix32_t _one  = {.i=1, .f=0};
-const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
-const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
+static const fix32_t _zero = {.i=0, .f=0};
+static const fix32_t _one  = {.i=1, .f=0};
+static const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
+static const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 
 #define gc __attribute__((__cleanup__(__decref)))
 
+// grep -P '^\w+.*{$' lua.c | sed 's/\s\+{/;/'
+Func_t __direct_call(Func_t f);
+Func_t __call(TValue_t t);
+Func_t __call_ptr(TValue_t* t);
+void print_bool(bool b);
+void print_str(char* c);
+TValue_t print_tvalue(TValue_t v);
+void print_tvalue_ptr(TValue_t* v);
+bool _streq(Str_t a, Str_t b);
+bool equal(TValue_t a, TValue_t b);
+TValue_t _equal(TValue_t a, TValue_t b);
+void grow_table(uint16_t idx);
+void set_tabvalue(TValue_t t, TValue_t key, TValue_t v);
+TValue_t get_tabvalue(TValue_t u, TValue_t key);
+TValue_t del_tabvalue(TValue_t u, TValue_t key);
+TValue_t _mult(TValue_t a, TValue_t b);
+TValue_t _add(TValue_t a, TValue_t b);
+TValue_t _sub(TValue_t a, TValue_t b);
+TValue_t _div(TValue_t a, TValue_t b);
+TValue_t _sqr(TValue_t a);
+TValue_t _sqrt(TValue_t a);
+void _pluseq(TValue_t* a, TValue_t b);
+void _minuseq(TValue_t* a, TValue_t b);
+TValue_t _geq(TValue_t a, TValue_t b);
+TValue_t _gt(TValue_t a, TValue_t b);
+TValue_t _leq(TValue_t a, TValue_t b);
+TValue_t _lt(TValue_t a, TValue_t b);
+TValue_t _invert_sign(TValue_t a);
+TValue_t _notequal(TValue_t a, TValue_t b);
+TValue_t _mod(TValue_t a, TValue_t b);
+bool __mbool(bool b);
+bool __bool(TValue_t a);
+TValue_t _or(TValue_t a, TValue_t b);
+TValue_t _and(TValue_t a, TValue_t b);
+uint16_t make_table(uint16_t size);
+void free_tvalue(TValue_t tv);
+TValue_t flr(TValue_t f);
+TValue_t getmetatable(TValue_t t);
+void setmetatable(TValue_t t, TValue_t meta);
+void iadd_tab(TValue_t t, TValue_t key, TValue_t v);
+void isub_tab(TValue_t t, TValue_t key, TValue_t v);
+void idiv_tab(TValue_t t, TValue_t key, TValue_t v);
+TValue_t count(TValue_t t);
+uint16_t _find_str_index(Str_t s);
+uint16_t _store_str(Str_t s);
+uint16_t make_str(char* c);
+void _tab_decref(Table_t* t, uint16_t cur_idx);
+void _decref(TValue_t v);
+void __decref(TValue_t* v);
+void _incref(TValue_t v);
+void _set(TValue_t* dst, TValue_t src);
+TValue_t _concat(TValue_t a, TValue_t b);
+TValue_t __internal_debug_str_len();
+TValue_t __internal_debug_str_used();
+TValue_t tostring(TValue_t v);
+void __internal_debug_assert_eq(TValue_t got, TValue_t expected);
+TValue_t __get_array_index_capped(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default);
+bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+bool __opt_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx, bool _default);
+fix32_t __get_num(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default);
 Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx);
 
-int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default);
-int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx);
-fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default);
-fix32_t __get_num(TValue_t* arr, uint8_t arrlen, uint8_t idx);
-bool __opt_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx, bool _default);
-bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+Str_t* GETSTRP(TValue_t x);
+Str_t GETSTR(TValue_t x);
+Table_t* GETTAB(TValue_t x);
+Table_t GETMETATAB(Table_t x);
 #endif

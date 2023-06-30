@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "lua.h"
-#include "fix32.h"
+//#include "fix32.h"
 
 
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
@@ -573,10 +573,10 @@ TValue_t tostring(TValue_t v) {
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	bool eq = equal(got, expected);
 	if (eq) return;
-	printf("Expected: ");
-	printh(expected);
+	printf("FIXME Expected: ");
+	//printh(expected);
 	printf("Got: ");
-	printh(got);
+	//printh(got);
 }
 
 
@@ -631,4 +631,17 @@ Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
 		DEBUG_PRINT("Tried to __get_str a non-str: %d\n", arr[idx].tag);
 		return &_strings.strings[0];
 	}
+}
+
+Str_t* GETSTRP(TValue_t x) {
+	return &_strings.strings[x.str_idx];
+}
+Str_t GETSTR(TValue_t x) {
+	return _strings.strings[x.str_idx];
+}
+Table_t* GETTAB(TValue_t x) {
+	return &_tables.tables[x.table_idx];
+}
+Table_t GETMETATAB(Table_t x) {
+	return _tables.tables[x.metatable_idx];
 }

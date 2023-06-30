@@ -1,3 +1,4 @@
+#include "lua.h"
 #include "pico8.h"
 TValue_t adder = T_NULL;
 TValue_t empty = T_NULL;
