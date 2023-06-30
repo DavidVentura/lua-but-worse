@@ -46,13 +46,16 @@ SArena_t _strings = {.strings=NULL, .len=0};
 
 Table_t* ENV;
 Func_t __direct_call(Func_t f) {
+	assert(f != NULL);
 	return f;
 }
 
 Func_t __call(TValue_t t) {
+	assert(t.fun != NULL);
 	return t.fun;
 }
 Func_t __call_ptr(TValue_t* t) {
+	assert(t->fun != NULL);
 	return t->fun;
 }
 void print_bool(bool b) {
