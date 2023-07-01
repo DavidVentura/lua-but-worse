@@ -633,12 +633,8 @@ fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default) 
 
 Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
 	assert(idx < arrlen);
-	if(arr[idx].tag == STR) {
-		return GETSTRP(arr[idx]);
-	} else {
-		DEBUG_PRINT("Tried to __get_str a non-str: %d\n", arr[idx].tag);
-		return &_strings.strings[0];
-	}
+	assert(arr[idx].tag == STR);
+	return GETSTRP(arr[idx]);
 }
 
 Str_t* GETSTRP(TValue_t x) {
