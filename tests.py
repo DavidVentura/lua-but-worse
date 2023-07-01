@@ -32,7 +32,7 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
     return s.decode().strip().splitlines()
 
 def find_case_pairs():
-    marks = ['basic', 'compound', 'internals', 'pico8']
+    marks = ['basic', 'compound', 'internals', 'pico8', 'syntax']
     ret = []
     for m in marks:
         per_mark = [pytest.param(f'test_cases/{m}', d, marks=getattr(pytest.mark, m)) for d in os.listdir(f'test_cases/{m}')]
