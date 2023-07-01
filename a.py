@@ -298,7 +298,8 @@ def transform_logical_operators(tree):
             _tempname = Name(f"__tmp_and_var_{i}")
             i += 1
             temp = LocalAssign([_tempname], [n.left], parent=n.parent)
-            _ifbody = Assign([_tempname], [n.right])
+
+            _ifbody = Assign([_tempname], [n.right], parent=n.parent)
             #_elsebody = Assign([_tempname], [n.left])
             _if = If(_tempname, Block([_ifbody]), Block([]))
 
@@ -312,7 +313,7 @@ def transform_logical_operators(tree):
             _tempname = Name(f"__tmp_or_var_{j}")
             j += 1
             temp = LocalAssign([_tempname], [n.left], parent=n.parent)
-            _ifbody = Assign([_tempname], [n.right])
+            _ifbody = Assign([_tempname], [n.right], parent=n.parent)
             #_elsebody = Assign([_tempname], [n.left])
             _if = If(ULNotOp(_tempname), Block([_ifbody]), Block([]))
 
@@ -397,7 +398,7 @@ def transform_table_functions(tree):
             continue
 
         _callable_name = f"__table_func_{n.name.value.id}_{n.name.idx.id}"
-        n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))]))
+        n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))], parent=n.parent))
 
         # extract the lambda to be a normal function
         tree.body.body.append(Function(Name(_callable_name), n.args, n.body))
@@ -434,10 +435,10 @@ def transform_anonymous_functions(tree):
             n.parent.replace_child(n, FunctionReference(Name(_callable_name)))
         else:
             _callable_name = f"__nested_func_{n.name.id}" # FIXME: should include parent's name
-            n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))]))
+            n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))], parent=n.parent))
 
         # extract the lambda to be a normal function
-        tree.body.body.append(Function(Name(_callable_name), n.args, n.body))
+        tree.body.body.append(Function(Name(_callable_name), n.args, n.body, parent=tree.body))
         # TODO:
         # - Read/Write _enclosed_ variables from UpValue table
         #   - How to know when it's an UpValue ???
