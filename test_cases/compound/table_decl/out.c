@@ -1,8 +1,11 @@
 #include "lua.h"
 #include "pico8.h"
+TValue_t func_in_tab = T_NULL;
 TValue_t literals = T_NULL;
 TValue_t __preinit();
+TValue_t __anonymous_function(uint8_t argc, TValue_t *function_arguments);
 TValue_t __main();
+// Fields for table func_in_tab
 
 TValue_t __main() {
   TValue_t gc __subtable_idk_good_name_prefix_right = T_NULL;
@@ -33,7 +36,18 @@ TValue_t __main() {
   set_tabvalue(literals, TSTR("right"), __subtable_idk_good_name_prefix_right);
   printh(get_tabvalue(get_tabvalue(literals, TSTR("top")), TSTR("y")));
   printh(get_tabvalue(get_tabvalue(literals, TSTR("right")), TSTR("x")));
+  CALL((get_tabvalue(func_in_tab, TSTR("func"))), 1, ((TValue_t[1]){func_in_tab}));
   return TNUM16(0);
 }
 
-TValue_t __preinit() {}
+TValue_t __anonymous_function(uint8_t argc, TValue_t *function_arguments) {
+  TValue_t gc this = T_NULL;
+  _set(&this, __get_array_index_capped(function_arguments, argc, 0)); // unknown type
+  set_tabvalue(this, TSTR("attr"), TSTR("value"));
+  printh(TSTR("func in tab"));
+}
+
+TValue_t __preinit() {
+  _set(&func_in_tab, TTAB(make_table(2)));
+  set_tabvalue(func_in_tab, TSTR("func"), TFUN(__anonymous_function));
+}
