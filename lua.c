@@ -290,6 +290,10 @@ TValue_t _notequal(TValue_t a, TValue_t b) {
 	return TBOOL(!equal(a, b));
 }
 
+TValue_t _not(TValue_t a) {
+	return TBOOL(!__bool(a));
+}
+
 TValue_t _mod(TValue_t a, TValue_t b) {
 	assert(a.tag == NUM);
 	assert(b.tag == NUM);
@@ -390,7 +394,8 @@ void idiv_tab(TValue_t t, TValue_t key, TValue_t v) {
 
 TValue_t count(TValue_t t) {
 	assert(t.tag == TAB);
-	return TNUM(GETTAB(t)->count);
+	uint16_t _count = GETTAB(t)->count;
+	return TNUM(_count);
 }
 
 uint16_t _find_str_index(Str_t s) {

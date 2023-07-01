@@ -124,6 +124,7 @@ TValue_t _leq(TValue_t a, TValue_t b);
 TValue_t _lt(TValue_t a, TValue_t b);
 TValue_t _invert_sign(TValue_t a);
 TValue_t _notequal(TValue_t a, TValue_t b);
+TValue_t _not(TValue_t a);
 TValue_t _mod(TValue_t a, TValue_t b);
 bool __mbool(bool b);
 bool __bool(TValue_t a);
