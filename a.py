@@ -406,6 +406,10 @@ def transform_table_functions(tree):
         # - Read/Write _enclosed_ variables from UpValue table
         #   - How to know when it's an UpValue ???
 
+def _find_table_key(t: Table, value):
+    for f in t.fields:
+        if f.value == value:
+            return f.key.id # assuming it is always Name
 def transform_anonymous_functions(tree):
     """
     Rewrite AnonymousFunction (`a = function() ... end`) into:
@@ -417,21 +421,27 @@ def transform_anonymous_functions(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
+    i = 0
     for n in tree_visitor.nodes:
         if not isinstance(n, (Function, AnonymousFunction)):
             continue
         if not n.parent:
-            print("NO PARENT??")
+            print("transform_anon_func NO PARENT??")
             continue
-        if not _is_inside(n, Function) and not _is_inside(n, Table):
-            continue
-        #import pudb
-        #pudb.set_trace()
+        if isinstance(n, Function): 
+            if not _is_inside(n, Function) and not _is_inside(n, Table):
+                continue
         if isinstance(n, AnonymousFunction):
             _callable_name = "__anonymous_function"
             if isinstance(n.parent, Assign):
                 assert len(n.parent.targets) == 1
                 _callable_name += f'_{n.parent.targets[0].id}'
+            elif isinstance(n.parent, Table) and isinstance(n.parent.parent, Assign):
+                assert len(n.parent.parent.targets) == 1
+                _callable_name += f'_{n.parent.parent.targets[0].id}_{_find_table_key(n.parent, n)}'
+            else:
+                _callable_name = f'{_callable_name}_{i}'
+                i += 1
             n.parent.replace_child(n, FunctionReference(Name(_callable_name)))
         else:
             _callable_name = f"__nested_func_{n.name.id}" # FIXME: should include parent's name
