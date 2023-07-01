@@ -51,10 +51,12 @@ Func_t __direct_call(Func_t f) {
 }
 
 Func_t __call(TValue_t t) {
+	assert(t.tag == FUN);
 	assert(t.fun != NULL);
 	return t.fun;
 }
 Func_t __call_ptr(TValue_t* t) {
+	assert(t->tag == FUN);
 	assert(t->fun != NULL);
 	return t->fun;
 }
