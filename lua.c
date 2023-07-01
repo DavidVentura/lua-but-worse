@@ -297,7 +297,7 @@ TValue_t _not(TValue_t a) {
 TValue_t _mod(TValue_t a, TValue_t b) {
 	assert(a.tag == NUM);
 	assert(b.tag == NUM);
-	return (TValue_t){.tag=BOOL, .num=(fix32_mod(a.num, b.num))};
+	return (TValue_t){.tag=NUM, .num=(fix32_mod(a.num, b.num))};
 }
 
 bool __mbool(bool b) {
