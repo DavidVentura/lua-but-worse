@@ -260,7 +260,9 @@ def ensure_table_fields(tree):
             if not isinstance(s.values[0], Table):
                 # TODO ?? what's ArrayIndex doing
                 continue
-            s.values[0].field_names.add(n.key.dump())
+            d = n.key.dump()
+            if d not in s.values[0].field_names:
+                s.values[0].field_names.append(d)
 
 def transform_logical_operators(tree):
     """
