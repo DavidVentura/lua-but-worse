@@ -29,7 +29,7 @@ TValue_t __main() {
     _set(&c, TNUM16(3));
   }
 
-  if (!_bool(test)) {
+  if (_bool(_not(test))) {
     _set(&d, _invert_sign(TNUM16(4))); // unknown type
   } else {
     _set(&e, TNUM16(0));

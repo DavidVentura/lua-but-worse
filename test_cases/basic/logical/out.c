@@ -48,14 +48,14 @@ TValue_t __main() {
   printh(a);
   _set(&__tmp_or_var_0, TNUM16(4));
 
-  if (!_bool(__tmp_or_var_0)) {
+  if (_bool(_not(__tmp_or_var_0))) {
     _set(&__tmp_or_var_0, TNUM16(5));
   }
   _set(&a, __tmp_or_var_0); // unknown type
   printh(a);
   _set(&__tmp_or_var_1, T_FALSE);
 
-  if (!_bool(__tmp_or_var_1)) {
+  if (_bool(_not(__tmp_or_var_1))) {
     _set(&__tmp_or_var_1, TNUM16(5));
   }
   _set(&a, __tmp_or_var_1); // unknown type
@@ -97,7 +97,7 @@ TValue_t __main() {
   _set(&a, __tmp_and_var_9);     // unknown type
   _set(&__tmp_or_var_2, T_TRUE); // unknown type
 
-  if (!_bool(__tmp_or_var_2)) {
+  if (_bool(_not(__tmp_or_var_2))) {
     _set(&__tmp_or_var_2, printh(TSTR("OR-NOT VISIBLE"))); // unknown type
   }
   _set(&a, __tmp_or_var_2); // unknown type

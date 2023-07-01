@@ -10,7 +10,7 @@ TValue_t _inner(uint8_t argc, TValue_t *function_arguments) {
   _set(&intermediate, T_NULL);
   _set(&s, TSTR("$"));
   _set(&intermediate, TNUM16(5));
-  for (TValue_t i = TNUM16(1); __bool(_lt(i, TNUM16(10))); i = _add(i, TNUM16(1))) {
+  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(10))); i = _add(i, TNUM16(1))) {
     _set(&intermediate, tostring(i));           // unknown type
     _set(&s, _concat(TSTR("#"), intermediate)); // unknown type
   }
