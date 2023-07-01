@@ -219,11 +219,15 @@ def transform_literal_tables_to_assignments(tree):
         assert isinstance(_assign.parent, Block)
 
         _assign_idx = _assign.parent.body.index(_assign)
+        # if isinstance(_assign.targets[0], Index):
+        # this should be fine, it'd be set_tabvalue(get_tabvalue(..), key, value)
+        # which is `a.b.c = 1`
+        _target_table =_assign.targets[0]
         for f in n.fields[::-1]:
             key = f.key
             if isinstance(key, Name):
                 key = String(key.id)
-            settabvalue = SetTabValue(_assign.targets[0], key, f.value, parent=_assign.parent,
+            settabvalue = SetTabValue(_target_table, key, f.value, parent=_assign.parent,
                                       first_token=n.first_token, last_token=n.last_token)
             _assign.parent.body.insert(_assign_idx+1, settabvalue)
         if len(n.fields) > 0:
