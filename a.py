@@ -418,7 +418,7 @@ def transform_anonymous_functions(tree):
         if not n.parent:
             print("NO PARENT??")
             continue
-        if not _is_inside(n, Function):
+        if not _is_inside(n, Function) and not _is_inside(n, Table):
             continue
         #import pudb
         #pudb.set_trace()
