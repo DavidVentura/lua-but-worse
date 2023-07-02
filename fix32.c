@@ -94,6 +94,10 @@ void fix32_pluseq(fix32_t* a, fix32_t b) {
 	*a = fix32_add(*a, b);
 }
 
+void fix32_muleq(fix32_t* a, fix32_t b) {
+	*a = fix32_mul(*a, b);
+}
+
 void fix32_minuseq(fix32_t* a, fix32_t b) {
 	*a = fix32_sub(*a, b);
 }

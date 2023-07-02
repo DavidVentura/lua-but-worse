@@ -31,6 +31,7 @@ fix32_t fix32_div(fix32_t a, fix32_t b);
 bool fix32_equals(fix32_t a, fix32_t b);
 fix32_t fix32_flr(fix32_t a);
 void fix32_pluseq(fix32_t* a, fix32_t b);
+void fix32_muleq(fix32_t* a, fix32_t b);
 void fix32_minuseq(fix32_t* a, fix32_t b);
 bool fix32_geq(fix32_t a, fix32_t b);
 bool fix32_gt(fix32_t a, fix32_t b);
