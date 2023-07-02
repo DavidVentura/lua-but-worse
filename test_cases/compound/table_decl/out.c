@@ -1,10 +1,12 @@
 #include "lua.h"
 #include "pico8.h"
 TValue_t func_in_tab = T_NULL;
+TValue_t this = T_NULL;
 TValue_t literals = T_NULL;
 TValue_t __preinit();
-TValue_t __anonymous_function(uint8_t argc, TValue_t *function_arguments);
+TValue_t __anonymous_function_func_in_tab_func(uint8_t argc, TValue_t *function_arguments);
 TValue_t __main();
+// Fields for table attr
 // Fields for table func_in_tab
 
 TValue_t __main() {
@@ -40,14 +42,19 @@ TValue_t __main() {
   return TNUM16(0);
 }
 
-TValue_t __anonymous_function(uint8_t argc, TValue_t *function_arguments) {
+TValue_t __anonymous_function_func_in_tab_func(uint8_t argc, TValue_t *function_arguments) {
   TValue_t gc this = T_NULL;
   _set(&this, __get_array_index_capped(function_arguments, argc, 0)); // unknown type
-  set_tabvalue(this, TSTR("attr"), TSTR("value"));
+  set_tabvalue(this, TSTR("attr"), TTAB(make_table(1)));
+  // Fields for table attr
+  set_tabvalue(get_tabvalue(this, TSTR("attr")), TSTR("key"), TSTR("value"));
   printh(TSTR("func in tab"));
 }
 
 TValue_t __preinit() {
+  _set(&this, TTAB(make_table(1)));
+  set_tabvalue(this, TSTR("attr"), TTAB(make_table(1)));
+  set_tabvalue(get_tabvalue(this, TSTR("attr")), TSTR("key"), TSTR("value"));
   _set(&func_in_tab, TTAB(make_table(2)));
-  set_tabvalue(func_in_tab, TSTR("func"), TFUN(__anonymous_function));
+  set_tabvalue(func_in_tab, TSTR("func"), TFUN(__anonymous_function_func_in_tab_func));
 }
