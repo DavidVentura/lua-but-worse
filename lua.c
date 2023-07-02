@@ -71,6 +71,10 @@ void print_str(char* c) {
 	printf("%s\n", c);
 }
 
+TValue_t printh_lambda(uint8_t argc, TValue_t* argv) {
+	assert(argc == 1);
+	return print_tvalue(argv[0]);
+}
 TValue_t print_tvalue(TValue_t v) {
 	char buf[12] = {0};
 	switch(v.tag) {
@@ -253,6 +257,12 @@ void _pluseq(TValue_t* a, TValue_t b) {
 	fix32_pluseq(&a->num, b.num);
 }
 
+void _muleq(TValue_t* a, TValue_t b) {
+	assert(a->tag == NUM);
+	assert(b.tag == NUM);
+	fix32_muleq(&a->num, b.num);
+}
+
 void _minuseq(TValue_t* a, TValue_t b) {
 	assert(a->tag == NUM);
 	assert(b.tag == NUM);
@@ -314,13 +324,11 @@ bool __bool(TValue_t a) {
 }
 
 TValue_t _or(TValue_t a, TValue_t b) {
-	// TODO: short-cut evaluation for function calls
 	return __bool(a) ? a : b;
 }
 
 TValue_t _and(TValue_t a, TValue_t b) {
-	// TODO: short-cut evaluation for function calls
-	return __bool(a) && __bool(b) ? b : a;
+	return __bool(a) ? b : a ;
 }
 
 uint16_t make_table(uint16_t size) {
@@ -377,6 +385,13 @@ void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	assert(v.tag == NUM); //TODO(CORR): tables can override this
 	TValue_t newval = _add(get_tabvalue(t, key), v);
+	set_tabvalue(t, key, newval);
+}
+
+void imul_tab(TValue_t t, TValue_t key, TValue_t v) {
+	assert(t.tag == TAB);
+	assert(v.tag == NUM); //TODO(CORR): tables can override this
+	TValue_t newval = _mult(get_tabvalue(t, key), v);
 	set_tabvalue(t, key, newval);
 }
 
