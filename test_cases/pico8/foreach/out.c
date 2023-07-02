@@ -12,7 +12,7 @@ TValue_t __main() {
   set_tabvalue(t, TNUM16(3), TSTR("hello"));
   set_tabvalue(t, TNUM16(4), TNUM16(5));
   set_tabvalue(t, TNUM16(5), TNUM16(7));
-  foreach (t, _printh)
+  foreach (t, printh_lambda)
     ;
 }
 

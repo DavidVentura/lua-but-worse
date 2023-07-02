@@ -1,3 +1,7 @@
+g = function(par)
+	printh(par)
+end
+
 function main()
 	captured = 7
 	a = function(x)
@@ -21,6 +25,8 @@ function main()
 		return "works inside a table, via hashmap"
 	end
 	printh(c[v]())
+
+	g(55)
 
 	return 0
 end
