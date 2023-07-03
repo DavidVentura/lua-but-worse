@@ -2,10 +2,10 @@
 #include "pico8.h"
 TValue_t __preinit();
 TValue_t __main();
-TValue_t test_del(uint8_t argc, TValue_t *function_arguments);
-TValue_t test_add(uint8_t argc, TValue_t *function_arguments);
+TValue_t test_del(TVSlice_t function_arguments);
+TValue_t test_add(TVSlice_t function_arguments);
 
-TValue_t test_add(uint8_t argc, TValue_t *function_arguments) {
+TValue_t test_add(TVSlice_t function_arguments) {
   TValue_t gc t = T_NULL;
   _set(&t, TTAB(make_table(0)));
   add(t, TSTR("a value"));
@@ -17,7 +17,7 @@ TValue_t test_add(uint8_t argc, TValue_t *function_arguments) {
   printh(get_tabvalue(t, TNUM16(3)));
 }
 
-TValue_t test_del(uint8_t argc, TValue_t *function_arguments) {
+TValue_t test_del(TVSlice_t function_arguments) {
   TValue_t gc t = T_NULL;
   _set(&t, TTAB(make_table(0)));
   add(t, TSTR("a value"));
@@ -28,9 +28,9 @@ TValue_t test_del(uint8_t argc, TValue_t *function_arguments) {
 }
 
 TValue_t __main() {
-  CALL((test_add), 0, NULL);
+  CALL((test_add), ((TVSlice_t){.elems = NULL, .num = 0}));
   printh(TSTR("---"));
-  CALL((test_del), 0, NULL);
+  CALL((test_del), ((TVSlice_t){.elems = NULL, .num = 0}));
 }
 
 TValue_t __preinit() {}

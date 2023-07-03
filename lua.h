@@ -11,7 +11,11 @@
 enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
 
 typedef struct TValue_s TValue_t;
-typedef TValue_t (*Func_t)(uint8_t c, TValue_t*);
+typedef struct TVSlice_s {
+	TValue_t* elems;
+	uint16_t num;
+} TVSlice_t;
+typedef TValue_t (*Func_t)(TVSlice_t);
 
 struct TValue_s {
 	// no size advantage on replacing the two pointers (str, num)
@@ -81,7 +85,7 @@ static const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
 
-#define CALL(x, y, z)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)(y, z)
+#define CALL(x, y)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)((y))
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 // Declaring this as a `const TValue_t` still raises warnings
@@ -99,7 +103,7 @@ static const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 Func_t __direct_call(Func_t f);
 Func_t __call(TValue_t t);
 Func_t __call_ptr(TValue_t* t);
-TValue_t printh_lambda(uint8_t c, TValue_t*);
+TValue_t printh_lambda(TVSlice_t);
 void print_bool(bool b);
 void print_str(char* c);
 TValue_t print_tvalue(TValue_t v);
@@ -155,7 +159,7 @@ TValue_t __internal_debug_str_len();
 TValue_t __internal_debug_str_used();
 TValue_t tostring(TValue_t v);
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected);
-TValue_t __get_array_index_capped(TValue_t* arr, uint8_t arrlen, uint8_t idx);
+TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx);
 int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx);
 int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default);
 bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx);

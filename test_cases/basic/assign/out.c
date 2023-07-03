@@ -18,8 +18,8 @@ TValue_t __main() {
   _pluseq(&x, TNUM16(2));
   _set(&a, TNUM16(1));
   _set(&b, TNUM16(2));
-  _set(&c, flr(TNUM(fix32_from_float(1.5f)))); // unknown type
-  _set(&d, flr(TNUM(fix32_from_float(2.5f)))); // unknown type
+  _set(&c, flr(TNUM(fix32_from_float(1.5f))));
+  _set(&d, flr(TNUM(fix32_from_float(2.5f))));
   _set(&e, TNUM16(1));
   _set(&e, TNUM16(2));
   _set(&o, TTAB(make_table(1)));

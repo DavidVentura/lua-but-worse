@@ -18,8 +18,8 @@ TValue_t __main() {
   _pluseq(&x, TNUM16(2));
   _set(&a, TNUM16(1));
   _set(&b, TNUM16(2));
-  _set(&c, flr(TNUM(fix32_from_float(1.5f)))); // unknown type
-  _set(&d, flr(TNUM(fix32_from_float(2.5f)))); // unknown type
+  _set(&c, flr(TNUM(fix32_from_float(1.5f))));
+  _set(&d, flr(TNUM(fix32_from_float(2.5f))));
   _set(&e, TNUM16(1));
   _set(&e, TNUM16(2));
   _set(&o, TTAB(make_table(1)));
@@ -32,7 +32,7 @@ TValue_t __main() {
   // Fields for table _anonymous_table_0
   set_tabvalue(_anonymous_table_0, TNUM16(7), TNUM16(8));
   set_tabvalue(_anonymous_table_0, TNUM16(8), TNUM16(7));
-  _set(&t, get_tabvalue(_anonymous_table_0, t)); // unknown type
+  _set(&t, get_tabvalue(_anonymous_table_0, t));
   printh(_mult(a, c));
   printh(_mult(b, d));
   printh(e);

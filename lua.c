@@ -60,6 +60,19 @@ Func_t __call_ptr(TValue_t* t) {
 	assert(t->fun != NULL);
 	return t->fun;
 }
+
+TValue_t __call_with_varargs(TValue_t f, TVSlice_t args, TVSlice_t varargs) {
+	assert(f.tag == FUN);
+
+	return T_NULL;
+	//return f.fun(ret);
+}
+
+TVSlice_t concat_slice(TVSlice_t a, TVSlice_t b) {
+	TValue_t* argarray = calloc(a.num+b.num, sizeof(TValue_t*));
+	return (TVSlice_t){.num=a.num+b.num, .elems=argarray};
+}
+
 void print_bool(bool b) {
 	if(b) {
 		printf("true\n");
@@ -71,9 +84,9 @@ void print_str(char* c) {
 	printf("%s\n", c);
 }
 
-TValue_t printh_lambda(uint8_t argc, TValue_t* argv) {
-	assert(argc == 1);
-	return print_tvalue(argv[0]);
+TValue_t printh_lambda(TVSlice_t a) {
+	assert(a.num == 1);
+	return print_tvalue(a.elems[0]);
 }
 TValue_t print_tvalue(TValue_t v) {
 	char buf[12] = {0};
@@ -205,7 +218,7 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 			case TAB:
 				return get_tabvalue(TTAB(__index.table_idx), key);
 			case FUN:
-				return CALL(__index, 1, ((TValue_t[]){key}));
+				return CALL(__index, ((TVSlice_t){.elems=(TValue_t[]){key}, .num=1}));
 			default:
 				assert(false);
 		}
@@ -605,9 +618,9 @@ void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 }
 
 
-TValue_t __get_array_index_capped(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
-	if(idx >= arrlen) return T_NULL;
-	return arr[idx];
+TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx) {
+	if(idx >= arr.num) return T_NULL;
+	return arr.elems[idx];
 }
 
 int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx) {

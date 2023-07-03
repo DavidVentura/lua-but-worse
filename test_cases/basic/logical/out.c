@@ -30,77 +30,77 @@ TValue_t __main() {
   if (_bool(__tmp_and_var_0)) {
     _set(&__tmp_and_var_0, TNUM16(6));
   }
-  _set(&a, __tmp_and_var_0); // unknown type
+  _set(&a, __tmp_and_var_0);
   printh(a);
   _set(&__tmp_and_var_2, T_NULL);
 
   if (_bool(__tmp_and_var_2)) {
     _set(&__tmp_and_var_2, TNUM16(13));
   }
-  _set(&a, __tmp_and_var_2); // unknown type
+  _set(&a, __tmp_and_var_2);
   printh(a);
   _set(&__tmp_and_var_3, T_FALSE);
 
   if (_bool(__tmp_and_var_3)) {
     _set(&__tmp_and_var_3, TNUM16(13));
   }
-  _set(&a, __tmp_and_var_3); // unknown type
+  _set(&a, __tmp_and_var_3);
   printh(a);
   _set(&__tmp_or_var_0, TNUM16(4));
 
   if (_bool(_not(__tmp_or_var_0))) {
     _set(&__tmp_or_var_0, TNUM16(5));
   }
-  _set(&a, __tmp_or_var_0); // unknown type
+  _set(&a, __tmp_or_var_0);
   printh(a);
   _set(&__tmp_or_var_1, T_FALSE);
 
   if (_bool(_not(__tmp_or_var_1))) {
     _set(&__tmp_or_var_1, TNUM16(5));
   }
-  _set(&a, __tmp_or_var_1); // unknown type
+  _set(&a, __tmp_or_var_1);
   printh(a);
   printh(TSTR("----"));
-  _set(&__tmp_and_var_4, TNUM16(5)); // unknown type
+  _set(&__tmp_and_var_4, TNUM16(5));
 
   if (_bool(__tmp_and_var_4)) {
-    _set(&__tmp_and_var_4, printh(TSTR("visible"))); // unknown type
+    _set(&__tmp_and_var_4, printh(TSTR("visible")));
   }
-  _set(&a, __tmp_and_var_4);         // unknown type
-  _set(&__tmp_and_var_6, TNUM16(5)); // unknown type
+  _set(&a, __tmp_and_var_4);
+  _set(&__tmp_and_var_6, TNUM16(5));
 
   if (_bool(__tmp_and_var_6)) {
-    _set(&__tmp_and_var_6, printh(TSTR("visible2"))); // unknown type
+    _set(&__tmp_and_var_6, printh(TSTR("visible2")));
   }
-  _set(&__tmp_and_var_5, __tmp_and_var_6); // unknown type
+  _set(&__tmp_and_var_5, __tmp_and_var_6);
 
   if (_bool(__tmp_and_var_5)) {
-    _set(&__tmp_and_var_5, printh(TSTR("also visible"))); // unknown type
+    _set(&__tmp_and_var_5, printh(TSTR("also visible")));
   }
-  _set(&a, __tmp_and_var_5);       // unknown type
-  _set(&__tmp_and_var_8, T_FALSE); // unknown type
+  _set(&a, __tmp_and_var_5);
+  _set(&__tmp_and_var_8, T_FALSE);
 
   if (_bool(__tmp_and_var_8)) {
-    _set(&__tmp_and_var_8, printh(TSTR("NOT visible"))); // unknown type
+    _set(&__tmp_and_var_8, printh(TSTR("NOT visible")));
   }
-  _set(&__tmp_and_var_7, __tmp_and_var_8); // unknown type
+  _set(&__tmp_and_var_7, __tmp_and_var_8);
 
   if (_bool(__tmp_and_var_7)) {
-    _set(&__tmp_and_var_7, printh(TSTR("also NOT visible"))); // unknown type
+    _set(&__tmp_and_var_7, printh(TSTR("also NOT visible")));
   }
-  _set(&a, __tmp_and_var_7);       // unknown type
-  _set(&__tmp_and_var_9, T_FALSE); // unknown type
+  _set(&a, __tmp_and_var_7);
+  _set(&__tmp_and_var_9, T_FALSE);
 
   if (_bool(__tmp_and_var_9)) {
-    _set(&__tmp_and_var_9, printh(TSTR("AND-NOT VISIBLE"))); // unknown type
+    _set(&__tmp_and_var_9, printh(TSTR("AND-NOT VISIBLE")));
   }
-  _set(&a, __tmp_and_var_9);     // unknown type
-  _set(&__tmp_or_var_2, T_TRUE); // unknown type
+  _set(&a, __tmp_and_var_9);
+  _set(&__tmp_or_var_2, T_TRUE);
 
   if (_bool(_not(__tmp_or_var_2))) {
-    _set(&__tmp_or_var_2, printh(TSTR("OR-NOT VISIBLE"))); // unknown type
+    _set(&__tmp_or_var_2, printh(TSTR("OR-NOT VISIBLE")));
   }
-  _set(&a, __tmp_or_var_2); // unknown type
+  _set(&a, __tmp_or_var_2);
   _set(&__tmp_and_var_11, TNUM16(4));
 
   if (_bool(__tmp_and_var_11)) {

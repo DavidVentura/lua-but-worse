@@ -17,7 +17,7 @@ TValue_t __main() {
   // Fields for table _anonymous_table_0
   set_tabvalue(_anonymous_table_0, TNUM16(7), TNUM16(8));
   set_tabvalue(_anonymous_table_0, TNUM16(8), TNUM16(7));
-  _set(&t, get_tabvalue(_anonymous_table_0, TNUM16(7))); // unknown type
+  _set(&t, get_tabvalue(_anonymous_table_0, TNUM16(7)));
   printh(get_tabvalue(o, TSTR("key")));
   printh(get_tabvalue(u, TSTR("a")));
   printh(t);
