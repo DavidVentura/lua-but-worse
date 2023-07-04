@@ -487,7 +487,7 @@ def transform_functions_to_vec_args(tree):
             #n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
             n.body.body.insert(0, LocalAssign([arg], [aidx], parent=n.body))
 
-        n.args = [Name('argc', type=Type.BARE_NUMBER), Name('function_arguments', type=Type.UNK_PTR)]
+        n.args = [Name('function_arguments', type=Type.SLICE)]
 
 def transform_methods(tree):
     """
