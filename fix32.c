@@ -37,8 +37,6 @@ fix32_t fix32_invert_sign(fix32_t a) {
 
 fix32_t fix32_from_float(float f) {
 	return fix32_from_bits((int32_t)((int64_t)(f * 65536.0f)));
-	if(f >= 0.0f) return fix32_from_bits((int32_t)((int64_t)(f * 65536.0f)));
-	return fix32_invert_sign(fix32_from_bits((int32_t)((int64_t)(f * 65536.0f))));
 }
 
 fix32_t fix32_sub(fix32_t a, fix32_t b) {
