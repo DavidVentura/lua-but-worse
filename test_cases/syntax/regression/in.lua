@@ -1,7 +1,11 @@
-function bunny3(t, ...)
+function integer_div()
+	printh(7\5)
+	printh(8\5)
+	printh(11\5)
+end
 --function bunny3(t, ...)
 --	?"\^i"..t.."\^-i\^g\f0"..t,...
-end
+--end
 function bunny2()
 	-- something after return
 	if (false) return
@@ -19,4 +23,7 @@ end
 
 function main()
 	celeste()
+	integer_div()
+	bunny()
+	bunny()
 end

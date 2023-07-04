@@ -6,13 +6,12 @@ TValue_t __main();
 TValue_t celeste(TVSlice_t function_arguments);
 TValue_t bunny(TVSlice_t function_arguments);
 TValue_t bunny2(TVSlice_t function_arguments);
-TValue_t bunny3(TVSlice_t function_arguments);
+TValue_t integer_div(TVSlice_t function_arguments);
 
-TValue_t bunny3(TVSlice_t function_arguments) {
-  TValue_t gc arg = T_NULL;
-  TValue_t gc t = T_NULL;
-  _set(&t, __get_array_index_capped(function_arguments, 0));
-  _set(&..., __get_array_index_capped(function_arguments, 1));
+TValue_t integer_div(TVSlice_t function_arguments) {
+  printh(_floor_div(TNUM16(7), TNUM16(5)));
+  printh(_floor_div(TNUM16(8), TNUM16(5)));
+  printh(_floor_div(TNUM16(11), TNUM16(5)));
 }
 
 TValue_t bunny2(TVSlice_t function_arguments) {
@@ -32,6 +31,11 @@ TValue_t celeste(TVSlice_t function_arguments) {
   }
 }
 
-TValue_t __main() { CALL((celeste), ((TVSlice_t){.elems = NULL, .num = 0})); }
+TValue_t __main() {
+  CALL((celeste), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((integer_div), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((bunny), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((bunny), ((TVSlice_t){.elems = NULL, .num = 0}));
+}
 
 TValue_t __preinit() {}
