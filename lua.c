@@ -439,12 +439,6 @@ void idiv_tab(TValue_t t, TValue_t key, TValue_t v) {
 	set_tabvalue(t, key, newval);
 }
 
-TValue_t count(TValue_t t) {
-	assert(t.tag == TAB);
-	uint16_t _count = GETTAB(t)->count;
-	return TNUM(_count);
-}
-
 uint16_t _find_str_index(Str_t s) {
 	for(uint16_t i=0; i<_strings.len; i++) {
 		if (_streq(_strings.strings[i], s)) {
@@ -683,6 +677,16 @@ Str_t* __get_str(TVSlice_t args, uint8_t idx) {
 	assert(args.elems[idx].tag == STR);
 	return GETSTRP(args.elems[idx]);
 }
+Table_t* __get_tab(TVSlice_t args, uint8_t idx) {
+	assert(idx < args.num);
+	assert(args.elems[idx].tag == TAB);
+	return GETTAB(args.elems[idx]);
+}
+
+TValue_t __opt_value(TVSlice_t args, uint8_t idx, TValue_t _default) {
+	if(idx >= args.num) return _default;
+	return args.elems[idx];
+}
 
 Str_t* GETSTRP(TValue_t x) {
 	return &_strings.strings[x.str_idx];
@@ -696,3 +700,4 @@ Table_t* GETTAB(TValue_t x) {
 Table_t GETMETATAB(Table_t x) {
 	return _tables.tables[x.metatable_idx];
 }
+
