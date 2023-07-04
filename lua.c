@@ -17,6 +17,12 @@ SArena_t _strings = {.strings=NULL, .len=0};
   #define DEBUG_PRINT(...) do{ } while ( false )
 #endif
 
+#ifdef DEBUG2
+ #define DEBUG2_PRINT(fmt, args...) fprintf(stderr, "DEBUG2: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
+#else
+  #define DEBUG2_PRINT(...) do{ } while ( false )
+#endif
+
 
 /* Pending optimizations:
  *
@@ -41,6 +47,13 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * which saves some masking & shifting
  *
  * Allocate all static strings, access them by index instead of lookup every time
+ * https://en.wikipedia.org/wiki/Literal_pool
+ *
+ * Move Math, Tables, Values and Objects to be implemented in this repo
+ * https://pico-8.fandom.com/wiki/APIReference
+ * - They do not depend on pico8 internal state or backend chosen
+ * - Somewhat easier testing
+ * - Should generate better asm, more inlining, etc
  */
 
 
@@ -250,6 +263,10 @@ TValue_t _add(TValue_t a, TValue_t b) {
 
 TValue_t _sub(TValue_t a, TValue_t b) {
 	return TNUM(fix32_sub(a.num, b.num));
+}
+
+TValue_t _floor_div(TValue_t a, TValue_t b) {
+	return TNUM(fix32_flr(fix32_div(a.num, b.num)));
 }
 
 TValue_t _div(TValue_t a, TValue_t b) {
@@ -623,48 +640,48 @@ TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx) {
 	return arr.elems[idx];
 }
 
-int16_t __get_int(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
-	assert(idx < arrlen);
-	assert(arr[idx].tag == NUM);
-	assert(arr[idx].num.f == 0);
-	return arr[idx].num.i;
+int16_t __get_int(TVSlice_t args, uint8_t idx) {
+	assert(idx < args.num);
+	assert(args.elems[idx].tag == NUM);
+	assert(args.elems[idx].num.f == 0);
+	return args.elems[idx].num.i;
 }
 
-int16_t __opt_int(TValue_t* arr, uint8_t arrlen, uint8_t idx, int16_t _default) {
-	if(idx >= arrlen) return _default;
-	assert(arr[idx].tag == NUM);
-	assert(arr[idx].num.f == 0);
-	return arr[idx].num.i;
+int16_t __opt_int(TVSlice_t args, uint8_t idx, int16_t _default) {
+	if(idx >= args.num) return _default;
+	assert(args.elems[idx].tag == NUM);
+	assert(args.elems[idx].num.f == 0);
+	return args.elems[idx].num.i;
 }
 
-bool __get_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
-	assert(idx < arrlen);
-	assert(arr[idx].tag == BOOL);
-	return __bool(arr[idx]);
+bool __get_bool(TVSlice_t args, uint8_t idx) {
+	assert(idx < args.num);
+	assert(args.elems[idx].tag == BOOL);
+	return __bool(args.elems[idx]);
 }
 
-bool __opt_bool(TValue_t* arr, uint8_t arrlen, uint8_t idx, bool _default) {
-	if(idx >= arrlen) return _default;
-	assert(arr[idx].tag == BOOL);
-	return __bool(arr[idx]);
+bool __opt_bool(TVSlice_t args, uint8_t idx, bool _default) {
+	if(idx >= args.num) return _default;
+	assert(args.elems[idx].tag == BOOL);
+	return __bool(args.elems[idx]);
 }
 
-fix32_t __get_num(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
-	assert(idx < arrlen);
-	assert(arr[idx].tag == NUM);
-	return arr[idx].num;
+fix32_t __get_num(TVSlice_t args, uint8_t idx) {
+	assert(idx < args.num);
+	assert(args.elems[idx].tag == NUM);
+	return args.elems[idx].num;
 }
 
-fix32_t __opt_num(TValue_t* arr, uint8_t arrlen, uint8_t idx, fix32_t _default) {
-	if(idx >= arrlen) return _default;
-	assert(arr[idx].tag == NUM);
-	return arr[idx].num;
+fix32_t __opt_num(TVSlice_t args, uint8_t idx, fix32_t _default) {
+	if(idx >= args.num) return _default;
+	assert(args.elems[idx].tag == NUM);
+	return args.elems[idx].num;
 }
 
-Str_t* __get_str(TValue_t* arr, uint8_t arrlen, uint8_t idx) {
-	assert(idx < arrlen);
-	assert(arr[idx].tag == STR);
-	return GETSTRP(arr[idx]);
+Str_t* __get_str(TVSlice_t args, uint8_t idx) {
+	assert(idx < args.num);
+	assert(args.elems[idx].tag == STR);
+	return GETSTRP(args.elems[idx]);
 }
 
 Str_t* GETSTRP(TValue_t x) {
