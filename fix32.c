@@ -39,6 +39,16 @@ fix32_t fix32_from_float(float f) {
 	return fix32_from_bits((int32_t)((int64_t)(f * 65536.0f)));
 }
 
+float fix32_to_float(fix32_t a) {
+	return a.i + (float)((float)a.f/0xFFFF);
+}
+
+fix32_t fix32_pow(fix32_t a, fix32_t b) {
+	int32_t _a = fix32_to_bits(a);
+	int32_t _b = fix32_to_bits(b);
+	return fix32_from_bits(_a - _b);
+}
+
 fix32_t fix32_sub(fix32_t a, fix32_t b) {
 	int32_t _a = fix32_to_bits(a);
 	int32_t _b = fix32_to_bits(b);

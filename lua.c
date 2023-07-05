@@ -11,6 +11,7 @@
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
 
+#define dbg_assert(x)  do { if(!(x)) { print_trace(); assert(x); } } while (0)
 #ifdef DEBUG
  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
 #else
@@ -56,10 +57,28 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * - Should generate better asm, more inlining, etc
  */
 
+#include <execinfo.h>
+void print_trace (void) {
+  void *array[5];
+  char **strings;
+  int size, i;
+
+  size = backtrace (array, 5);
+  strings = backtrace_symbols (array, size);
+  if (strings != NULL)
+  {
+
+    printf ("Obtained %d stack frames.\n", size);
+    for (i = 0; i < size; i++)
+      printf ("%s\n", strings[i]);
+  }
+
+  free (strings);
+}
 
 Table_t* ENV;
 Func_t __direct_call(Func_t f) {
-	assert(f != NULL);
+	dbg_assert(f != NULL);
 	return f;
 }
 
@@ -279,6 +298,14 @@ TValue_t _sqr(TValue_t a) {
 
 TValue_t _sqrt(TValue_t a) {
 	return TNUM(fix32_sqrt(a.num));
+}
+
+TValue_t _pow(TValue_t a, TValue_t b){
+	return TNUM(fix32_pow(a.num, b.num));
+}
+
+TValue_t _ceil(TValue_t a) {
+	return TNUM(fix32_ceil(a.num));
 }
 
 void _pluseq(TValue_t* a, TValue_t b) {
@@ -572,6 +599,7 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	// TODO(OPT): how to prevent unnecessary allocation
 	// when the key exists?
 	assert(a.tag == STR);
+	if(b.tag != STR) return T_NULL;
 	assert(b.tag == STR);
 
 	uint16_t alen = GETSTR(a).len;

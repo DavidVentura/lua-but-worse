@@ -21,6 +21,14 @@ const fix32_t FOUR 	= (fix32_t){.i=4, .f=0};
 const fix32_t FIVE 	= (fix32_t){.i=5, .f=0};
 
 
+void assert_very_close_fp(float got, float expected) {
+	float delta = got - expected;
+	if(delta > 0.01f) {
+		printf("Expected ~%f but got %f (delta %f)\n", got, expected, delta);
+		fflush(stdout);
+		assert(false);
+	}
+}
 void assert_very_close(fix32_t got, fix32_t expected) {
 	fix32_t epsilon = (fix32_t){.i=0, .f=1};
 	fix32_t delta = fix32_abs(fix32_sub(got, expected));
@@ -158,6 +166,15 @@ void test_cmp() {
 	printf("CMP ok\n");
 }
 
+void test_float() {
+	assert_very_close_fp(5.0f, 5.0f);
+	assert_very_close_fp(5.0f, fix32_to_float(fix32_from_float(5.0f)));
+	assert_very_close_fp(5.1f, fix32_to_float(fix32_from_float(5.1f)));
+	assert_very_close_fp(5.5f, fix32_to_float(fix32_from_float(5.5f)));
+	assert_very_close_fp(-2.0f, fix32_to_float(fix32_from_float(-2.0f)));
+	printf("FLOAT ok\n");
+}
+
 int main() {
 	test_invert_sign();
 	test_cmp();
@@ -169,4 +186,5 @@ int main() {
 	test_cos_matches_fpcos();
 	test_cos();
 	test_sin();
+	test_float();
 }
