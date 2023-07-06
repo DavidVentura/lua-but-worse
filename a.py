@@ -567,29 +567,6 @@ def add_signatures(tree):
             n.name.id = '__main'
         tree.body.add_signatures(n)
 
-def find_static_table_accesses(tree):
-    """
-    Flags constant table accesses (tab["const"] or tab.const) as "optimizable" 
-
-    Returns a sorted, deduplicated list of all constant field names.
-    """
-    tree_visitor = ast.WalkVisitor()
-    tree_visitor.visit(tree)
-
-    values = set()
-    for n in tree_visitor.nodes:
-        if not isinstance(n, Index):
-            continue
-        if isinstance(n.idx, String):
-            values.add(n.idx.s)
-            n.optimized_access = True
-        elif isinstance(n.idx, Name) and n.notation == IndexNotation.DOT:
-            values.add(n.id)
-            n.optimized_access = True
-        else:
-            logger.debug("Not optimizing non-string/constant value", getattr(n.idx, 'id', getattr(n.idx, 'n', n.id)))
-    return sorted(values)
-
 def set_parent_on_children(tree):
     """
     When the tree is constructed top-down, some Nodes do not know
@@ -621,17 +598,9 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     move_to_preinit(tree)
     add_signatures(tree)
     add_decls(tree)
-    #static_table_fields = find_static_table_accesses(tree)
-    #static_table_fields = [] # FIXME LATER
 
     if dump_ast:
         print(ast.to_pretty_str(tree))
-
-    #_field_to_const = {x: f'FIELD_{x.upper()}' for x in static_table_fields}
-    #ff_len = len(static_table_fields)
-    #var_init = '\n'.join([f'fields["{x}"]\t= &fast_fields[{_field_to_const[x]}];' for x in static_table_fields])
-    #field_to_idx = '\n'.join(f'const uint16_t {_field_to_const[x]} = {i};' for i, x in enumerate(static_table_fields))
-    #idx_to_name = f'const TValue* idx_to_name[{ff_len}] = {{' + ', '.join(f'new TValue("{var}")' for var in static_table_fields) + '};'
 
 
     gen = '''#include "pico8.h"
