@@ -544,9 +544,10 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		return;
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
-	free(t->kvs);
-	t->kvs = NULL;
-	t->len = 0;
+	memset(t->kvs, 0, t->len * sizeof(KV_t));
+	// this memset will set the `tag` on `key` and `value` to NUL
+	// which means that the backing array can later be assigned to a new
+	// table without an allocation
 	t->count = 0;
 	if(t->metatable_idx != UINT16_MAX) {
 		Table_t* meta = &_tables.tables[t->metatable_idx];
