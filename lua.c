@@ -53,7 +53,7 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * - Should generate better asm, more inlining, etc
  *
  * Fast table access:
- * For known table indexes, like in the case of 
+ * For known table indexes, like in the case of
  * a = {x: 5, y: 6}
  * a.z = 7
  */
@@ -623,7 +623,7 @@ void _incref(TValue_t v) {
 
 void _set(TValue_t* dst, TValue_t src) {
 	_incref(src); // if dst == src, doing _decref first
-				  // may end up freeing a value, which 
+				  // may end up freeing a value, which
 				  // immediately gets _incref'd
 	_decref(*dst);
 	memcpy(dst, &src, sizeof(TValue_t));
@@ -687,10 +687,10 @@ TValue_t tostring(TValue_t v) {
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	bool eq = equal(got, expected);
 	if (eq) return;
-	printf("FIXME Expected: ");
-	//printh(expected);
+	printf("Expected: ");
+	printh(expected);
 	printf("Got: ");
-	//printh(got);
+	printh(got);
 }
 
 
