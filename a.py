@@ -205,7 +205,7 @@ def transform_literal_tables_to_assignments(tree):
         if not isinstance(n, Table):
             continue
         if not n.parent:
-            continue
+            assert False
         if not isinstance(n.parent, Assign):
             continue
         _assign = n.parent
@@ -269,10 +269,9 @@ def ensure_table_fields(tree):
     tree_visitor.visit(tree)
 
     for n in tree_visitor.nodes:
-        if not n.parent:
-            continue
         if not isinstance(n, SetTabValue):
             continue
+        assert n.parent is not None
         for s in n.parent.body:
             if not isinstance(s, Assign):
                 continue
@@ -351,10 +350,11 @@ def transform_index_assign(tree):
     tree_visitor.visit(tree)
 
     for n in tree_visitor.nodes:
-        if not n.parent:
-            continue
         if not isinstance(n, Index):
             continue
+        assert n.parent is not None, f'{n} - {n.value.id}.{n.idx.id}'
+
+
         if not isinstance(n.parent, (IAssign, Assign)):
             continue
 
