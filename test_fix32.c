@@ -23,7 +23,7 @@ const fix32_t FIVE 	= (fix32_t){.i=5, .f=0};
 
 void assert_very_close_fp(float got, float expected) {
 	float delta = got - expected;
-	if(delta > 0.01f) {
+	if(delta > 0.00001f) {
 		printf("Expected ~%f but got %f (delta %f)\n", got, expected, delta);
 		fflush(stdout);
 		assert(false);
@@ -172,6 +172,7 @@ void test_float() {
 	assert_very_close_fp(5.1f, fix32_to_float(fix32_from_float(5.1f)));
 	assert_very_close_fp(5.5f, fix32_to_float(fix32_from_float(5.5f)));
 	assert_very_close_fp(-2.0f, fix32_to_float(fix32_from_float(-2.0f)));
+	assert_very_close_fp(-2.3f, fix32_to_float(fix32_from_float(-2.3f)));
 	printf("FLOAT ok\n");
 }
 
