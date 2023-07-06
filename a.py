@@ -32,6 +32,11 @@ def const_strings(tree):
         if isinstance(n, String):
             assert n.parent is not None, f"{n} ({n.s}) has no parent"
             n.parent.replace_child(n, StringRef(n.s))
+        elif isinstance(n, Index) and n.notation == IndexNotation.DOT:
+            # value.idx 
+            assert isinstance(n.idx, Name)
+            assert n.parent is not None, f"{n} ({n.dump()}) has no parent"
+            n.idx = StringRef(n.idx.id, parent=n)
         elif isinstance(n, Field):
             ""
             #assert n.parent is not None, f"{n} has no parent"
@@ -645,8 +650,8 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     # everything that appends nodes to the tree
     move_to_preinit(tree)
     add_signatures(tree) # should go after everything that creates functions, including move_to_preinit
-    #const_strings(tree)
-    #add_string_decls(tree) # depends on const_strings, preinit having run
+    const_strings(tree)
+    add_string_decls(tree) # depends on const_strings, preinit having run
     add_decls(tree)
 
     if dump_ast:
