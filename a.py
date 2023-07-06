@@ -112,8 +112,7 @@ def move_to_preinit(tree):
             continue
         tree.body.body.remove(n)
         moved_nodes.append(n)
-
-    _preinit = Function(Name("__preinit"), [], Block(moved_nodes))
+    _preinit = Function(Name("__preinit"), [], Block(moved_nodes), parent=tree.body)
     tree.body.body.append(_preinit)
 
 def add_string_decls(tree):
@@ -467,7 +466,7 @@ def transform_table_functions(tree):
         n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))], parent=n.parent))
 
         # extract the lambda to be a normal function
-        tree.body.body.append(Function(Name(_callable_name), n.args, n.body))
+        tree.body.body.append(Function(Name(_callable_name), n.args, n.body, parent=tree.body))
         # TODO:
         # - Read/Write _enclosed_ variables from UpValue table
         #   - How to know when it's an UpValue ???
@@ -549,11 +548,10 @@ def transform_functions_to_vec_args(tree):
         # after args declaration, assign the index value
         for arg in n.args[::-1]:
             idx = n.args.index(arg)
-            aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'), Name('argc'))
-            #n.body.body.insert(len(n.args), LocalAssign([arg], [aidx], parent=n.body))
+            aidx = ArrayIndex(Number(idx, ntype=NumberType.BARE_INT), Name('function_arguments'), parent=n.body)
             n.body.body.insert(0, LocalAssign([arg], [aidx], parent=n.body))
 
-        n.args = [Name('function_arguments', type=Type.SLICE)]
+        n.args = [Name('function_arguments', type=Type.SLICE, parent=n)]
 
 def transform_methods(tree):
     """
@@ -579,7 +577,7 @@ def transform_methods(tree):
             continue
         if isinstance(n, Method):
             _args = [Name('self', type=Type.UNKNOWN)] + n.args
-            replacement_f = Function(Name(f'__{n.source.id}_{n.name.id}'), _args, n.body)
+            replacement_f = Function(Name(f'__{n.source.id}_{n.name.id}'), _args, n.body, parent=tree.body)
             assign = SetTabValue(n.source, String(n.name.id), FunctionReference(replacement_f.name))
             assign.parent = n.parent
 
