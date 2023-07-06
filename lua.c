@@ -13,7 +13,7 @@ SArena_t _strings = {.strings=NULL, .len=0};
 
 #define dbg_assert(x)  do { if(!(x)) { print_trace(); assert(x); } } while (0)
 #define __DEBUG_PRINT(level, fmt, args...) do {\
-	    char buffer[50]; \
+	    char buffer[150]; \
 	    sprintf(buffer, "%s:%d:%s():", __FILE__, __LINE__, __func__); \
 	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
 	} while (0)
