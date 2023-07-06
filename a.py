@@ -7,7 +7,7 @@ import textwrap
 from luaparser import ast
 from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
         AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
-        AndLoOp, OrLoOp, ULNotOp,
+        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl,
         )
 
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +18,25 @@ logger = logging.getLogger()
 ## Syntax
 print(3..a) dead
 """
+def const_strings(tree):
+    """
+    Replaces all literal strings ("string_1") with StringRef("string_1")
+    Also Table fields ({"a"=5})
+    And Index access by name (a.b)
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+    for n in tree_visitor.nodes:
+        if not isinstance(n, ((String, Index, Field))):
+            continue
+        if isinstance(n, String):
+            assert n.parent is not None, f"{n} ({n.s}) has no parent"
+            n.parent.replace_child(n, StringRef(n.s))
+        elif isinstance(n, Field):
+            ""
+            #assert n.parent is not None, f"{n} has no parent"
+            #n.parent.replace_child(n, Name(f'__str_{n.s.replace(" ", "_")}'))
+
 def add_decls(tree):
     """
     Adds variable declarations in corresponding blocks. Globals are declared at the root chunk.
@@ -96,6 +115,35 @@ def move_to_preinit(tree):
 
     _preinit = Function(Name("__preinit"), [], Block(moved_nodes))
     tree.body.body.append(_preinit)
+
+def add_string_decls(tree):
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    strings_to_decl = []
+
+    __preinit = None
+    for n in tree_visitor.nodes:
+        if isinstance(n, Function) and n.name.id == "__preinit":
+            __preinit = n
+            continue
+        if not isinstance(n, StringRef):
+            continue
+        if n.name not in [_n.name for _n in strings_to_decl]:
+            strings_to_decl.append(n)
+    assert __preinit is not None
+
+    i = 0
+    _seen_varname_by_str = {}
+    for s in strings_to_decl[::-1]:
+        # if string "a b c" and "a-b-c" exist, this should die
+        assert _seen_varname_by_str.get(s.varname) in (None, s.name), f"Varname '{s.varname}' was seen as '{_seen_varname_by_str.get(s.varname)}' but is also '{s.name}'"
+        sd = Assign([Name(s.varname)], [StringDecl(s.name, i)], parent=__preinit)
+        __preinit.body.body.insert(0, sd)
+        i += 1
+
+    __preinit.body.body.insert(0, Call(Name("_grow_strings_to"), [Number(str(i), ntype=NumberType.BARE_INT)], parent=__preinit))
+
 
 def _find_index_at_closest_block(t: Node) -> tuple[int, Block]:
     if t.parent is None:
@@ -595,8 +643,12 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     transform_index_assign(tree)
     transform_logical_operators(tree)
     ensure_table_fields(tree)
+    # these are "post-processing" and should always be after
+    # everything that appends nodes to the tree
     move_to_preinit(tree)
-    add_signatures(tree)
+    add_signatures(tree) # should go after everything that creates functions, including move_to_preinit
+    #const_strings(tree)
+    #add_string_decls(tree) # depends on const_strings, preinit having run
     add_decls(tree)
 
     if dump_ast:
