@@ -219,10 +219,28 @@ def transform_literal_tables_to_assignments(tree):
         assert isinstance(_assign.parent, Block)
 
         _assign_idx = _assign.parent.body.index(_assign)
-        # if isinstance(_assign.targets[0], Index):
-        # this should be fine, it'd be set_tabvalue(get_tabvalue(..), key, value)
-        # which is `a.b.c = 1`
-        _target_table =_assign.targets[0]
+        _target_table = _assign.targets[0]
+        if isinstance(_target_table, Index):
+            """
+            this function (transform_literal_tables_to_assignments) does not _replace_ the existing node,
+            instead it _adds_ a new node.
+
+            if isinstance(_assign.targets[0], Index),
+            it is `a.b.c = 1`, which should be serialized as `set_tabvalue(get_tabvalue(..), key, value)`
+
+            Mutating the original reference node (the get_tabvalue, Index) is problematic, as that node's `parent`
+            attribute will get out of sync, when the AST looks like
+
+            Assign
+                Index (gettabvalue)
+            SetTabValue
+                Index (gettabvalue)
+
+            when calling `SetTabValue`, it sets the `parent` attribute on all the passed arguments to itself
+            so instead we pass `SetTabValue` a copy of the original node
+
+            """
+            _target_table = Index(_target_table.idx, _target_table.value, _target_table.notation)
         for f in n.fields[::-1]:
             key = f.key
             if isinstance(key, Name):
@@ -231,7 +249,7 @@ def transform_literal_tables_to_assignments(tree):
                                       first_token=n.first_token, last_token=n.last_token)
             _assign.parent.body.insert(_assign_idx+1, settabvalue)
         if len(n.fields) > 0:
-            _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}"))
+            _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}", parent=_assign.parent))
 
 
 
