@@ -34,16 +34,8 @@ SArena_t _strings = {.strings=NULL, .len=0};
 
 /* Pending optimizations:
  *
- * Fast table access:
- * For known table indexes, like in the case of 
- * a = {x: 5, y: 6}
- * a.z = 7
- *
- * instead of using `get_tabvalue(a, "x")`, a direct index can be assigned for both
- * set & get.
- * This would always bypass key lookup on `get`; and _can_ bypass the current
- * linear lookup for a free slot for `set`; though that will be diminished with the
- * pool bitmap
+ * Allocate all static strings, access them by index instead of lookup every time
+ * https://en.wikipedia.org/wiki/Literal_pool
  *
  * Bitmap for "free table slot"
  * Instead of iterating over the entire `tables` array to find a free slot,
@@ -54,14 +46,16 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * Fix32 to_bits and from_bits could return the internal representation of a 32-bit value
  * which saves some masking & shifting
  *
- * Allocate all static strings, access them by index instead of lookup every time
- * https://en.wikipedia.org/wiki/Literal_pool
- *
  * Move Math, Tables, Values and Objects to be implemented in this repo
  * https://pico-8.fandom.com/wiki/APIReference
  * - They do not depend on pico8 internal state or backend chosen
  * - Somewhat easier testing
  * - Should generate better asm, more inlining, etc
+ *
+ * Fast table access:
+ * For known table indexes, like in the case of 
+ * a = {x: 5, y: 6}
+ * a.z = 7
  */
 
 #include <execinfo.h>
