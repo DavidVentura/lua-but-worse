@@ -391,7 +391,11 @@ uint16_t make_table(uint16_t size) {
 		if (_tables.tables == NULL) {
 			_tables.tables = calloc(new_len, sizeof(Table_t));
 		} else {
+			uint16_t old_len = _tables.len;
+			assert(new_len > old_len);
 			_tables.tables = realloc(_tables.tables, new_len*sizeof(Table_t));
+			// only zero out the new part of the buffer
+			memset(_tables.tables+old_len, 0, (new_len-old_len)*sizeof(Table_t));
 		}
 		_tables.len = new_len;
 	}
@@ -490,7 +494,11 @@ void _grow_strings_to(uint16_t new_len) {
 		// and we also set `len` to 0 when ref_count=0
 	} else {
 		DEBUG2_PRINT("Growing strings to size %d\n", new_len);
+		assert(new_len > _strings.len);
+		uint16_t old_len = _strings.len;
 		_strings.strings = realloc(_strings.strings, new_len*sizeof(Str_t));
+		// only zero out the new part of the buffer
+		memset(_strings.strings+old_len, 0, (new_len-old_len)*sizeof(Str_t));
 	}
 	_strings.len = new_len;
 }
