@@ -12,18 +12,25 @@ TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
 
 #define dbg_assert(x)  do { if(!(x)) { print_trace(); assert(x); } } while (0)
-#ifdef DEBUG
- #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
-#else
-  #define DEBUG_PRINT(...) do{ } while ( false )
-#endif
+#define __DEBUG_PRINT(level, fmt, args...) do {\
+	    char buffer[50]; \
+	    sprintf(buffer, "%s:%d:%s():", __FILE__, __LINE__, __func__); \
+	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
+	} while (0)
 
 #ifdef DEBUG2
- #define DEBUG2_PRINT(fmt, args...) fprintf(stderr, "DEBUG2: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
+ #define DEBUG
+ #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
 #else
   #define DEBUG2_PRINT(...) do{ } while ( false )
 #endif
 
+
+#ifdef DEBUG
+ #define DEBUG_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG", fmt, ##args)
+#else
+  #define DEBUG_PRINT(...) do{ } while ( false )
+#endif
 
 /* Pending optimizations:
  *
@@ -252,6 +259,7 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 			case FUN:
 				return CALL(__index, ((TVSlice_t){.elems=(TValue_t[]){key}, .num=1}));
 			default:
+				printf("metatab points to type %d\n", __index.tag);
 				assert(false);
 		}
 	}
@@ -413,6 +421,7 @@ uint16_t make_table(uint16_t size) {
 	// TODO(CORR): find correct index for table
 	_tables.used++;
 	_tables.tables[_tables.used] = ret;
+	DEBUG_PRINT("Created <tab %d>\n", _tables.used);
 	return _tables.used;
 }
 
@@ -436,6 +445,8 @@ void setmetatable(TValue_t t, TValue_t meta) {
 	assert(t.tag == TAB);
 	assert(meta.tag == TAB);
 	GETTAB(t)->metatable_idx = meta.table_idx;
+	DEBUG2_PRINT("<tab %d>.metatable = <tab %d>\n", t.table_idx, meta.table_idx);
+	_incref(meta);
 }
 
 void iadd_tab(TValue_t t, TValue_t key, TValue_t v) {
@@ -475,6 +486,26 @@ uint16_t _find_str_index(Str_t s) {
 	return UINT16_MAX;
 }
 
+uint16_t _store_str_at_or_die(Str_t s, uint16_t idx) {
+	assert(_strings.len >= idx);
+	assert(_strings.strings[idx].len == 0);
+	_strings.strings[idx] = s;
+	return idx;
+}
+
+void _grow_strings_to(uint16_t new_len) {
+	if (_strings.strings == NULL) {
+		DEBUG2_PRINT("Initializing strings with size %d\n", new_len);
+		_strings.strings = calloc(new_len, sizeof(Str_t));
+		// this calloc sets `len` to 0
+		// and we also set `len` to 0 when ref_count=0
+	} else {
+		DEBUG2_PRINT("Growing strings to size %d\n", new_len);
+		_strings.strings = realloc(_strings.strings, new_len*sizeof(Str_t));
+	}
+	_strings.len = new_len;
+}
+
 uint16_t _store_str(Str_t s) {
 	uint16_t ret = UINT16_MAX;
 	for(uint16_t i = 0; i<_strings.len; i++) {
@@ -483,20 +514,15 @@ uint16_t _store_str(Str_t s) {
 			break;
 		}
 	}
+
 	if(ret == UINT16_MAX) {
 		uint16_t old_len = _strings.len;
 		uint16_t new_len = _strings.len == 0 ? 16 : _strings.len*2;
-		if (_strings.strings == NULL) {
-			_strings.strings = calloc(new_len, sizeof(Str_t));
-			// this calloc sets `len` to 0
-			// and we also set `len` to 0 when ref_count=0
-		} else {
-			_strings.strings = realloc(_strings.strings, new_len*sizeof(Str_t));
-		}
-		_strings.len = new_len;
+		_grow_strings_to(new_len);
 		ret = old_len + 1;
 	}
-	DEBUG_PRINT("Allocating a str for '%.*s' at %d\n", s.len, s.data, ret);
+
+	DEBUG2_PRINT("Storing str '%.*s' at %d\n", s.len, s.data, ret);
 	_strings.strings[ret] = s;
 	return ret;
 }
@@ -511,19 +537,28 @@ uint16_t make_str(char* c) {
 		strindex = _store_str(s);
 	} else {
 		// TODO(OPT): less disgusting way of finding temp strings
+		DEBUG_PRINT("Pointlessly allocated and freed '%s'\n", c);
 		free(data);
 	}
 	return strindex;
 }
 
 void _tab_decref(Table_t* t, uint16_t cur_idx) {
+	DEBUG2_PRINT("decref <tab %d> %d->%d\n", cur_idx, t->refcount, t->refcount-1);
 	t->refcount--;
-	if(t->refcount==0) {
-		DEBUG_PRINT("nuked table %d\n", cur_idx);
+	if(t->refcount!=0) {
+		return;
 	}
+	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
+	free(t->kvs);
+	t->kvs = NULL;
+	t->len = 0;
+	t->count = 0;
 	if(t->metatable_idx != UINT16_MAX) {
-		DEBUG_PRINT("now nuking its metatable %d\n", t->metatable_idx);
-		_tab_decref(&_tables.tables[t->metatable_idx], t->metatable_idx);
+		Table_t* meta = &_tables.tables[t->metatable_idx];
+		assert(meta->refcount > 0);
+		DEBUG2_PRINT("  decref-ing its metatable (<tab %d>), %d->%d\n", t->metatable_idx, meta->refcount, meta->refcount-1);
+		_tab_decref(meta, t->metatable_idx);
 	}
 }
 void _decref(TValue_t v) {
@@ -542,7 +577,7 @@ void _decref(TValue_t v) {
 			assert(GETSTRP(v)->refcount > 0);
 			GETSTRP(v)->refcount--;
 			if(GETSTRP(v)->refcount==0) {
-				DEBUG_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
+				DEBUG2_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
 				GETSTRP(v)->len = 0;
 				free(GETSTRP(v)->data);
 			}
@@ -558,13 +593,17 @@ void __decref(TValue_t* v) {
 		case BOOL:
 			// these are value types
 			return;
-		default:
+		case TAB:
+			DEBUG2_PRINT("End of scope for <tab %d>\n", v->table_idx);
+			break;
+		case STR:
+			DEBUG2_PRINT("End of scope for '%.*s'\n", GETSTRP(*v)->len, GETSTRP(*v)->data);
 			break;
 	}
-	DEBUG_PRINT("End of scope for: \n");
 	_decref(*v);
-	DEBUG_PRINT("/End of scope\n");
+	DEBUG2_PRINT("/End of scope\n");
 }
+
 void _incref(TValue_t v) {
 	switch(v.tag) {
 		case NUL:
@@ -574,11 +613,11 @@ void _incref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			//DEBUG_PRINT("added refc on tab '%d'\n", GETTAB(v)->, GETTAB(v)->data);
 			GETTAB(v)->refcount++;
+			DEBUG2_PRINT("added refc on <tab %d>=%d\n", v.table_idx, GETTAB(v)->refcount);
 			break;
 		case STR:
-			DEBUG_PRINT("added refc on '%.*s'\n", GETSTRP(v)->len, GETSTRP(v)->data);
+			DEBUG2_PRINT("added refc on '%.*s'\n", GETSTRP(v)->len, GETSTRP(v)->data);
 			GETSTRP(v)->refcount++;
 			break;
 	}

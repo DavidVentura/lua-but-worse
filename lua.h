@@ -18,9 +18,6 @@ typedef struct TVSlice_s {
 typedef TValue_t (*Func_t)(TVSlice_t);
 
 struct TValue_s {
-	// no size advantage on replacing the two pointers (str, num)
-	// with u16 indexes -- on embedded targets, the pointers are 32 bits
-	// same as the fix32_t type.
 	union {
 		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
@@ -74,13 +71,13 @@ typedef struct SArena_s {
 	uint16_t len;
 } SArena_t;
 
-static const Str_t STR__INDEX = {.data=(uint8_t*)"__index", .len=7};
-
 
 #define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
 #define TNUM8(x)       ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
 #define TNUM16(x)      ((TValue_t){.tag = NUM,  .num = (fix32_from_int16(x))})
 #define TSTR(x)        ((TValue_t){.tag = STR,  .str_idx = (make_str(x))})
+#define TSTRi(i)       ((TValue_t){.tag = STR,  .str_idx = (i)})
+#define CONSTSTR(x)    ((Str_t){.data = (uint8_t*)(x), .len=(sizeof((x))-1), .refcount=1})
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
@@ -96,6 +93,8 @@ static const fix32_t _zero = {.i=0, .f=0};
 static const fix32_t _one  = {.i=1, .f=0};
 static const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
 static const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
+static const Str_t STR__INDEX = CONSTSTR("__index");
+
 
 #define gc __attribute__((__cleanup__(__decref)))
 
@@ -150,6 +149,8 @@ void imul_tab(TValue_t t, TValue_t key, TValue_t v);
 void idiv_tab(TValue_t t, TValue_t key, TValue_t v);
 uint16_t _find_str_index(Str_t s);
 uint16_t _store_str(Str_t s);
+uint16_t _store_str_at_or_die(Str_t s, uint16_t idx);
+void _grow_strings_to(uint16_t new_len);
 uint16_t make_str(char* c);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
 void _decref(TValue_t v);
