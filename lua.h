@@ -97,6 +97,7 @@ static const Str_t STR__INDEX = CONSTSTR("__index");
 
 
 #define gc __attribute__((__cleanup__(__decref)))
+#define printh print_tvalue
 
 // grep -P '^\w+.*{$' lua.c | sed 's/\s\+{/;/'
 Func_t __direct_call(Func_t f);
