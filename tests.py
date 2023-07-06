@@ -9,6 +9,7 @@ from a import transform
 
 here = Path(__file__).parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
+DO_NOT_GENERATE_CODE = os.environ.get("DO_NOT_GENERATE_CODE", None)
 
 def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict):
     _target_temp = Path(dest_dir / 'out.c')
@@ -55,17 +56,19 @@ def test_cases(test_dir, test_case: str):
         i = fd.read()
 
     testing_params = _extract_pragmas(i)
-    code = transform(i).strip()
-    actual = code.splitlines()
-    if SHOULD_REGENERATE_OUTPUT:
-        with expected_f.open('w') as fd:
-            print(code, file=fd)
-            expected = code
 
-    with expected_f.open() as fd:
-        expected = fd.read()
+    if not DO_NOT_GENERATE_CODE:
+        code = transform(i).strip()
+        actual = code.splitlines()
+        if SHOULD_REGENERATE_OUTPUT:
+            with expected_f.open('w') as fd:
+                print(code, file=fd)
+                expected = code
 
-    assert actual == expected.strip().splitlines()
+        with expected_f.open() as fd:
+            expected = fd.read()
+
+        assert actual == expected.strip().splitlines()
 
     if stdout_f is None:
         # not all test cases have expected outputs
