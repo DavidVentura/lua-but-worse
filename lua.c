@@ -34,9 +34,6 @@ SArena_t _strings = {.strings=NULL, .len=0};
 
 /* Pending optimizations:
  *
- * Allocate all static strings, access them by index instead of lookup every time
- * https://en.wikipedia.org/wiki/Literal_pool
- *
  * Bitmap for "free table slot"
  * Instead of iterating over the entire `tables` array to find a free slot,
  * keep a 32-bit bitmap that represents the availability of the first 32 entries.
@@ -51,11 +48,6 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * - They do not depend on pico8 internal state or backend chosen
  * - Somewhat easier testing
  * - Should generate better asm, more inlining, etc
- *
- * Fast table access:
- * For known table indexes, like in the case of
- * a = {x: 5, y: 6}
- * a.z = 7
  */
 
 #include <execinfo.h>
