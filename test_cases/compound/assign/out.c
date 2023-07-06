@@ -1,5 +1,6 @@
 #include "lua.h"
 #include "pico8.h"
+TValue_t __str_a = T_NULL;
 TValue_t t = T_NULL;
 TValue_t u = T_NULL;
 TValue_t o = T_NULL;
@@ -25,8 +26,8 @@ TValue_t __main() {
   _set(&o, TTAB(make_table(1)));
   _set(&u, TTAB(make_table(2)));
   // Fields for table u
-  set_tabvalue(u, TSTR("a"), TNUM16(1));
-  set_tabvalue(o, TSTR("a"), get_tabvalue(u, TSTR("a")));
+  set_tabvalue(u, __str_a, TNUM16(1));
+  set_tabvalue(o, __str_a, get_tabvalue(u, __str_a));
   _set(&t, TNUM16(7));
   _set(&_anonymous_table_0, TTAB(make_table(2)));
   // Fields for table _anonymous_table_0
@@ -36,9 +37,12 @@ TValue_t __main() {
   printh(_mult(a, c));
   printh(_mult(b, d));
   printh(e);
-  printh(get_tabvalue(o, TSTR("a")));
+  printh(get_tabvalue(o, __str_a));
   printh(t);
   return TNUM16(0);
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() {
+  _grow_strings_to(1);
+  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 0)));
+}

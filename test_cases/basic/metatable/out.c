@@ -13,4 +13,4 @@ TValue_t __main() {
   printh(_equal(getmetatable(t), t1));
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

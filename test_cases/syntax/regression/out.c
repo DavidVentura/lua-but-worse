@@ -7,6 +7,9 @@ TValue_t celeste(TVSlice_t function_arguments);
 TValue_t bunny(TVSlice_t function_arguments);
 TValue_t bunny2(TVSlice_t function_arguments);
 TValue_t integer_div(TVSlice_t function_arguments);
+TValue_t peeks(TVSlice_t function_arguments);
+
+TValue_t peeks(TVSlice_t function_arguments) {}
 
 TValue_t integer_div(TVSlice_t function_arguments) {
   printh(_floor_div(TNUM16(7), TNUM16(5)));
@@ -38,4 +41,4 @@ TValue_t __main() {
   CALL((bunny), ((TVSlice_t){.elems = NULL, .num = 0}));
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

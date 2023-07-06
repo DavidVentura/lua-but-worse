@@ -1,5 +1,8 @@
 #include "lua.h"
 #include "pico8.h"
+TValue_t __str_all_missing = T_NULL;
+TValue_t __str_2_missing = T_NULL;
+TValue_t __str_all = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 TValue_t f(TVSlice_t function_arguments);
@@ -17,12 +20,17 @@ TValue_t f(TVSlice_t function_arguments) {
 }
 
 TValue_t __main() {
-  printh(TSTR("all"));
+  printh(__str_all);
   CALL((f), ((TVSlice_t){.elems = (TValue_t[3]){TNUM16(1), TNUM16(2), TNUM16(3)}, .num = 3}));
-  printh(TSTR("2 missing"));
+  printh(__str_2_missing);
   CALL((f), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(1)}, .num = 1}));
-  printh(TSTR("all missing"));
+  printh(__str_all_missing);
   CALL((f), ((TVSlice_t){.elems = NULL, .num = 0}));
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() {
+  _grow_strings_to(3);
+  _set(&__str_all, TSTRi(_store_str_at_or_die(CONSTSTR("all"), 2)));
+  _set(&__str_2_missing, TSTRi(_store_str_at_or_die(CONSTSTR("2 missing"), 1)));
+  _set(&__str_all_missing, TSTRi(_store_str_at_or_die(CONSTSTR("all missing"), 0)));
+}

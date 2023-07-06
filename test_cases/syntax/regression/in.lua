@@ -1,3 +1,8 @@
+function peeks()
+--	printh(@0x4300) -- 1
+--	printh(%0b1111) -- 2
+--	printh($0x4300) -- 4
+end
 function integer_div()
 	printh(7\5)
 	printh(8\5)

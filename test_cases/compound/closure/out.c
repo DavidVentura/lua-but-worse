@@ -48,4 +48,4 @@ TValue_t __anonymous_function_a(TVSlice_t function_arguments) {
 
 TValue_t __nested_func_b(TVSlice_t function_arguments) { _set(&captured, TNUM16(1)); }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

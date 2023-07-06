@@ -12,4 +12,4 @@ TValue_t __main() {
 
 TValue_t __nested_func_b(TVSlice_t function_arguments) { printh(TNUM16(5)); }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

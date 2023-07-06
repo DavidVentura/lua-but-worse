@@ -44,4 +44,4 @@ TValue_t __main() {
   return TNUM16(0);
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

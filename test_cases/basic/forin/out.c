@@ -14,15 +14,17 @@ TValue_t __main() {
   set_tabvalue(t, TNUM16(3), TNUM16(3));
   set_tabvalue(t, TNUM16(4), TNUM16(4));
 
-  TValue_t *_super_secret_iterator = all(t);
-  uint16_t __i = 0;
-  while (_super_secret_iterator[__i].tag != NUL) {
-    TValue_t item = _super_secret_iterator[__i];
-    printh(item);
-    __i++;
-  }
+  {
+    TValue_t *_super_secret_iterator = all(t);
+    uint16_t __i = 0;
+    while (_super_secret_iterator[__i].tag != NUL) {
+      TValue_t item = _super_secret_iterator[__i];
+      printh(item);
+      __i++;
+    }
 
-  free(_super_secret_iterator);
+    free(_super_secret_iterator);
+  }
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

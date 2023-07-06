@@ -55,4 +55,4 @@ TValue_t __main() {
   printh(__tmp_and_var_4);
 }
 
-TValue_t __preinit() {}
+TValue_t __preinit() { _grow_strings_to(0); }

@@ -7,6 +7,7 @@ TValue_t __main();
 TValue_t __main() { printh(a); }
 
 TValue_t __preinit() {
+  _grow_strings_to(0);
   _set(&a, TNUM16(5));
   _pluseq(&a, TNUM16(1));
 
