@@ -101,7 +101,6 @@ static const Str_t STR__INDEX = CONSTSTR("__index");
 // grep -P '^\w+.*{$' lua.c | sed 's/\s\+{/;/'
 Func_t __direct_call(Func_t f);
 Func_t __call(TValue_t t);
-Func_t __call_ptr(TValue_t* t);
 TValue_t printh_lambda(TVSlice_t);
 void print_bool(bool b);
 void print_str(char* c);

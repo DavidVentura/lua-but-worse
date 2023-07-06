@@ -88,11 +88,6 @@ Func_t __call(TValue_t t) {
 	assert(t.fun != NULL);
 	return t.fun;
 }
-Func_t __call_ptr(TValue_t* t) {
-	assert(t->tag == FUN);
-	assert(t->fun != NULL);
-	return t->fun;
-}
 
 TValue_t __call_with_varargs(TValue_t f, TVSlice_t args, TVSlice_t varargs) {
 	assert(f.tag == FUN);
