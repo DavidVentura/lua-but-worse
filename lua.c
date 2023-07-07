@@ -315,6 +315,18 @@ void _minuseq(TValue_t* a, TValue_t b) {
 	fix32_minuseq(&a->num, b.num);
 }
 
+void _diveq(TValue_t* a, TValue_t b) {
+	assert(a->tag == NUM);
+	assert(b.tag == NUM);
+	a->num = fix32_div(a->num, b.num);
+}
+
+void _modeq(TValue_t* a, TValue_t b) {
+	assert(a->tag == NUM);
+	assert(b.tag == NUM);
+	a->num = fix32_mod(a->num, b.num);
+}
+
 TValue_t _geq(TValue_t a, TValue_t b) {
 	assert(a.tag == NUM);
 	assert(b.tag == NUM);
@@ -561,7 +573,8 @@ void _decref(TValue_t v) {
 			break;
 		case TAB:
 			assert(GETTAB(v)->refcount > 0);
-			_tab_decref(GETTAB(v), v.table_idx);
+			// FIXME(GC)
+			//_tab_decref(GETTAB(v), v.table_idx);
 			break;
 		case STR:
 			assert(GETSTRP(v)->refcount > 0);
@@ -603,7 +616,8 @@ void _incref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			GETTAB(v)->refcount++;
+			// FIXME(GC)
+			if (GETTAB(v)->refcount < 10) GETTAB(v)->refcount++;
 			DEBUG2_PRINT("added refc on <tab %d>=%d\n", v.table_idx, GETTAB(v)->refcount);
 			break;
 		case STR:

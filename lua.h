@@ -126,6 +126,8 @@ TValue_t _ceil(TValue_t a);
 void _pluseq(TValue_t* a, TValue_t b);
 void _muleq(TValue_t* a, TValue_t b);
 void _minuseq(TValue_t* a, TValue_t b);
+void _diveq(TValue_t* a, TValue_t b);
+void _modeq(TValue_t* a, TValue_t b);
 TValue_t _geq(TValue_t a, TValue_t b);
 TValue_t _gt(TValue_t a, TValue_t b);
 TValue_t _leq(TValue_t a, TValue_t b);
