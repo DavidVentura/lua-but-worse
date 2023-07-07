@@ -95,6 +95,8 @@ def rename_stdlib_calls(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Call):
             continue
+        if not isinstance(n.func, Name):
+            continue
         if n.func.id in ['sqr', 'sqrt', 'ceil']:
             n.func.id = f'_{n.func.id}'
 
