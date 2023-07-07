@@ -789,3 +789,10 @@ TValue_t type(TValue_t arg) {
 			return TSTR("function");
 	}
 }
+
+TValue_t mid(TValue_t a, TValue_t b, TValue_t c) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
+	assert(c.tag == NUM);
+	assert(false);
+}
