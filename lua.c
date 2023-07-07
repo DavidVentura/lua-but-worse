@@ -772,3 +772,20 @@ Table_t GETMETATAB(Table_t x) {
 	return _tables.tables[x.metatable_idx];
 }
 
+TValue_t type(TValue_t arg) {
+	// TODO(OPT): make these values constant
+	switch(arg.tag) {
+		case NUM:
+			return TSTR("number");
+		case STR:
+			return TSTR("string");
+		case BOOL:
+			return TSTR("boolean");
+		case TAB:
+			return TSTR("table");
+		case NUL:
+			return TSTR("nil");
+		case FUN:
+			return TSTR("function");
+	}
+}
