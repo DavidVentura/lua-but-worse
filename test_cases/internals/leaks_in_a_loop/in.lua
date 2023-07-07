@@ -1,12 +1,12 @@
 function _inner()
-	local intermediate = nil
 	local s = "$"
-	intermediate = 5
+	local intermediate
 	for i=1,10 do
 		intermediate = tostring(i)
 		s = "#"..intermediate
 	end
-	-- 4 strings exist: "#10" "#" "10" and "$"
+	-- 3 strings exist: "#10" "#" "10" and "$"
+	-- i would expect "10" to not exist
 	__internal_debug_assert_eq(__internal_debug_str_used(), 4)
 end
 function main()

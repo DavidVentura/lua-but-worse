@@ -12,6 +12,7 @@ TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
+  TValue_t gc oof = T_NULL;
   TValue_t gc x = T_NULL;
   TValue_t gc y = T_NULL;
 
@@ -28,6 +29,7 @@ TValue_t __main() {
   // Fields for table u
   set_tabvalue(u, __str_a, TNUM16(123));
   set_tabvalue(o, __str_a, TNUM16(333));
+  _set(&oof, TNUM(fix32_from_float(0.5f)));
   printh(_mult(a, c));
   printh(_mult(b, d));
   printh(e);

@@ -1,3 +1,30 @@
+function bool_weird()
+ if printh(0) and mult_or(1, 1) then
+	a = 1
+ elseif printh(1111) and mult_or(4444, 5555) then
+	a = 1
+ end
+end
+function mult_or()
+	local w = 2
+	local sw = (w or 1)*8
+end
+function or_call()
+  local obj = false
+  (obj or nil)(obj)
+end
+function fractional_binary_literal()
+	printh("fractional_binary_literal")
+	printh(0b0111110101111101.1) -- 32125.5
+end
+function mod_equal()
+	a %= 5
+end
+function inplace_arith_for_bracket_table_assign()
+	obj = {}
+	axis = 5
+	obj.rem[axis] += axis
+end
 function short_while()
 	while (false) a = 5
 end
@@ -33,5 +60,5 @@ function main()
 	celeste()
 	integer_div()
 	bunny()
-	bunny()
+	fractional_binary_literal()
 end

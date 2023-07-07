@@ -14,114 +14,82 @@ TValue_t __preinit();
 TValue_t __main();
 
 TValue_t __main() {
-  TValue_t gc __tmp_and_var_10 = T_NULL;
-  TValue_t gc __tmp_and_var_11 = T_NULL;
-  TValue_t gc __tmp_or_var_2 = T_NULL;
-  TValue_t gc __tmp_and_var_9 = T_NULL;
-  TValue_t gc __tmp_and_var_7 = T_NULL;
-  TValue_t gc __tmp_and_var_8 = T_NULL;
-  TValue_t gc __tmp_and_var_5 = T_NULL;
   TValue_t gc __tmp_and_var_6 = T_NULL;
-  TValue_t gc __tmp_and_var_4 = T_NULL;
-  TValue_t gc __tmp_or_var_1 = T_NULL;
   TValue_t gc __tmp_or_var_0 = T_NULL;
+  TValue_t gc __tmp_and_var_5 = T_NULL;
+  TValue_t gc __tmp_and_var_4 = T_NULL;
   TValue_t gc __tmp_and_var_3 = T_NULL;
   TValue_t gc __tmp_and_var_2 = T_NULL;
-  TValue_t gc __tmp_and_var_0 = T_NULL;
   TValue_t gc __tmp_and_var_1 = T_NULL;
-  _set(&__tmp_and_var_1, TNUM16(4));
-
-  if (_bool(__tmp_and_var_1)) {
-    _set(&__tmp_and_var_1, TNUM16(5));
-  }
-  _set(&__tmp_and_var_0, __tmp_and_var_1);
+  TValue_t gc __tmp_and_var_0 = T_NULL;
+  _set(&__tmp_and_var_0, _and(TNUM16(4), TNUM16(5)));
 
   if (_bool(__tmp_and_var_0)) {
     _set(&__tmp_and_var_0, TNUM16(6));
   }
   _set(&a, __tmp_and_var_0);
   printh(a);
-  _set(&__tmp_and_var_2, T_NULL);
+  _set(&__tmp_and_var_1, T_NULL);
 
-  if (_bool(__tmp_and_var_2)) {
-    _set(&__tmp_and_var_2, TNUM16(13));
+  if (_bool(__tmp_and_var_1)) {
+    _set(&__tmp_and_var_1, TNUM16(13));
   }
-  _set(&a, __tmp_and_var_2);
+  _set(&a, __tmp_and_var_1);
   printh(a);
-  _set(&__tmp_and_var_3, T_FALSE);
-
-  if (_bool(__tmp_and_var_3)) {
-    _set(&__tmp_and_var_3, TNUM16(13));
-  }
-  _set(&a, __tmp_and_var_3);
+  _set(&a, _and(T_FALSE, TNUM16(13)));
   printh(a);
-  _set(&__tmp_or_var_0, TNUM16(4));
-
-  if (_bool(_not(__tmp_or_var_0))) {
-    _set(&__tmp_or_var_0, TNUM16(5));
-  }
-  _set(&a, __tmp_or_var_0);
+  _set(&a, _or(TNUM16(4), TNUM16(5)));
   printh(a);
-  _set(&__tmp_or_var_1, T_FALSE);
-
-  if (_bool(_not(__tmp_or_var_1))) {
-    _set(&__tmp_or_var_1, TNUM16(5));
-  }
-  _set(&a, __tmp_or_var_1);
+  _set(&a, _or(T_FALSE, TNUM16(5)));
   printh(a);
   printh(__str__dash__dash__dash__dash_);
-  _set(&__tmp_and_var_4, TNUM16(5));
+  _set(&__tmp_and_var_2, TNUM16(5));
+
+  if (_bool(__tmp_and_var_2)) {
+    _set(&__tmp_and_var_2, printh(__str_visible));
+  }
+  _set(&a, __tmp_and_var_2);
+  _set(&__tmp_and_var_3, TNUM16(5));
+
+  if (_bool(__tmp_and_var_3)) {
+    _set(&__tmp_and_var_3, printh(__str_visible2));
+  }
+  _set(&__tmp_and_var_0, __tmp_and_var_3);
+
+  if (_bool(__tmp_and_var_0)) {
+    _set(&__tmp_and_var_0, printh(__str_also_visible));
+  }
+  _set(&a, __tmp_and_var_0);
+  _set(&__tmp_and_var_4, T_FALSE);
 
   if (_bool(__tmp_and_var_4)) {
-    _set(&__tmp_and_var_4, printh(__str_visible));
+    _set(&__tmp_and_var_4, printh(__str_NOT_visible));
   }
-  _set(&a, __tmp_and_var_4);
-  _set(&__tmp_and_var_6, TNUM16(5));
+  _set(&__tmp_and_var_1, __tmp_and_var_4);
 
-  if (_bool(__tmp_and_var_6)) {
-    _set(&__tmp_and_var_6, printh(__str_visible2));
+  if (_bool(__tmp_and_var_1)) {
+    _set(&__tmp_and_var_1, printh(__str_also_NOT_visible));
   }
-  _set(&__tmp_and_var_5, __tmp_and_var_6);
+  _set(&a, __tmp_and_var_1);
+  _set(&__tmp_and_var_5, T_FALSE);
 
   if (_bool(__tmp_and_var_5)) {
-    _set(&__tmp_and_var_5, printh(__str_also_visible));
+    _set(&__tmp_and_var_5, printh(__str_AND_dash_NOT_VISIBLE));
   }
   _set(&a, __tmp_and_var_5);
-  _set(&__tmp_and_var_8, T_FALSE);
+  _set(&__tmp_or_var_0, T_TRUE);
 
-  if (_bool(__tmp_and_var_8)) {
-    _set(&__tmp_and_var_8, printh(__str_NOT_visible));
+  if (_bool(_not(__tmp_or_var_0))) {
+    _set(&__tmp_or_var_0, printh(__str_OR_dash_NOT_VISIBLE));
   }
-  _set(&__tmp_and_var_7, __tmp_and_var_8);
+  _set(&a, __tmp_or_var_0);
+  _set(&__tmp_and_var_6, _and(TNUM16(4), TNUM16(5)));
 
-  if (_bool(__tmp_and_var_7)) {
-    _set(&__tmp_and_var_7, printh(__str_also_NOT_visible));
-  }
-  _set(&a, __tmp_and_var_7);
-  _set(&__tmp_and_var_9, T_FALSE);
-
-  if (_bool(__tmp_and_var_9)) {
-    _set(&__tmp_and_var_9, printh(__str_AND_dash_NOT_VISIBLE));
-  }
-  _set(&a, __tmp_and_var_9);
-  _set(&__tmp_or_var_2, T_TRUE);
-
-  if (_bool(_not(__tmp_or_var_2))) {
-    _set(&__tmp_or_var_2, printh(__str_OR_dash_NOT_VISIBLE));
-  }
-  _set(&a, __tmp_or_var_2);
-  _set(&__tmp_and_var_11, TNUM16(4));
-
-  if (_bool(__tmp_and_var_11)) {
-    _set(&__tmp_and_var_11, TNUM16(5));
-  }
-  _set(&__tmp_and_var_10, __tmp_and_var_11);
-
-  if (_bool(__tmp_and_var_10)) {
-    _set(&__tmp_and_var_10, TNUM16(6));
+  if (_bool(__tmp_and_var_6)) {
+    _set(&__tmp_and_var_6, TNUM16(6));
   }
 
-  if (_bool(__tmp_and_var_10)) {
+  if (_bool(__tmp_and_var_6)) {
     printh(__str_yep);
   }
 }
