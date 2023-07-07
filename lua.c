@@ -812,3 +812,24 @@ KV_t* pairs(TValue_t t) {
 	ret[j] = (KV_t){.key = T_NULL, .value = T_NULL};
 	return ret;
 }
+
+KV_t* ipairs(TValue_t t) {
+	// based on `add`
+	assert(t.tag == TAB);
+	Table_t* tab = GETTAB(t);
+	KV_t* ret = calloc(tab->count+1, sizeof(KV_t));
+	int16_t wanted = 1;
+	while(true) {
+		TValue_t _key = TNUM(wanted);
+		TValue_t _val = get_tabvalue(t, _key);
+		if(_val.tag == NUL) { u: key:
+			break;
+		}
+		// wanted is "1-based indexing"
+		ret[wanted-1] = (KV_t){.key = _key, .value = _val};
+		wanted++;
+	}
+
+	ret[wanted-1] = (KV_t){.key = T_NULL, .value = T_NULL};
+	return ret;
+}
