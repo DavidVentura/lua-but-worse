@@ -7,7 +7,7 @@ import textwrap
 from luaparser import ast
 from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
         AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
-        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl,
+        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr,
         )
 
 logging.basicConfig(level=logging.INFO)
@@ -339,6 +339,15 @@ def ensure_table_fields(tree):
             if d not in s.values[0].field_names:
                 s.values[0].field_names.append(d)
 
+def __flattened_children(node, state):
+    for c in node.children():
+        state.append(c)
+        __flattened_children(c, state)
+    return state
+
+def _flattened_children(node):
+    return __flattened_children(node, [])
+
 def transform_logical_operators(tree):
     """
     Rewrite logical operators into nested branches:
@@ -353,29 +362,77 @@ def transform_logical_operators(tree):
         and_result = func(13)
     end
     ```
+
+    LoOp can be nested arbitrarily deep within a block, as an example:
+
+                                       |    Block
+                                       |      Assign
+                                       |        Target
+                                       |        Value
+                 a = (b or c) * d      |          MultOp
+                                       |            OrLoOp
+                                       |              Name
+                                       |              Name
+                                       |            Name
+
+
+    we need to insert the temp var within the _block_, right before
+    the first-parent-that-is-a-direct-child-of-the-block (in the example, before Assign)
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
     i = 0
     j = 0
-    # TODO: Recursive somehow
-    # a = false or false or false or true
+
+    def _is_simple_lo_op(node):
+        simple_types = (Name, Number, TrueExpr, FalseExpr)
+        return isinstance(node.left, simple_types) and isinstance(node.right, simple_types)
+
+    had_nested = False
     for n in tree_visitor.nodes:
-        if not n.parent:
-            continue
         if not isinstance(n, (AndLoOp, OrLoOp)):
             continue
+        assert n.parent
+
+        if _is_simple_lo_op(n):
+            continue
+
+        # if it's a nested condition, come back later
+        lo_ops = [c for c in _flattened_children(n) if isinstance(c, (AndLoOp, OrLoOp,))]
+        if any([not _is_simple_lo_op(c) for c in lo_ops]):
+            had_nested = True
+            continue
+
+        parent_block = _first_parent_of_type(n, (Block,))
+        direct_child_of_parent_block = n
+        while direct_child_of_parent_block.parent != parent_block:
+            assert direct_child_of_parent_block.parent is not None
+            direct_child_of_parent_block = direct_child_of_parent_block.parent
+
+        idx = parent_block.body.index(direct_child_of_parent_block)
+
         if isinstance(n, (AndLoOp)):
+            """
+            (a and b)
+
+            If 'a' is true: return 'b'
+            return 'a'
+
+            ->
+
+            __tmp_and_var = a
+            if (__tmp_and_var) then
+              __tmp_and_var = b
+            end
+
+            """
             _tempname = Name(f"__tmp_and_var_{i}")
             i += 1
             temp = LocalAssign([_tempname], [n.left], parent=n.parent)
 
             _ifbody = Assign([_tempname], [n.right], parent=n.parent)
-            #_elsebody = Assign([_tempname], [n.left])
             _if = If(_tempname, Block([_ifbody]), Block([]))
 
-            parent_block = _first_parent_of_type(n, (Block,))
-            idx = parent_block.body.index(n.parent)
             parent_block.body.insert(idx, _if)
             parent_block.body.insert(idx, temp)
 
@@ -388,12 +445,13 @@ def transform_logical_operators(tree):
             #_elsebody = Assign([_tempname], [n.left])
             _if = If(ULNotOp(_tempname), Block([_ifbody]), Block([]))
 
-            parent_block = _first_parent_of_type(n, (Block,))
-            idx = parent_block.body.index(n.parent)
             parent_block.body.insert(idx, _if)
             parent_block.body.insert(idx, temp)
 
             n.parent.replace_child(n, _tempname)
+
+    if had_nested:
+        transform_logical_operators(tree)
 
 def transform_index_assign(tree):
     """
