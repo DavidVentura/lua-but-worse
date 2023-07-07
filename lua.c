@@ -796,3 +796,17 @@ TValue_t mid(TValue_t a, TValue_t b, TValue_t c) {
 	assert(c.tag == NUM);
 	assert(false);
 }
+
+KV_t* pairs(TValue_t t) {
+	assert(t.tag == TAB);
+	Table_t* tab = GETTAB(t);
+	KV_t* ret = calloc(tab->count+1, sizeof(KV_t));
+	uint16_t j = 0;
+	for(uint16_t i=0; i<tab->len; i++) {
+		if(tab->kvs[i].key.tag == NUL) continue;
+		ret[j] = tab->kvs[i];
+		j++;
+	}
+	ret[j] = (KV_t){.key = T_NULL, .value = T_NULL};
+	return ret;
+}
