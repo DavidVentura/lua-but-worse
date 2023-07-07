@@ -1,3 +1,6 @@
+function short_while()
+	while (false) a = 5
+end
 function peeks()
 --	printh(@0x4300) -- 1
 --	printh(%0b1111) -- 2

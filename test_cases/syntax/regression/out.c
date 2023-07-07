@@ -8,6 +8,14 @@ TValue_t bunny(TVSlice_t function_arguments);
 TValue_t bunny2(TVSlice_t function_arguments);
 TValue_t integer_div(TVSlice_t function_arguments);
 TValue_t peeks(TVSlice_t function_arguments);
+TValue_t short_while(TVSlice_t function_arguments);
+
+TValue_t short_while(TVSlice_t function_arguments) {
+
+  while (_bool(T_FALSE)) {
+    _set(&a, TNUM16(5));
+  }
+}
 
 TValue_t peeks(TVSlice_t function_arguments) {}
 
