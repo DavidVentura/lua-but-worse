@@ -191,6 +191,7 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	Table_t* u = GETTAB(t);
 	assert(u != NULL);
+	assert(v.tag != NUL); // need to lower u->count iff old value was not null
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
 	bool is_index = key.tag == STR && _streq(GETSTR(key), STR__INDEX);
