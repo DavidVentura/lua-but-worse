@@ -1,3 +1,6 @@
+function comment()
+	//it is a comment
+end
 function bool_weird()
  if printh(0) and mult_or(1, 1) then
 	a = 1

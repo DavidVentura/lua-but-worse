@@ -19,6 +19,9 @@ TValue_t fractional_binary_literal(TVSlice_t function_arguments);
 TValue_t or_call(TVSlice_t function_arguments);
 TValue_t mult_or(TVSlice_t function_arguments);
 TValue_t bool_weird(TVSlice_t function_arguments);
+TValue_t comment(TVSlice_t function_arguments);
+
+TValue_t comment(TVSlice_t function_arguments) {}
 
 TValue_t bool_weird(TVSlice_t function_arguments) {
   TValue_t gc __tmp_and_var_1 = T_NULL;
