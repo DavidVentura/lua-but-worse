@@ -255,6 +255,7 @@ TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 			TValue_t ret = t->kvs[i].value;
 			t->kvs[i].key = T_NULL;
 			t->kvs[i].value = T_NULL;
+			t->count--;
 			return ret;
 		}
 	}
