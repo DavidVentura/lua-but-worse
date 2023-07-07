@@ -404,6 +404,7 @@ def transform_logical_operators(tree):
             continue
 
         parent_block = _first_parent_of_type(n, (Block,))
+        assert parent_block is not None, f'Could not find a parent Block for {n} {n.dump()}'
         direct_child_of_parent_block = n
         while direct_child_of_parent_block.parent != parent_block:
             assert direct_child_of_parent_block.parent is not None
@@ -426,29 +427,32 @@ def transform_logical_operators(tree):
             end
 
             """
-            _tempname = Name(f"__tmp_and_var_{i}")
+            # Using _varname instead of creating a `Name` here as
+            # on creation of the other nodes (Assign, LocalAssign, If), they will
+            # try and set `parent` on it to themselves. Each should get its own instance
+            # of `Name`.
+            _varname = f"__tmp_and_var_{i}"
             i += 1
-            temp = LocalAssign([_tempname], [n.left], parent=n.parent)
+            temp = LocalAssign([Name(_varname)], [n.left], parent=parent_block)
 
-            _ifbody = Assign([_tempname], [n.right], parent=n.parent)
-            _if = If(_tempname, Block([_ifbody]), Block([]))
+            _ifbody = Assign([Name(_varname)], [n.right], parent=n.parent)
+            _if = If(Name(_varname), Block([_ifbody]), Block([]), parent=parent_block)
 
             parent_block.body.insert(idx, _if)
             parent_block.body.insert(idx, temp)
 
-            n.parent.replace_child(n, _tempname)
+            n.parent.replace_child(n, Name(_varname))
         elif isinstance(n, (OrLoOp)):
-            _tempname = Name(f"__tmp_or_var_{j}")
+            _varname = f"__tmp_or_var_{j}"
             j += 1
-            temp = LocalAssign([_tempname], [n.left], parent=n.parent)
-            _ifbody = Assign([_tempname], [n.right], parent=n.parent)
-            #_elsebody = Assign([_tempname], [n.left])
-            _if = If(ULNotOp(_tempname), Block([_ifbody]), Block([]))
+            temp = LocalAssign([Name(_varname)], [n.left], parent=parent_block)
+            _ifbody = Assign([Name(_varname)], [n.right], parent=n.parent)
+            _if = If(ULNotOp(Name(_varname)), Block([_ifbody]), Block([]), parent=parent_block)
 
             parent_block.body.insert(idx, _if)
             parent_block.body.insert(idx, temp)
 
-            n.parent.replace_child(n, _tempname)
+            n.parent.replace_child(n, Name(_varname))
 
     if had_nested:
         transform_logical_operators(tree)
@@ -461,6 +465,7 @@ def transform_index_assign(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
+    # FIXME these show the same Assign twice
     for n in tree_visitor.nodes:
         if not isinstance(n, Index):
             continue
@@ -484,6 +489,10 @@ def transform_index_assign(tree):
         else:
             assert False, "Only Assign and IAssign supported"
 
+        if not _assign in _assign.parent.body:
+            # FIXME, why is this iterating over the same Assign twice?
+            #assert False
+            continue
         _key = n.idx
         if n.notation == IndexNotation.DOT:
             # DOT notation (a.b) is always a string (a["b"])
@@ -505,6 +514,10 @@ def transform_index_assign(tree):
                     InplaceOp.DIV: IDivTab,
                     }
             new_assign_elem = _map[n.parent.op](n.value, _key, _assign.value, first_token=n.first_token, last_token=n.last_token)
+            #_key.parent = new_assign_elem
+        #print(f"replacing {_assign} with {new_assign_elem}")
+        #print(_assign.dump())
+        #print(new_assign_elem.dump())
         _assign.parent.replace_child(_assign, new_assign_elem)
 
 def transform_table_functions(tree):
@@ -602,6 +615,7 @@ def transform_functions_to_vec_args(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
+    # this tree is processed twice?
     for n in tree_visitor.nodes:
         if not isinstance(n, Function):
             continue
