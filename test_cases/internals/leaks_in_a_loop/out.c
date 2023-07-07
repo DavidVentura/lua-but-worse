@@ -16,12 +16,13 @@ TValue_t _inner(TVSlice_t function_arguments) {
     _set(&intermediate, tostring(i));
     _set(&s, _concat(__str__hash_, intermediate));
   }
-  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(3));
+  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(4));
 }
 
 TValue_t __main() {
+  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(2));
   CALL((_inner), ((TVSlice_t){.elems = NULL, .num = 0}));
-  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(1));
+  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(2));
 }
 
 TValue_t __preinit() {
