@@ -268,15 +268,17 @@ def transform_literal_tables_to_assignments(tree):
         _assign = n.parent
         if n not in _assign.values:
             continue
-        assert len(_assign.targets) == 1
-        assert len(_assign.values) == 1
+        # TODO also allow asymmetric
+        assert len(_assign.targets) == len(_assign.values)
         # some day
 
         # assuming Assign can only happen in Block
         assert isinstance(_assign.parent, Block)
 
+        _table_value_idx = _assign.values.index(n)
+
         _assign_idx = _assign.parent.body.index(_assign)
-        _target_table = _assign.targets[0]
+        _target_table = _assign.targets[_table_value_idx]
         if isinstance(_target_table, Index):
             """
             this function (transform_literal_tables_to_assignments) does not _replace_ the existing node,
@@ -332,15 +334,22 @@ def ensure_table_fields(tree):
         for s in n.parent.body:
             if not isinstance(s, Assign):
                 continue
-            if n.table.id not in [t.id for t in s.targets]:
+            # given
+            # b.key = value
+            # -> find when `b` was created via assign, like
+            # a, b, c = ?
+            # TODO: Global/out-of-scope `b`/reassigned
+            _tnames = [_t.id for _t in s.targets]
+            if n.table.id not in _tnames:
                 continue
-            assert len(s.targets) == 1
-            if not isinstance(s.values[0], Table):
+            assert len(s.targets) == len(s.values)
+            _tab_idx = _tnames.index(n.table.id)
+            if not isinstance(s.values[_tab_idx], Table):
                 # TODO ?? what's ArrayIndex doing
                 continue
             d = n.key.dump()
-            if d not in s.values[0].field_names:
-                s.values[0].field_names.append(d)
+            if d not in s.values[_tab_idx].field_names:
+                s.values[_tab_idx].field_names.append(d)
 
 def __flattened_children(node, state):
     for c in node.children():
