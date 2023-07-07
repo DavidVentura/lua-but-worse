@@ -764,7 +764,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
 
 def prettify(src):
     p = subprocess.Popen(['clang-format'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, err = p.communicate(input=src.encode(), timeout=1)
+    out, err = p.communicate(input=src.encode(), timeout=2)
     return out.decode()
 
 
