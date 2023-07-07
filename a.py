@@ -474,17 +474,15 @@ def transform_index_assign(tree):
             continue
         assert n.parent is not None, f'{n} - {n.value.id}.{n.idx.id}'
 
-
         if not isinstance(n.parent, (IAssign, Assign)):
             continue
 
         if isinstance(n.parent, Assign):
             _assign = n.parent
             if n not in _assign.targets:
+                # var = tab.idx
                 continue
-            assert len(_assign.targets) == 1
-            assert len(_assign.values) == 1
-            # some day
+            assert len(_assign.targets) == len(_assign.values)
         elif isinstance(n.parent, IAssign):
             _assign = n.parent
             if n != _assign.target:
@@ -509,7 +507,22 @@ def transform_index_assign(tree):
                 _key = n.idx
         assert _key
         if isinstance(n.parent, Assign):
-            new_assign_elem = SetTabValue(n.value, _key, _assign.values[0], first_token=n.first_token, last_token=n.last_token)
+            _this_idx = _assign.targets.index(n)
+            # Do not want the original values mutated
+            new_assign_elem = SetTabValue(n.value.copy(), _key, _assign.values[_this_idx].copy(), first_token=n.first_token, last_token=n.last_token)
+
+            if len(_assign.targets) == 1:
+                _assign.parent.replace_child(_assign, new_assign_elem)
+            else:
+                # when working on a.key, b.key2 = 1, 2
+                # pop the target and value, and prepend the Assign with a SetTabValue
+
+                # insert first, as otherwise `assign` won't pass equality checks
+                _assign.parent.prepend_child(_assign, new_assign_elem)
+
+                _assign.targets.pop(_this_idx)
+                _assign.values.pop(_this_idx)
+
         if isinstance(n.parent, IAssign):
             _map = {InplaceOp.ADD: IAddTab,
                     InplaceOp.SUB: ISubTab,
@@ -517,11 +530,8 @@ def transform_index_assign(tree):
                     InplaceOp.DIV: IDivTab,
                     }
             new_assign_elem = _map[n.parent.op](n.value, _key, _assign.value, first_token=n.first_token, last_token=n.last_token)
-            #_key.parent = new_assign_elem
-        #print(f"replacing {_assign} with {new_assign_elem}")
-        #print(_assign.dump())
-        #print(new_assign_elem.dump())
-        _assign.parent.replace_child(_assign, new_assign_elem)
+            _assign.parent.replace_child(_assign, new_assign_elem)
+
 
 def transform_table_functions(tree):
     """
