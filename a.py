@@ -95,13 +95,21 @@ def rename_stdlib_calls(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
+    _stdlib_overlap = ['sqr', 'sqrt', 'ceil']
+    _custom_overlap = ['remove']
+    _to_rename = _stdlib_overlap + _custom_overlap
     for n in tree_visitor.nodes:
-        if not isinstance(n, Call):
+        if not isinstance(n, (Function, Call)):
             continue
-        if not isinstance(n.func, Name):
-            continue
-        if n.func.id in ['sqr', 'sqrt', 'ceil']:
-            n.func.id = f'_{n.func.id}'
+        if isinstance(n, Call):
+            if not isinstance(n.func, Name):
+                continue
+            if n.func.id in _to_rename:
+                n.func.id = f'_{n.func.id}'
+        elif isinstance(n, Function):
+            if n.name.id in _to_rename:
+                n.name.id = f'_{n.name.id}'
+
 
 def move_to_preinit(tree):
     """
