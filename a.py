@@ -33,6 +33,9 @@ def const_strings(tree):
             assert n.parent is not None, f"{n} ({n.s}) has no parent"
             n.parent.replace_child(n, StringRef(n.s))
         elif isinstance(n, Index) and n.notation == IndexNotation.DOT:
+            if isinstance(n.idx, StringRef):
+                # already replaced this.. problematic?
+                continue
             # value.idx 
             assert isinstance(n.idx, Name)
             assert n.parent is not None, f"{n} ({n.dump()}) has no parent"
