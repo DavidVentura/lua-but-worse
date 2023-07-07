@@ -3,11 +3,10 @@
 -- an anonymous-table in an anonymous-function in a global-anonymous-table should work
 
 this = {}
-this.attr = {key="value"}
+this.attr = {key="value_top"}
 func_in_tab = {
 	func=function(this)
-		this.attr = {key="value"}
-		-- set_tabvalue(get_tabvalue(this, "attr"), __anon_table)
+		this.attr = {key="value_attr"}
 		printh("func in tab")
 	end,
 }
