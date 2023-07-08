@@ -237,6 +237,9 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 				return get_tabvalue(TTAB(__index.table_idx), key);
 			case FUN:
 				return CALL(__index, ((TVSlice_t){.elems=(TValue_t[]){key}, .num=1}));
+			case NUL:
+				printf("metatab points to null, but metatable_idx is valid (%d)\n", t->metatable_idx);
+				assert(false);
 			default:
 				printf("metatab points to type %d\n", __index.tag);
 				assert(false);
