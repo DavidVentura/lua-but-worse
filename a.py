@@ -96,7 +96,7 @@ def rename_stdlib_calls(tree):
     tree_visitor.visit(tree)
 
     _stdlib_overlap = ['sqr', 'sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs', 'time', 'min', 'max']
-    _custom_overlap = ['remove', 'sfx']
+    _custom_overlap = ['remove']
     _to_rename = _stdlib_overlap + _custom_overlap
     for n in tree_visitor.nodes:
         if not isinstance(n, (Function, Call)):
@@ -783,7 +783,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     return ret
 
 def prettify(src):
-    p = subprocess.Popen(['clang-format'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(['clang-format', '--style={ColumnLimit: 150}'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = p.communicate(input=src.encode(), timeout=2)
     return out.decode()
 
@@ -799,20 +799,8 @@ def main():
     with open(args.source) as fd:
         src = fd.read()
 
-    t = transform(src, pretty=args.object_file is None, dump_ast=False)
-    if not args.object_file:
-        print(t)
-        return
-    with open("tmp.c", "w") as fd:
-        fd.write(t)
-    subprocess.run(['gcc', 
-                    '-I.', '-I/home/david/git/PicoPico/src',
-                    '-fPIC', '-shared',
-                    '-g', '-O2',
-                    '-std=c11',
-                    '-o', args.object_file,
-                    'tmp.c',
-                    'fix32.c', 'lua_table.c', 'lua_math.c', 'lua.c'])
-    print(f"File at {args.object_file}")
+    t = transform(src, pretty=True, dump_ast=False)
+    print(t)
+
 if __name__ == '__main__':
     main()
