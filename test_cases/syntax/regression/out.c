@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t __str_rem = T_NULL;
 TValue_t __str_fractional_binary_literal = T_NULL;
 TValue_t axis = T_NULL;

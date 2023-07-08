@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t __str_hello = T_NULL;
 TValue_t t = T_NULL;
 TValue_t __preinit();

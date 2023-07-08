@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t g = T_NULL;
 TValue_t __str_works_inside_a_table__via_hashma = T_NULL;
 TValue_t __str_works_inside_a_table = T_NULL;

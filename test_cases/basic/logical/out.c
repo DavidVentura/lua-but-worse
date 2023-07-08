@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t __str_yep = T_NULL;
 TValue_t __str_OR_dash_NOT_VISIBLE = T_NULL;
 TValue_t __str_AND_dash_NOT_VISIBLE = T_NULL;

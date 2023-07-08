@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t __str_all_missing = T_NULL;
 TValue_t __str_2_missing = T_NULL;
 TValue_t __str_all = T_NULL;

@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t b = T_NULL;
 TValue_t a = T_NULL;
 TValue_t captured = T_NULL;

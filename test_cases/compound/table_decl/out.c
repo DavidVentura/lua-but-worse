@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t func_in_tab = T_NULL;
 TValue_t this = T_NULL;
 TValue_t __str_value_top = T_NULL;

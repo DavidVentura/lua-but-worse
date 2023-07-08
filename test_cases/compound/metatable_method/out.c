@@ -2,6 +2,7 @@
 #include "lua_math.h"
 #include "lua_table.h"
 #include "pico8.h"
+#include "stdlib.h"
 TValue_t __str_x = T_NULL;
 TValue_t __str_method = T_NULL;
 TValue_t __str___index = T_NULL;
