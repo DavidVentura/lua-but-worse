@@ -261,30 +261,42 @@ TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 }
 
 TValue_t _mult(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
 	return TNUM(fix32_mul(a.num, b.num));
 }
 
 TValue_t _add(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
 	return TNUM(fix32_add(a.num, b.num));
 }
 
 TValue_t _sub(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
 	return TNUM(fix32_sub(a.num, b.num));
 }
 
 TValue_t _floor_div(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
 	return TNUM(fix32_flr(fix32_div(a.num, b.num)));
 }
 
 TValue_t _div(TValue_t a, TValue_t b) {
+	assert(a.tag == NUM);
+	assert(b.tag == NUM);
 	return TNUM(fix32_div(a.num, b.num));
 }
 
 TValue_t _sqr(TValue_t a) {
+	assert(a.tag == NUM);
 	return TNUM(fix32_mul(a.num, a.num));
 }
 
 TValue_t _sqrt(TValue_t a) {
+	assert(a.tag == NUM);
 	return TNUM(fix32_sqrt(a.num));
 }
 
