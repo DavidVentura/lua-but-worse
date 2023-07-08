@@ -1,4 +1,6 @@
 #include "lua.h"
+#include "lua_math.h"
+#include "lua_table.h"
 #include "pico8.h"
 TValue_t __str_y = T_NULL;
 TValue_t __str_x = T_NULL;

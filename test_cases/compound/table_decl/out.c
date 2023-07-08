@@ -1,4 +1,6 @@
 #include "lua.h"
+#include "lua_math.h"
+#include "lua_table.h"
 #include "pico8.h"
 TValue_t func_in_tab = T_NULL;
 TValue_t this = T_NULL;

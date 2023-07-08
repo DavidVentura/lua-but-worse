@@ -95,7 +95,7 @@ def rename_stdlib_calls(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    _stdlib_overlap = ['sqr', 'sqrt', 'ceil']
+    _stdlib_overlap = ['sqr', 'sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs']
     _custom_overlap = ['remove']
     _to_rename = _stdlib_overlap + _custom_overlap
     for n in tree_visitor.nodes:
@@ -764,6 +764,8 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
 
     gen = '''#include "pico8.h"
 #include "lua.h"
+#include "lua_math.h"
+#include "lua_table.h"
     '''
     ret = gen
     ret += tree.body.dump()
@@ -809,7 +811,7 @@ def main():
                     '-std=c11',
                     '-o', args.object_file,
                     'tmp.c',
-                    'fix32.c', os.path.expanduser('~/git/PicoPico/src/pico8.c'), 'lua.c'])
+                    'fix32.c', 'lua_table.c', 'lua_math.c', 'lua.c'])
     print(f"File at {args.object_file}")
 if __name__ == '__main__':
     main()
