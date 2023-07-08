@@ -65,22 +65,24 @@ void print_trace (void) {
 }
 
 Table_t* ENV;
-Func_t __direct_call(Func_t f) {
+TValue_t __direct_call(Func_t f, TVSlice_t args) {
+	// can never be closure
 	dbg_assert(f != NULL);
-	return f;
+	return f(args);
 }
 
-Func_t __call(TValue_t t) {
+TValue_t __call(TValue_t t, TVSlice_t args) {
 	assert(t.tag == FUN);
 	assert(t.fun != NULL);
-	return t.fun;
-}
-
-TValue_t __call_with_varargs(TValue_t f, TVSlice_t args, TVSlice_t varargs) {
-	assert(f.tag == FUN);
-
-	return T_NULL;
-	//return f.fun(ret);
+	if(t.env_table_idx != UINT16_MAX) {
+		TValue_t* argarray = calloc(args.num+1, sizeof(TValue_t));
+		memcpy(argarray, args.elems, sizeof(TValue_t)*args.num);
+		argarray[args.num] = TTAB(t.env_table_idx);
+		TValue_t ret = t.fun((TVSlice_t){.elems=argarray, .num=args.num+1});
+		free(argarray);
+		return ret;
+	}
+	return t.fun(args);
 }
 
 TVSlice_t concat_slice(TVSlice_t a, TVSlice_t b) {

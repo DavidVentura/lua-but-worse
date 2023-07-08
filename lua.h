@@ -21,16 +21,19 @@ struct TValue_s {
 	union {
 		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
-		Func_t fun;
 		uint16_t table_idx;
+		Func_t fun;
 	};
+	uint16_t env_table_idx; // closure env for `fun`. putting these in a struct takes way more space
 	enum typetag_t tag; // 3 bits used only
 };
 
 _Static_assert(sizeof(TValue_t) <= 64, "too big");
-_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 8 for padding. could be 1 with packed attr
-												   // 8 total size on 32bit
-//_Static_assert(sizeof(TValue_t) == 8, "too big"); // 8 for pointer on 64bit
+_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 2 for table_idx, 1 for enum, ?? for padding.
+#if UINTPTR_MAX == UINT32_MAX
+_Static_assert(sizeof(TValue_t) <= 12, "too big"); // 12 total size on 32bit
+#endif
+
 
 typedef struct KV_s {
 	TValue_t key;
@@ -79,10 +82,11 @@ typedef struct SArena_s {
 #define TSTRi(i)       ((TValue_t){.tag = STR,  .str_idx = (i)})
 #define CONSTSTR(x)    ((Str_t){.data = (uint8_t*)(x), .len=(sizeof((x))-1), .refcount=1})
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x)})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=UINT16_MAX})
+#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=(y).table_idx})
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
 
-#define CALL(x, y)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)(x)((y))
+#define CALL(x, y)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)((x), (y))
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
 // Declaring this as a `const TValue_t` still raises warnings
@@ -100,8 +104,8 @@ static const Str_t STR__INDEX = CONSTSTR("__index");
 #define printh print_tvalue
 
 // grep -P '^\w+.*{$' lua.c | sed 's/\s\+{/;/'
-Func_t __direct_call(Func_t f);
-Func_t __call(TValue_t t);
+TValue_t __direct_call(Func_t f, TVSlice_t args);
+TValue_t __call(TValue_t t, TVSlice_t args);
 TValue_t printh_lambda(TVSlice_t);
 void print_bool(bool b);
 void print_str(char* c);
