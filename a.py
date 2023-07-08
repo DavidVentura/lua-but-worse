@@ -617,7 +617,7 @@ def transform_anonymous_functions(tree):
             n.parent.replace_child(n, FunctionReference(Name(_callable_name), n.environment))
         else:
             _callable_name = f"__nested_func_{n.name.id}" # FIXME: should include parent's name
-            n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))], parent=n.parent))
+            n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name), n.environment)], parent=n.parent))
 
         # extract the lambda to be a normal function
         tree.body.body.append(Function(Name(_callable_name), n.args, n.body, parent=tree.body))
@@ -739,7 +739,6 @@ def set_parent_on_children(tree):
 def _first_parent_containing_assign_of(t: Node, n: Name):
     if t.parent is None:
         return None
-    # TODO: implement method-variables?
     if isinstance(t.parent, (Function, Method, AnonymousFunction)):
         _body = t.parent.body.body
     else:
@@ -795,23 +794,27 @@ def transform_captured_variables(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, Name):
             continue
-        if isinstance(n.parent, (Assign, LocalAssign)):
+        # a LocalAssign can never be an UpValue
+        if isinstance(n.parent, LocalAssign):
             continue
         defined_in = _first_parent_containing_assign_of(n, n)
         if not defined_in:
             continue
         _function_needing_upvalues = _first_parent_of_type(n, (AnonymousFunction, Function, Method))
-        _used_name = 'lambda' if isinstance(_function_needing_upvalues, AnonymousFunction) else _function_needing_upvalues.name.id
+        if _function_needing_upvalues == defined_in:
+            continue
 
         # 1. Define a `lambda_args` table in the original environment
+        # TODO - If not already defined
         defined_in.body.body.insert(0, LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body))
         # 2. Replace all references to the original var with lambda_args.var
         _convert_local_name_to_lambda_env(defined_in, n)
-        # 4. Inject `lambda_args` as argument in the closure
-        _function_needing_upvalues.args.append(Name("lambda_args"))
-        # 5. Inject `var = lambda_args.var` in the closure
-        _function_needing_upvalues.body.body.insert(0, LocalAssign([Name(n.id)], [Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)], parent=_function_needing_upvalues.body))
-        # 6. Mark creation of closure with `environment=lambda_args`
+        _convert_local_name_to_lambda_env(_function_needing_upvalues, n)
+        # 3. Inject `lambda_args` as argument in the closure
+        if not any(_a.id == "lambda_args" for _a in _function_needing_upvalues.args):
+            _function_needing_upvalues.args.append(Name("lambda_args"))
+        # TODO - if not already defined
+        # 4. Mark creation of closure with `environment=lambda_args`
         _function_needing_upvalues.environment = Name("lambda_args")
 
 def transform(src, pretty=True, dump_ast=False, testing_params=None):
