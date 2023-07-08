@@ -95,8 +95,8 @@ def rename_stdlib_calls(tree):
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    _stdlib_overlap = ['sqr', 'sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs']
-    _custom_overlap = ['remove']
+    _stdlib_overlap = ['sqr', 'sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs', 'time', 'min', 'max']
+    _custom_overlap = ['remove', 'sfx']
     _to_rename = _stdlib_overlap + _custom_overlap
     for n in tree_visitor.nodes:
         if not isinstance(n, (Function, Call)):
@@ -763,6 +763,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
 
 
     gen = '''#include "pico8.h"
+#include "stdlib.h"
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"

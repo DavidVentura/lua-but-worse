@@ -68,6 +68,9 @@ TValue_t del(TValue_t tab, TValue_t v) {
 	return found_value;
 }
 
+TValue_t deli(TVSlice_t varargs) {
+	assert(false);
+}
 
 void _foreach(TValue_t t, Func_t f) {
 	assert(t.tag == TAB);
@@ -119,3 +122,4 @@ KV_t* ipairs(TValue_t t) {
 	ret[wanted-1] = (KV_t){.key = T_NULL, .value = T_NULL};
 	return ret;
 }
+
