@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import subprocess
 import textwrap
 
@@ -36,7 +35,7 @@ def const_strings(tree):
             if isinstance(n.idx, StringRef):
                 # already replaced this.. problematic?
                 continue
-            # value.idx 
+            # value.idx
             assert isinstance(n.idx, Name)
             assert n.parent is not None, f"{n} ({n.dump()}) has no parent"
             n.idx = StringRef(n.idx.id, parent=n)
@@ -601,7 +600,7 @@ def transform_anonymous_functions(tree):
         if not n.parent:
             print("transform_anon_func NO PARENT??")
             continue
-        if isinstance(n, Function): 
+        if isinstance(n, Function):
             if not _is_inside(n, Function) and not _is_inside(n, Table):
                 continue
         if isinstance(n, AnonymousFunction):
@@ -615,7 +614,7 @@ def transform_anonymous_functions(tree):
             else:
                 _callable_name = f'{_callable_name}_{i}'
                 i += 1
-            n.parent.replace_child(n, FunctionReference(Name(_callable_name)))
+            n.parent.replace_child(n, FunctionReference(Name(_callable_name), n.environment))
         else:
             _callable_name = f"__nested_func_{n.name.id}" # FIXME: should include parent's name
             n.parent.replace_child(n, Assign([n.name], [FunctionReference(Name(_callable_name))], parent=n.parent))
@@ -736,11 +735,92 @@ def set_parent_on_children(tree):
     for n in tree_visitor.nodes:
         n.set_parent_on_children()
 
+
+def _first_parent_containing_assign_of(t: Node, n: Name):
+    if t.parent is None:
+        return None
+    # TODO: implement method-variables?
+    if isinstance(t.parent, (Function, Method, AnonymousFunction)):
+        _body = t.parent.body.body
+    else:
+        return _first_parent_containing_assign_of(t.parent, n)
+
+    # UpValues are "external local variables", we only look for LocalAssign
+    for stmt in _body:
+        if not isinstance(stmt, LocalAssign):
+            continue
+        if n.id not in [_t.id for _t in stmt.targets]:
+            continue
+        if n.id in [_a.id for _a in t.parent.args]:
+            continue
+        return t.parent
+
+    # didn't find a LocalAssign in the function, keep going up
+    return _first_parent_containing_assign_of(t.parent, n)
+
+def _convert_local_name_to_lambda_env(block, name):
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(block)
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Name):
+            continue
+        # we are walking recursively down the tree, but only care for anything
+        # directly within the scope of the original block; not for nested functions
+        if _first_parent_of_type(n, (Function, Method, AnonymousFunction)) != block:
+            continue
+        assert n.parent, n.dump()
+        if n.id != name.id:
+            continue
+        #print("found name to replace within", n.parent.dump())
+        new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
+        n.parent.replace_child(n, new_child)
+
+def transform_captured_variables(tree):
+    """
+    Given a local variable that is used in a nested function ("UpValue"), replace it
+    with a table-based access
+
+    function a()                | function a()
+        local var = 5           |   local lambda_args = {var=5}
+        function b()            |   function b()
+                                |       var = _lambda_environment.var
+            return var          |       return var
+        end                     |   end
+        return b                |   return TCLOSURE(b, lambda_args)
+    end                         | end
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Name):
+            continue
+        if isinstance(n.parent, (Assign, LocalAssign)):
+            continue
+        defined_in = _first_parent_containing_assign_of(n, n)
+        if not defined_in:
+            continue
+        _function_needing_upvalues = _first_parent_of_type(n, (AnonymousFunction, Function, Method))
+        _used_name = 'lambda' if isinstance(_function_needing_upvalues, AnonymousFunction) else _function_needing_upvalues.name.id
+
+        # 1. Define a `lambda_args` table in the original environment
+        defined_in.body.body.insert(0, LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body))
+        # 2. Replace all references to the original var with lambda_args.var
+        _convert_local_name_to_lambda_env(defined_in, n)
+        # 4. Inject `lambda_args` as argument in the closure
+        _function_needing_upvalues.args.append(Name("lambda_args"))
+        # 5. Inject `var = lambda_args.var` in the closure
+        _function_needing_upvalues.body.body.insert(0, LocalAssign([Name(n.id)], [Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)], parent=_function_needing_upvalues.body))
+        # 6. Mark creation of closure with `environment=lambda_args`
+        _function_needing_upvalues.environment = Name("lambda_args")
+
 def transform(src, pretty=True, dump_ast=False, testing_params=None):
     tree = ast.parse(src)
     set_parent_on_children(tree)
 
     rename_stdlib_calls(tree)
+    transform_captured_variables(tree) # before transform_functions_to_vec_args, as it has to ignore args
+                                       # before transform_anonymous_functions, as it has to walk upwards looking for UpValues
     transform_anonymous_functions(tree)
     transform_table_functions(tree)
     transform_methods(tree)
