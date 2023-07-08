@@ -43,11 +43,6 @@ SArena_t _strings = {.strings=NULL, .len=0};
  * Fix32 to_bits and from_bits could return the internal representation of a 32-bit value
  * which saves some masking & shifting
  *
- * Move Math, Tables, Values and Objects to be implemented in this repo
- * https://pico-8.fandom.com/wiki/APIReference
- * - They do not depend on pico8 internal state or backend chosen
- * - Somewhat easier testing
- * - Should generate better asm, more inlining, etc
  */
 
 #include <execinfo.h>
