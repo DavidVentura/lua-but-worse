@@ -822,7 +822,7 @@ KV_t* ipairs(TValue_t t) {
 	while(true) {
 		TValue_t _key = TNUM(wanted);
 		TValue_t _val = get_tabvalue(t, _key);
-		if(_val.tag == NUL) { u: key:
+		if(_val.tag == NUL) {
 			break;
 		}
 		// wanted is "1-based indexing"
