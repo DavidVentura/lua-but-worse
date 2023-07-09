@@ -36,7 +36,7 @@ def const_strings(tree):
                 # already replaced this.. problematic?
                 continue
             # value.idx
-            assert isinstance(n.idx, Name)
+            assert isinstance(n.idx, Name), n.dump()
             assert n.parent is not None, f"{n} ({n.dump()}) has no parent"
             n.idx = StringRef(n.idx.id, parent=n)
         elif isinstance(n, Field):
@@ -770,7 +770,6 @@ def _convert_local_name_to_lambda_env(block, name):
         assert n.parent, n.dump()
         if n.id != name.id:
             continue
-        #print("found name to replace within", n.parent.dump())
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 
