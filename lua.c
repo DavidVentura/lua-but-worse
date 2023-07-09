@@ -293,11 +293,6 @@ TValue_t _div(TValue_t a, TValue_t b) {
 	return TNUM(fix32_div(a.num, b.num));
 }
 
-TValue_t _sqr(TValue_t a) {
-	assert(a.tag == NUM);
-	return TNUM(fix32_mul(a.num, a.num));
-}
-
 TValue_t _sqrt(TValue_t a) {
 	assert(a.tag == NUM);
 	return TNUM(fix32_sqrt(a.num));

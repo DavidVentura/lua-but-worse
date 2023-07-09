@@ -94,12 +94,12 @@ def rename_stdlib_calls(tree):
     """
     Rewrites certain function calls to not use C stdlib names, like
 
-    `sqr` -> `_sqr`
+    `sqrt` -> `_sqrt`
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
 
-    _stdlib_overlap = ['sqr', 'sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs', 'time', 'min', 'max']
+    _stdlib_overlap = ['sqrt', 'ceil', 'sin', 'cos', 'atan2', 'abs', 'time', 'min', 'max']
     _custom_overlap = ['remove']
     _to_rename = _stdlib_overlap + _custom_overlap
     for n in tree_visitor.nodes:
