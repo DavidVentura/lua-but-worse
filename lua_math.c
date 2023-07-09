@@ -1,5 +1,6 @@
 #include "fix32.h"
 #include "lua.h"
+#include "lua_table.h"
 #include "assert.h"
 #include <stdlib.h>
 
@@ -45,12 +46,19 @@ TValue_t shl(TValue_t num, TValue_t bits){
 }
 
 TValue_t rnd(TVSlice_t varargs){
-	//_Static_assert(RAND_MAX >= UINT16_MAX, "Rand is not big enough to use trivially");
+	_Static_assert(RAND_MAX >= UINT16_MAX, "Rand is not big enough to use trivially");
 	if (varargs.num == 0) {
 		return TNUM(fix32_from_bits(rand() % fix32_to_bits(fix32_from_bits(1))));
 	}
 	assert(varargs.num == 1);
-	assert(varargs.elems[0].tag == NUM); // TODO table
-	return TNUM(fix32_from_bits(rand() % fix32_to_bits(varargs.elems[0].num)));
+	if (varargs.elems[0].tag == NUM) {
+		return TNUM(fix32_from_bits(rand() % fix32_to_bits(varargs.elems[0].num)));
+	}
+	if (varargs.elems[0].tag == TAB) {
+		int16_t seq_until = _sequential_until(varargs.elems[0]);
+		if (seq_until == 0) return T_NULL;
+		return get_tabvalue(varargs.elems[0], TNUM(rand() % seq_until));
+	}
+	return TNUM(0);
 }
 
