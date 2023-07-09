@@ -46,21 +46,33 @@ typedef struct  __attribute__((__packed__)) KVSlice_s {
 } KVSlice_t;
 _Static_assert(sizeof(KVSlice_t) <= 10, "too big");
 
-typedef struct Table_s {
+typedef struct Metamethod_s {
 	TValue_t __index;
+	TValue_t __add;
+	TValue_t __mul;
+	TValue_t __sub;
+	TValue_t __div;
+	TValue_t __unm;
+	TValue_t __pow;
+	TValue_t __concat;
+} Metamethod_t;
+
+typedef struct Table_s {
+	Metamethod_t* mm;
 	KVSlice_t kvp;
 	uint16_t metatable_idx;
 	uint16_t count;
 	uint8_t refcount;
 } Table_t;
 
-// 16 on TValue_t __index 		(8 on 32bit)
+// 8 on TValue_t __index 		(8 on 32bit)
 // 16 on kvs  				    (8 on 32bit)
 // 5 on count/refcount/metatable_idx
 // 3 on padding
-_Static_assert(sizeof(Table_t) <= 32, "too big");
-// 20 on 32bit
-// _Static_assert(sizeof(Table_t) <= 20, "too big");
+_Static_assert(sizeof(Table_t) <= 24, "too big");
+#if UINTPTR_MAX == UINT32_MAX
+_Static_assert(sizeof(Table_t) <= 16, "too big");
+#endif
 
 
 typedef struct TArena_s {
@@ -104,6 +116,8 @@ static const fix32_t _one  = {.i=1, .f=0};
 static const TValue_t T_TRUE =  {.tag = BOOL, .num = {.i=1, .f=0}};
 static const TValue_t T_FALSE = {.tag = BOOL, .num = {.i=0, .f=0}};
 static const Str_t STR__INDEX = CONSTSTR("__index");
+static const Str_t STR__ADD   = CONSTSTR("__add");
+static const Str_t STR__SUB   = CONSTSTR("__sub");
 
 
 #define gc __attribute__((__cleanup__(__decref)))

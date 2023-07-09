@@ -197,14 +197,33 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	}
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
-	bool is_index = key.tag == STR && _streq(GETSTR(key), STR__INDEX);
+	// 5 = shortest metamethod = __add
+
+	if (key.tag == STR) {
+		Str_t _maybe_meta = GETSTR(key);
+		if (_maybe_meta.len >= 5 && _maybe_meta.data[0] == '_' && _maybe_meta.data[1] == '_') {
+			if (u->mm == NULL) {
+				u->mm = malloc(sizeof(Metamethod_t));
+			}
+			if(_streq(_maybe_meta, STR__INDEX)) {
+				u->mm->__index = v;
+				return;
+			}
+			if(_streq(_maybe_meta, STR__ADD)) {
+				u->mm->__add = v;
+				return;
+			}
+			if(_streq(_maybe_meta, STR__SUB)) {
+				u->mm->__sub = v;
+				return;
+			}
+			// TODO: other operations
+		}
+	}
 
 	for(uint16_t i=0; i<u->kvp.len; i++) {
 		if (equal(u->kvp.kvs[i].key, key)) {
 			u->kvp.kvs[i].value = v;
-			if(is_index) {
-				u->__index = u->kvp.kvs[i].value;
-			}
 			return;
 		}
 		if(u->kvp.kvs[i].key.tag == NUL && first_null == UINT16_MAX) {
@@ -215,9 +234,6 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 		u->kvp.kvs[first_null].key = key;
 		u->kvp.kvs[first_null].value = v;
 		u->count++;
-		if(is_index) {
-			u->__index = u->kvp.kvs[first_null].value;
-		}
 		return;
 	}
 	assert(first_null == UINT16_MAX);
@@ -237,7 +253,9 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 		}
 	}
 	if(t->metatable_idx != UINT16_MAX) {
-		TValue_t __index = GETMETATAB(*t).__index;
+		Table_t meta = GETMETATAB(*t);
+		if (meta.mm == NULL) return T_NULL;
+		TValue_t __index = meta.mm->__index;
 		switch(__index.tag) {
 			case TAB:
 				return get_tabvalue(TTAB(__index.table_idx), key);
@@ -427,7 +445,7 @@ uint16_t make_table(uint16_t size) {
 		.kvp.kvs = kvs,
 		.kvp.len = size,
 		.metatable_idx = UINT16_MAX,
-		.__index = T_NULL,
+		.mm = NULL,
 	};
 
 	// TODO(CORR): find correct index for table
@@ -568,6 +586,7 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
 	memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
+	memset(t->mm, 0, sizeof(Metamethod_t));
 	// this memset will set the `tag` on `key` and `value` to NUL
 	// which means that the backing array can later be assigned to a new
 	// table without an allocation
@@ -658,8 +677,16 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	// making it overwritable
 	// TODO(OPT): how to prevent unnecessary allocation
 	// when the key exists?
+	if (a.tag==NUL || b.tag==NUL) {
+		DEBUG_PRINT("attempt to concatenate a nil value\n");
+		assert(false);
+	}
 	assert(a.tag == STR);
-	if(b.tag != STR) return T_NULL;
+	if(b.tag != STR) {
+		assert(b.tag == NUM);
+		b = tostring(b);
+		GETSTRP(b)->refcount = 1; // FIXME: this is terrible, unsure of its purpose
+	}
 	assert(b.tag == STR);
 
 	uint16_t alen = GETSTR(a).len;
