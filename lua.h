@@ -29,7 +29,7 @@ struct TValue_s {
 };
 
 _Static_assert(sizeof(TValue_t) <= 64, "too big");
-_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 2 for table_idx, 1 for enum, ?? for padding.
+_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 2 for table_idx, 1 for enum, 3 for padding.
 #if UINTPTR_MAX == UINT32_MAX
 _Static_assert(sizeof(TValue_t) <= 12, "too big"); // 12 total size on 32bit
 #endif
@@ -40,18 +40,24 @@ typedef struct KV_s {
 	TValue_t value;
 } KV_t;
 
-typedef struct Table_s {
+typedef struct  __attribute__((__packed__)) KVSlice_s {
 	KV_t* kvs;
-	TValue_t __index;
-	uint16_t metatable_idx;
 	uint16_t len;
+} KVSlice_t;
+_Static_assert(sizeof(KVSlice_t) <= 10, "too big");
+
+typedef struct Table_s {
+	TValue_t __index;
+	KVSlice_t kvp;
+	uint16_t metatable_idx;
 	uint16_t count;
 	uint8_t refcount;
 } Table_t;
-// 8 on pointer 				(4 on 32bit)
-// 16 on TValue_t __idnex 		(8 on 32bit)
-// 7 on count/refcount/len/metatable_idx
-// 1 on padding
+
+// 16 on TValue_t __index 		(8 on 32bit)
+// 16 on kvs  				    (8 on 32bit)
+// 5 on count/refcount/metatable_idx
+// 3 on padding
 _Static_assert(sizeof(Table_t) <= 32, "too big");
 // 20 on 32bit
 // _Static_assert(sizeof(Table_t) <= 20, "too big");

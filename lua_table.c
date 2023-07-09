@@ -15,10 +15,10 @@ TValue_t* all(TValue_t t) {
 	// +1 to ensure a T_NULL can always be a delimiter
 	TValue_t* ret = calloc(tab->count+1, sizeof(TValue_t));
 	uint16_t idx = 0;
-	for(uint16_t i=0; i<tab->len; i++) {
-		if(tab->kvs[i].value.tag != NUL) {
+	for(uint16_t i=0; i<tab->kvp.len; i++) {
+		if(tab->kvp.kvs[i].value.tag != NUL) {
 			assert(idx<tab->count);
-			ret[idx] = tab->kvs[i].value;
+			ret[idx] = tab->kvp.kvs[i].value;
 			idx++;
 		}
 	}
@@ -75,9 +75,9 @@ TValue_t deli(TVSlice_t varargs) {
 void _foreach(TValue_t t, Func_t f) {
 	assert(t.tag == TAB);
 	Table_t* tab = GETTAB(t);
-	for(uint16_t i=0; i<tab->len; i++) {
-		if(tab->kvs[i].key.tag != NUL) {
-			f((TVSlice_t){.elems=(TValue_t[1]){tab->kvs[i].value}, .num=1});
+	for(uint16_t i=0; i<tab->kvp.len; i++) {
+		if(tab->kvp.kvs[i].key.tag != NUL) {
+			f((TVSlice_t){.elems=(TValue_t[1]){tab->kvp.kvs[i].value}, .num=1});
 		}
 	}
 }
@@ -93,9 +93,9 @@ KV_t* pairs(TValue_t t) {
 	Table_t* tab = GETTAB(t);
 	KV_t* ret = calloc(tab->count+1, sizeof(KV_t));
 	uint16_t j = 0;
-	for(uint16_t i=0; i<tab->len; i++) {
-		if(tab->kvs[i].key.tag == NUL) continue;
-		ret[j] = tab->kvs[i];
+	for(uint16_t i=0; i<tab->kvp.len; i++) {
+		if(tab->kvp.kvs[i].key.tag == NUL) continue;
+		ret[j] = tab->kvp.kvs[i];
 		j++;
 	}
 	ret[j] = (KV_t){.key = T_NULL, .value = T_NULL};

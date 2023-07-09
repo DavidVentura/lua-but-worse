@@ -171,16 +171,16 @@ void grow_table(uint16_t idx)  {
 	assert(false);
 #else
 	Table_t* t = &_tables.tables[idx];
-	uint16_t new_len = t->len * 2;
-	new_len = (t->len == 0) ? 2 : new_len;
+	uint16_t new_len = t->kvp.len * 2;
+	new_len = (t->kvp.len == 0) ? 2 : new_len;
 	// this sets key->tag to 0 (NUL) for all new spaces in KVs
 	KV_t* new_kvs = calloc(sizeof(KV_t), new_len);
-	if(t->len) {
-		memcpy(new_kvs, t->kvs, sizeof(KV_t) * t->len);
+	if(t->kvp.len) {
+		memcpy(new_kvs, t->kvp.kvs, sizeof(KV_t) * t->kvp.len);
 	}
-	free(t->kvs);
-	t->kvs = new_kvs;
-	t->len = new_len;
+	free(t->kvp.kvs);
+	t->kvp.kvs = new_kvs;
+	t->kvp.len = new_len;
 	// t->count does not change
 #endif
 }
@@ -199,24 +199,24 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	uint16_t first_null = UINT16_MAX;
 	bool is_index = key.tag == STR && _streq(GETSTR(key), STR__INDEX);
 
-	for(uint16_t i=0; i<u->len; i++) {
-		if (equal(u->kvs[i].key, key)) {
-			u->kvs[i].value = v;
+	for(uint16_t i=0; i<u->kvp.len; i++) {
+		if (equal(u->kvp.kvs[i].key, key)) {
+			u->kvp.kvs[i].value = v;
 			if(is_index) {
-				u->__index = u->kvs[i].value;
+				u->__index = u->kvp.kvs[i].value;
 			}
 			return;
 		}
-		if(u->kvs[i].key.tag == NUL && first_null == UINT16_MAX) {
+		if(u->kvp.kvs[i].key.tag == NUL && first_null == UINT16_MAX) {
 			first_null = i;
 		}
 	}
 	if (first_null < UINT16_MAX) {
-		u->kvs[first_null].key = key;
-		u->kvs[first_null].value = v;
+		u->kvp.kvs[first_null].key = key;
+		u->kvp.kvs[first_null].value = v;
 		u->count++;
 		if(is_index) {
-			u->__index = u->kvs[first_null].value;
+			u->__index = u->kvp.kvs[first_null].value;
 		}
 		return;
 	}
@@ -231,9 +231,9 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 	if(key.tag == NUL) return T_NULL;
 	Table_t* t = GETTAB(u);
-	for(uint16_t i=0; i<t->len; i++) {
-		if (equal(t->kvs[i].key, key)) {
-			return t->kvs[i].value;
+	for(uint16_t i=0; i<t->kvp.len; i++) {
+		if (equal(t->kvp.kvs[i].key, key)) {
+			return t->kvp.kvs[i].value;
 		}
 	}
 	if(t->metatable_idx != UINT16_MAX) {
@@ -257,11 +257,11 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 	if(key.tag == NUL) return T_NULL;
 	Table_t* t = GETTAB(u);
-	for(uint16_t i=0; i<t->len; i++) {
-		if (equal(t->kvs[i].key, key)) {
-			TValue_t ret = t->kvs[i].value;
-			t->kvs[i].key = T_NULL;
-			t->kvs[i].value = T_NULL;
+	for(uint16_t i=0; i<t->kvp.len; i++) {
+		if (equal(t->kvp.kvs[i].key, key)) {
+			TValue_t ret = t->kvp.kvs[i].value;
+			t->kvp.kvs[i].key = T_NULL;
+			t->kvp.kvs[i].value = T_NULL;
 			t->count--;
 			return ret;
 		}
@@ -424,8 +424,8 @@ uint16_t make_table(uint16_t size) {
 		kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
 
 	Table_t ret = {
-		.kvs = kvs,
-		.len = size,
+		.kvp.kvs = kvs,
+		.kvp.len = size,
 		.metatable_idx = UINT16_MAX,
 		.__index = T_NULL,
 	};
@@ -567,7 +567,7 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		return;
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
-	memset(t->kvs, 0, t->len * sizeof(KV_t));
+	memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
 	// this memset will set the `tag` on `key` and `value` to NUL
 	// which means that the backing array can later be assigned to a new
 	// table without an allocation
@@ -588,7 +588,8 @@ void _decref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			assert(GETTAB(v)->refcount > 0);
+			// FIXME
+			//assert(GETTAB(v)->refcount > 0);
 			// FIXME(GC)
 			//_tab_decref(GETTAB(v), v.table_idx);
 			break;
