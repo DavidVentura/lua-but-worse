@@ -294,15 +294,35 @@ TValue_t _mult(TValue_t a, TValue_t b) {
 }
 
 TValue_t _add(TValue_t a, TValue_t b) {
-	assert(a.tag == NUM);
-	assert(b.tag == NUM);
-	return TNUM(fix32_add(a.num, b.num));
+	if (a.tag == NUM && b.tag == NUM) {
+		return TNUM(fix32_add(a.num, b.num));
+	}
+	if (a.tag == TAB && b.tag == TAB) {
+		// what happens if they have different metatables or...
+		Table_t* t = GETTAB(a);
+		assert(t->metatable_idx != UINT16_MAX);
+		Table_t mt = GETMETATAB(*t);
+		assert(mt.mm != NULL);
+		assert(mt.mm->__add.tag == FUN);
+		return CALL(mt.mm->__add, ((TVSlice_t){.elems=(TValue_t[2]){a, b}, .num=2}));
+	}
+	assert(false);
 }
 
 TValue_t _sub(TValue_t a, TValue_t b) {
-	assert(a.tag == NUM);
-	assert(b.tag == NUM);
-	return TNUM(fix32_sub(a.num, b.num));
+	if (a.tag == NUM && b.tag == NUM) {
+		return TNUM(fix32_sub(a.num, b.num));
+	}
+	if (a.tag == TAB && b.tag == TAB) {
+		// what happens if they have different metatables or...
+		Table_t* t = GETTAB(a);
+		assert(t->metatable_idx != UINT16_MAX);
+		Table_t mt = GETMETATAB(*t);
+		assert(mt.mm != NULL);
+		assert(mt.mm->__sub.tag == FUN);
+		return CALL(mt.mm->__sub, ((TVSlice_t){.elems=(TValue_t[2]){a, b}, .num=2}));
+	}
+	assert(false);
 }
 
 TValue_t _floor_div(TValue_t a, TValue_t b) {
@@ -816,6 +836,7 @@ Table_t* GETTAB(TValue_t x) {
 	return &_tables.tables[x.table_idx];
 }
 Table_t GETMETATAB(Table_t x) {
+	assert(x.metatable_idx != UINT16_MAX);
 	return _tables.tables[x.metatable_idx];
 }
 
