@@ -53,11 +53,9 @@ void print_trace (void) {
 
   size = backtrace (array, 5);
   strings = backtrace_symbols (array, size);
-  if (strings != NULL)
-  {
-
+  if (strings != NULL && size > 2) {
     printf ("Obtained %d stack frames.\n", size);
-    for (i = 0; i < size; i++)
+    for (i = 2; i < size; i++)
       printf ("%s\n", strings[i]);
   }
 
@@ -72,7 +70,11 @@ TValue_t __direct_call(Func_t f, TVSlice_t args) {
 }
 
 TValue_t __call(TValue_t t, TVSlice_t args) {
-	assert(t.tag == FUN);
+	if (t.tag != FUN) {
+		DEBUG_PRINT("attempt to call a nil value\n");
+		print_trace();
+		assert(false);
+	}
 	assert(t.fun != NULL);
 	if(t.env_table_idx != UINT16_MAX) {
 		TValue_t* argarray = calloc(args.num+1, sizeof(TValue_t));
@@ -188,7 +190,11 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	assert(t.tag == TAB);
 	Table_t* u = GETTAB(t);
 	assert(u != NULL);
-	assert(v.tag != NUL); // need to lower u->count iff old value was not null
+	if (v.tag == NUL) {
+		// need to lower u->count iff old value was not null
+		DEBUG_PRINT("tried to set_tabvalue to null\n");
+		return;
+	}
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
 	bool is_index = key.tag == STR && _streq(GETSTR(key), STR__INDEX);

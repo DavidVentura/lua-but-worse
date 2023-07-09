@@ -44,7 +44,8 @@ TValue_t __table_func_vector_new(TVSlice_t function_arguments) {
 TValue_t __vector_len(TVSlice_t function_arguments) {
   TValue_t gc self = T_NULL;
   _set(&self, __get_array_index_capped(function_arguments, 0));
-  return _sqrt(_add(_sqr(get_tabvalue(self, __str_x)), _sqr(get_tabvalue(self, __str_y))));
+  return _sqrt(_add(CALL((sqr), ((TVSlice_t){.elems = (TValue_t[1]){get_tabvalue(self, __str_x)}, .num = 1})),
+                    CALL((sqr), ((TVSlice_t){.elems = (TValue_t[1]){get_tabvalue(self, __str_y)}, .num = 1}))));
 }
 
 TValue_t __vector_normal(TVSlice_t function_arguments) {

@@ -38,10 +38,7 @@ TValue_t test_concat(TVSlice_t function_arguments) {
   printh(_concat(__str_, TNUM16(5)));
 }
 
-TValue_t __main() {
-  CALL((test_sub), ((TVSlice_t){.elems = NULL, .num = 0}));
-  CALL((test_concat), ((TVSlice_t){.elems = NULL, .num = 0}));
-}
+TValue_t __main() { CALL((test_sub), ((TVSlice_t){.elems = NULL, .num = 0})); }
 
 TValue_t __preinit() {
   _grow_strings_to(7);
