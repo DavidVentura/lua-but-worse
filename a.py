@@ -9,8 +9,13 @@ from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, 
         AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr,
         )
 
+from typing import Optional, TypeAlias
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
+_FunctionLike: TypeAlias = Function | AnonymousFunction | Method
+FunctionLike = (Function, AnonymousFunction, Method)
 
 """
 # TODO
@@ -736,13 +741,16 @@ def set_parent_on_children(tree):
         n.set_parent_on_children()
 
 
-def _first_parent_containing_assign_of(t: Node, n: Name):
+def _first_parent_containing_assign_of_or_argument(t: Node, n: Name) -> tuple[Optional[_FunctionLike], bool]:
+    """
+    Returns (Node?, was-argument)
+    """
     if t.parent is None:
-        return None
-    if isinstance(t.parent, (Function, Method, AnonymousFunction)):
+        return None, False
+    if isinstance(t.parent, FunctionLike):
         _body = t.parent.body.body
     else:
-        return _first_parent_containing_assign_of(t.parent, n)
+        return _first_parent_containing_assign_of_or_argument(t.parent, n)
 
     # UpValues are "external local variables", we only look for LocalAssign
     for stmt in _body:
@@ -752,10 +760,14 @@ def _first_parent_containing_assign_of(t: Node, n: Name):
             continue
         if n.id in [_a.id for _a in t.parent.args]:
             continue
-        return t.parent
+        return t.parent, False
+
+    for arg in t.parent.args:
+        if arg.id == n.id:
+            return t.parent, True
 
     # didn't find a LocalAssign in the function, keep going up
-    return _first_parent_containing_assign_of(t.parent, n)
+    return _first_parent_containing_assign_of_or_argument(t.parent, n)
 
 def _convert_local_name_to_lambda_env(block, name):
     tree_visitor = ast.WalkVisitor()
@@ -765,7 +777,7 @@ def _convert_local_name_to_lambda_env(block, name):
             continue
         # we are walking recursively down the tree, but only care for anything
         # directly within the scope of the original block; not for nested functions
-        if _first_parent_of_type(n, (Function, Method, AnonymousFunction)) != block:
+        if _first_parent_of_type(n, FunctionLike) != block:
             continue
         assert n.parent, n.dump()
         if n.id != name.id:
@@ -773,7 +785,7 @@ def _convert_local_name_to_lambda_env(block, name):
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 
-def _has_localassign_to_empty_table(f: Function) -> bool:
+def _localassign_of_lambda_args(f: Function) -> Optional[Node]:
     for n in f.body.body:
         if not isinstance(n, LocalAssign):
             continue
@@ -783,10 +795,11 @@ def _has_localassign_to_empty_table(f: Function) -> bool:
         if not isinstance(t, Name) or t.id != "lambda_args":
             continue
         v = n.values[0]
-        if not isinstance(v, Table) or len(v.fields) != 0:
+        if not isinstance(v, Table):
             continue
-        return True
-    return False
+        return n
+    return None
+
 def transform_captured_variables(tree):
     """
     Given a local variable that is used in a nested function ("UpValue"), replace it
@@ -800,6 +813,8 @@ def transform_captured_variables(tree):
         end                     |   end
         return b                |   return TCLOSURE(b, lambda_args)
     end                         | end
+
+    Arguments to functions are also local variables
     """
     tree_visitor = ast.WalkVisitor()
     tree_visitor.visit(tree)
@@ -810,22 +825,32 @@ def transform_captured_variables(tree):
         # a LocalAssign can never be an UpValue
         if isinstance(n.parent, LocalAssign):
             continue
-        defined_in = _first_parent_containing_assign_of(n, n)
+        defined_in, was_argument = _first_parent_containing_assign_of_or_argument(n, n)
         if not defined_in:
             continue
-        _function_needing_upvalues = _first_parent_of_type(n, (AnonymousFunction, Function, Method))
+        _function_needing_upvalues = _first_parent_of_type(n, FunctionLike)
         if _function_needing_upvalues == defined_in:
             continue
 
-        # 1. Define a `lambda_args` table in the original environment
-        if not _has_localassign_to_empty_table(defined_in):
-            defined_in.body.body.insert(0, LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body))
-        # 2. Replace all references to the original var with lambda_args.var
+        # 1. Replace all references to the original var with lambda_args.var
         _convert_local_name_to_lambda_env(defined_in, n)
         _convert_local_name_to_lambda_env(_function_needing_upvalues, n)
+
+        # 2. Define a `lambda_args` table in the original environment
+        _la = _localassign_of_lambda_args(defined_in)
+        if _la is None:
+            _la = LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body)
+            defined_in.body.body.insert(0, _la)
+
+        if was_argument:
+            # copy the argument to the lambda-args
+            f = Field(Name(n.id), Name(n.id), between_brackets=False, parent=_la)
+            _la.values[0].fields.append(f)
+
         # 3. Inject `lambda_args` as argument in the closure
         if not any(_a.id == "lambda_args" for _a in _function_needing_upvalues.args):
             _function_needing_upvalues.args.append(Name("lambda_args"))
+
         # 4. Mark creation of closure with `environment=lambda_args`
         _function_needing_upvalues.environment = Name("lambda_args")
 
