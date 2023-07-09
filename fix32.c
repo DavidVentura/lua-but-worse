@@ -35,6 +35,11 @@ fix32_t fix32_invert_sign(fix32_t a) {
 	return (fix32_t){.i = (int16_t)(-a.i-1), .f = (uint16_t)(0xFFFF - a.f + 1)};
 }
 
+fix32_t fix32_from_parts(int16_t i, uint16_t f) {
+	// GDB does not support literal structs
+	return (fix32_t){.i=i, .f=f};
+}
+
 fix32_t fix32_from_float(float f) {
 	return fix32_from_bits((int32_t)((int64_t)(f * 65536.0f)));
 }

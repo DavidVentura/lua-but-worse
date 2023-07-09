@@ -22,6 +22,7 @@ void fix32_inc(fix32_t* f);
 int32_t fix32_to_bits(fix32_t f);
 fix32_t fix32_from_bits(int32_t b);
 fix32_t fix32_invert_sign(fix32_t a);
+fix32_t fix32_from_parts(int16_t i, uint16_t f);
 fix32_t fix32_from_float(float f);
 float fix32_to_float(fix32_t a);
 fix32_t fix32_pow(fix32_t a, fix32_t b);
