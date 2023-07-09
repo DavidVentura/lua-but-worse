@@ -221,7 +221,7 @@ def transform_anonymous_tables(tree):
             # Regular table creation
             continue
 
-        _pt = _first_parent_of_type(n, (Table, Index))  # TODO Call Block ?
+        _pt = _first_parent_of_type(n, (Table, Index, Call))  # TODO Call Block ?
         if _pt is None:
             continue
 
@@ -252,6 +252,13 @@ def transform_anonymous_tables(tree):
                 _key = f"_anonymous_table_{anon_table_count}"
                 _pt.value = Name(_key)
                 anon_table_count += 1
+        elif isinstance(_pt, Call):
+            for arg in _pt.args:
+                if arg == n:
+                    table_to_replace = arg
+                    _key = f"_anonymous_table_{anon_table_count}"
+                    _pt.replace_child(arg, Name(_key))
+                    anon_table_count += 1
 
         _closest_block.body.insert(idx, LocalAssign([Name(_key)], [table_to_replace], parent=_closest_block,
                                                     first_token=n.first_token, last_token=n.last_token,
