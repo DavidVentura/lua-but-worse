@@ -76,7 +76,9 @@ TValue_t rnd(TVSlice_t varargs){
 	if (varargs.elems[0].tag == TAB) {
 		int16_t seq_until = _sequential_until(varargs.elems[0]);
 		if (seq_until == 0) return T_NULL;
-		return get_tabvalue(varargs.elems[0], TNUM(rand() % seq_until));
+		return get_tabvalue(varargs.elems[0], TNUM((rand() % seq_until)+1));
+		// rand() returns [0, n), but we need [1, n], adding 1 to the original range we get [1, n+1) which is the same
+
 	}
 	return TNUM(0);
 }
