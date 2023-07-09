@@ -723,6 +723,7 @@ int16_t __get_int(TVSlice_t args, uint8_t idx) {
 
 int16_t __opt_int(TVSlice_t args, uint8_t idx, int16_t _default) {
 	if(idx >= args.num) return _default;
+	if(args.elems[idx].tag == NUL) return _default;
 	assert(args.elems[idx].tag == NUM);
 	assert(args.elems[idx].num.f == 0);
 	return args.elems[idx].num.i;
@@ -736,6 +737,7 @@ bool __get_bool(TVSlice_t args, uint8_t idx) {
 
 bool __opt_bool(TVSlice_t args, uint8_t idx, bool _default) {
 	if(idx >= args.num) return _default;
+	if(args.elems[idx].tag == NUL) return _default;
 	assert(args.elems[idx].tag == BOOL);
 	return __bool(args.elems[idx]);
 }
@@ -748,6 +750,7 @@ fix32_t __get_num(TVSlice_t args, uint8_t idx) {
 
 fix32_t __opt_num(TVSlice_t args, uint8_t idx, fix32_t _default) {
 	if(idx >= args.num) return _default;
+	if(args.elems[idx].tag == NUL) return _default;
 	assert(args.elems[idx].tag == NUM);
 	return args.elems[idx].num;
 }
@@ -797,4 +800,18 @@ TValue_t type(TValue_t arg) {
 		case FUN:
 			return TSTR("function");
 	}
+}
+TValue_t sub(TVSlice_t args) {
+	Str_t* str = __get_str(args, 0);
+	int16_t start = __get_int(args, 1);
+	int16_t end = __opt_int(args, 2, -1);
+
+	if (start < 0) start = str->len + start + 1;
+	if (end < 0) end = str->len + end + 1;
+	assert(end>start);
+	uint8_t* new_data = malloc(end-start+1);
+	// `start` and `end` are 1-based -- need to start copying 1 byte before
+	memcpy(new_data, str->data+start-1, end-start+1);
+	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=0};
+	return TSTRi(_store_str(substr));
 }

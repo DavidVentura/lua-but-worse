@@ -123,7 +123,6 @@ TValue_t _add(TValue_t a, TValue_t b);
 TValue_t _sub(TValue_t a, TValue_t b);
 TValue_t _floor_div(TValue_t a, TValue_t b);
 TValue_t _div(TValue_t a, TValue_t b);
-TValue_t _sqr(TValue_t a);
 TValue_t _sqrt(TValue_t a);
 TValue_t _pow(TValue_t a, TValue_t b);
 TValue_t _ceil(TValue_t a);
