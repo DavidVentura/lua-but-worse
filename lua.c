@@ -703,7 +703,7 @@ TValue_t tostring(TValue_t v) {
 	assert(v.tag == NUM);
 	char* buf = calloc(12, 1);
 	print_fix32(v.num, buf);
-	ret = TSTR(buf);
+	ret = TSTR(buf); // TSTR makes its own copy
 	free(buf);
 	return ret;
 }
