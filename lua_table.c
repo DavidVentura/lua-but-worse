@@ -91,8 +91,15 @@ void _foreach(TValue_t t, Func_t f) {
 
 
 void _foreach_tvalue(TValue_t t, TValue_t f) {
+	// TODO: deduplicate with _foreach, this has to consider closure
 	assert(f.tag == FUN);
-	_foreach(t, f.fun);
+	assert(t.tag == TAB);
+	Table_t* tab = GETTAB(t);
+	for(uint16_t i=0; i<tab->kvp.len; i++) {
+		if(tab->kvp.kvs[i].key.tag != NUL) {
+			__call(f, (TVSlice_t){.elems=(TValue_t[1]){tab->kvp.kvs[i].value}, .num=1});
+		}
+	}
 }
 
 KV_t* pairs(TValue_t t) {
