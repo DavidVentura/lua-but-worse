@@ -723,17 +723,17 @@ TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx) {
 }
 
 int16_t __get_int(TVSlice_t args, uint8_t idx) {
+	// This truncates the decimal part
 	assert(idx < args.num);
 	assert(args.elems[idx].tag == NUM);
-	assert(args.elems[idx].num.f == 0);
 	return args.elems[idx].num.i;
 }
 
 int16_t __opt_int(TVSlice_t args, uint8_t idx, int16_t _default) {
+	// This truncates the decimal part
 	if(idx >= args.num) return _default;
 	if(args.elems[idx].tag == NUL) return _default;
 	assert(args.elems[idx].tag == NUM);
-	assert(args.elems[idx].num.f == 0);
 	return args.elems[idx].num.i;
 }
 
