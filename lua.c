@@ -425,10 +425,11 @@ uint16_t make_table(uint16_t size) {
 	};
 
 	// TODO(CORR): find correct index for table
+	uint16_t retval = _tables.used;
+	_tables.tables[retval] = ret;
 	_tables.used++;
-	_tables.tables[_tables.used] = ret;
 	DEBUG_PRINT("Created <tab %d>\n", _tables.used);
-	return _tables.used;
+	return retval;
 }
 
 void free_tvalue(TValue_t tv) {
