@@ -774,6 +774,20 @@ def _convert_local_name_to_lambda_env(block, name):
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 
+def _has_localassign_to_empty_table(f: Function) -> bool:
+    for n in f.body.body:
+        if not isinstance(n, LocalAssign):
+            continue
+        if len(n.targets) != 1:  # specifically looking for `local lambda_args = {}`
+            continue
+        t = n.targets[0]
+        if not isinstance(t, Name) or t.id != "lambda_args":
+            continue
+        v = n.values[0]
+        if not isinstance(v, Table) or len(v.fields) != 0:
+            continue
+        return True
+    return False
 def transform_captured_variables(tree):
     """
     Given a local variable that is used in a nested function ("UpValue"), replace it
@@ -805,15 +819,14 @@ def transform_captured_variables(tree):
             continue
 
         # 1. Define a `lambda_args` table in the original environment
-        # TODO - If not already defined
-        defined_in.body.body.insert(0, LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body))
+        if not _has_localassign_to_empty_table(defined_in):
+            defined_in.body.body.insert(0, LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body))
         # 2. Replace all references to the original var with lambda_args.var
         _convert_local_name_to_lambda_env(defined_in, n)
         _convert_local_name_to_lambda_env(_function_needing_upvalues, n)
         # 3. Inject `lambda_args` as argument in the closure
         if not any(_a.id == "lambda_args" for _a in _function_needing_upvalues.args):
             _function_needing_upvalues.args.append(Name("lambda_args"))
-        # TODO - if not already defined
         # 4. Mark creation of closure with `environment=lambda_args`
         _function_needing_upvalues.environment = Name("lambda_args")
 

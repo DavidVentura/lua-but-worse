@@ -20,15 +20,12 @@ TValue_t newCounter(TVSlice_t function_arguments);
 TValue_t newCounter(TVSlice_t function_arguments) {
   TValue_t gc lambda_args = T_NULL;
   _set(&lambda_args, TTAB(make_table(1)));
-  _set(&lambda_args, TTAB(make_table(1)));
-  _set(&lambda_args, TTAB(make_table(1)));
   set_tabvalue(lambda_args, __str_i, TNUM16(0));
   return TCLOSURE(__anonymous_function_0, lambda_args);
 }
 
 TValue_t __main() {
   TValue_t gc lambda_args = T_NULL;
-  _set(&lambda_args, TTAB(make_table(1)));
   _set(&lambda_args, TTAB(make_table(1)));
   set_tabvalue(lambda_args, __str_captured, TNUM16(7));
   _set(&a, TCLOSURE(__anonymous_function_a, lambda_args));
