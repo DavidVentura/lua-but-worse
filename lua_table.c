@@ -25,10 +25,11 @@ TValue_t* all(TValue_t t) {
 	ret[idx] = T_NULL;
 	return ret;
 }
-TValue_t add(TValue_t tab, TValue_t v) {
-	// TODO: optional index field
-	assert(tab.tag == TAB);
 
+int16_t _sequential_until(TValue_t tab) {
+	// Returns an index, n, such that all keys in the range [1..n]
+	// exist in the table
+	// Returns 0 if `1` is not in the table.
 	int16_t wanted = 1;
 	while(true) {
 		if(get_tabvalue(tab, TNUM(wanted)).tag == NUL) {
@@ -36,7 +37,13 @@ TValue_t add(TValue_t tab, TValue_t v) {
 		}
 		wanted++;
 	}
-	// wanted was not found as a contiguous number, add there
+	return wanted-1;
+}
+
+TValue_t add(TValue_t tab, TValue_t v) {
+	// TODO: optional index field
+	assert(tab.tag == TAB);
+	int16_t wanted = _sequential_until(tab) + 1;
 	set_tabvalue(tab, TNUM(wanted), v);
 	return v;
 }
