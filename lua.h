@@ -185,6 +185,7 @@ Table_t* __get_tab(TVSlice_t args, uint8_t idx);
 TValue_t __opt_value(TVSlice_t args, uint8_t idx, TValue_t _default);
 TValue_t type(TValue_t arg);
 TValue_t sub(TVSlice_t args);
+TValue_t _length(TValue_t arg);
 
 Str_t* GETSTRP(TValue_t x);
 Str_t GETSTR(TValue_t x);

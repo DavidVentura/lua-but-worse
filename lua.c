@@ -823,3 +823,11 @@ TValue_t sub(TVSlice_t args) {
 	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=0};
 	return TSTRi(_store_str(substr));
 }
+
+TValue_t _length(TValue_t arg) {
+	assert(arg.tag == STR || arg.tag == TAB);
+	if (arg.tag == STR) {
+		return TNUM(GETSTR(arg).len);
+	}
+	return TNUM(GETTAB(arg)->count);
+}
