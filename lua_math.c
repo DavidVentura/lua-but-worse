@@ -1,5 +1,6 @@
 #include "fix32.h"
 #include "lua.h"
+#include "math.h"
 #include "lua_table.h"
 #include "assert.h"
 #include <stdlib.h>
@@ -14,7 +15,10 @@ TValue_t _sin(TValue_t angle){
 	return TNUM(fix32_sin(angle.num));
 }
 TValue_t _atan2(TValue_t dx, TValue_t dy){
-	assert(false);
+	assert(dx.tag == NUM);
+	assert(dy.tag == NUM);
+	// TODO: do in fix32
+	return TNUM(fix32_from_float(atan2f(fix32_to_float(dx.num), fix32_to_float(dy.num))));
 }
 
 TValue_t _abs(TValue_t num){
@@ -24,8 +28,12 @@ TValue_t  sgn(TVSlice_t varargs){
 	assert(false);
 }
 TValue_t _min(TVSlice_t varargs){
-	assert(false);
+	fix32_t first  = __get_num(varargs, 0);
+	fix32_t second = __opt_num(varargs, 1, fix32_from_parts(0, 0));
+	if(fix32_lt(first, second)) return TNUM(first);
+	return TNUM(second);
 }
+
 TValue_t _max(TVSlice_t varargs){
 	assert(false);
 }
@@ -37,12 +45,23 @@ TValue_t  mid(TValue_t a, TValue_t b, TValue_t c){
 }
 
 TValue_t shr(TValue_t num, TValue_t bits){
-	assert(false);
-	//return TNUM(fix32_shr(num.num, bits.num));
+	assert(num.tag == NUM);
+	assert(bits.tag == NUM);
+	assert(bits.num.f == 0);
+	assert(bits.num.i >= 0);
+	uint32_t numbits = fix32_to_bits(num.num);
+
+	return TNUM(fix32_from_bits(numbits >> bits.num.i));
 }
+
 TValue_t shl(TValue_t num, TValue_t bits){
-	assert(false);
-	//return TNUM(fix32_shl(num.num, bits.num));
+	assert(num.tag == NUM);
+	assert(bits.tag == NUM);
+	assert(bits.num.f == 0);
+	assert(bits.num.i >= 0);
+	uint32_t numbits = fix32_to_bits(num.num);
+
+	return TNUM(fix32_from_bits(numbits << bits.num.i));
 }
 
 TValue_t rnd(TVSlice_t varargs){
