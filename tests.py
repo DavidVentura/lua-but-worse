@@ -21,6 +21,8 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
     flags = ['gcc', '-O0', '-std=c11', '-fsanitize=address',
             f'-I{here.absolute()}',
              '-I/home/david/git/PicoPico/src',
+             '-lm',  # link, -l, not I
+             '-g',
              str(_target_temp),
              f"{here.absolute()}/lua.c",
              f"{here.absolute()}/fix32.c",
