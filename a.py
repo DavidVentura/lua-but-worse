@@ -784,6 +784,10 @@ def _convert_local_name_to_lambda_env(block, name):
         assert n.parent, n.dump()
         if n.id != name.id:
             continue
+        if isinstance(n.parent, Index) and n.parent.notation is IndexNotation.DOT:
+            # when getting to `value.index`, if `index` matches, do not replace it
+            if n == n.parent.idx:
+                continue
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 

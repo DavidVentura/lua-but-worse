@@ -1,3 +1,17 @@
+function test_enclosing_table_index()
+	printh("enclosing arg overlap")
+	function wrapper(x,y)
+		local obj = {}
+		obj.x = "not wrapped"
+		obj.a = "wrapped"
+		function wrapped()
+			printh(obj.x)  -- this 'x' should NOT be wrapped
+			printh(obj[y]) -- this 'y' should be wrapped
+		end
+		wrapped()
+	end
+	wrapper(5, "a")
+end
 function test_returning_lambda()
   printh("newCounter")
   c1 = newCounter()
@@ -48,6 +62,7 @@ function main()
 
   test_returning_lambda()
   test_function_args_captured()
+  test_enclosing_table_index()
   return 0
 end
 
