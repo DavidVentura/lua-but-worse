@@ -17,8 +17,22 @@ TValue_t _sin(TValue_t angle){
 TValue_t _atan2(TValue_t dx, TValue_t dy){
 	assert(dx.tag == NUM);
 	assert(dy.tag == NUM);
+
 	// TODO: do in fix32
-	return TNUM(fix32_from_float(atan2f(fix32_to_float(dx.num), fix32_to_float(dy.num))));
+	float a2f = atan2f(fix32_to_float(dx.num), fix32_to_float(dy.num));
+	/*
+	fix32_t TAU = fix32_from_float(6.283185307179586f);
+	fix32_t a2 = fix32_from_float(a2f);
+	fix32_t res = fix32_add(fix32_from_float(0.7500001f), fix32_div(a2, TAU));
+	fix32_t one = fix32_from_parts(1, 0);
+	if(fix32_geq(res, one)) {
+		res = fix32_sub(res, one);
+	}
+	*/
+	float TAU = 6.283185307179586f;
+	float a = 0.75f + a2f / TAU;
+	if(a>=1) a-=1;
+	return TNUM(fix32_from_float(a));
 }
 
 TValue_t _abs(TValue_t num){
