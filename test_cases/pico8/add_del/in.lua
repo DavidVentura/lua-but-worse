@@ -8,6 +8,16 @@ function test_add()
 	printh(t[2])
 	printh(t[3])
 end
+function test_del2()
+	local t = {1,2,3,4,5,6}
+	printh(t[4]) -- 4
+	del(t, 4)
+	printh(t[4]) -- 5
+	printh(t[5]) -- 6
+	del(t, 4)
+	printh(t[4]) -- 6
+	printh(t[5]) -- nil
+end
 function test_del()
 	local t = {}
 	add(t, "a value")
@@ -21,4 +31,6 @@ function main()
 	test_add()
 	printh("---")
 	test_del()
+	printh("---")
+	test_del2()
 end

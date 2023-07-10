@@ -57,15 +57,20 @@ TValue_t del(TValue_t tab, TValue_t v) {
 	while(true) {
 		TValue_t key = TNUM(wanted);
 		TValue_t val = get_tabvalue(tab, key);
-		if(val.tag == NUL) {
+		if(val.tag == NUL) { // missing key
 			break;
 		}
 		if(last_contiguous_key.tag == NUL && equal(val, v)) {
 			last_contiguous_key = key;
 			found_value = val;
+			wanted++; // avoid copying the key to itself if it's matches on the first iteration
 			continue;
 		}
-		set_tabvalue(tab, last_contiguous_key, val); // copy val over to previous key
+		if(last_contiguous_key.tag != NUL) {
+			// copy val over to previous key, though there's no "previous key"
+			// on the first iteration
+			set_tabvalue(tab, last_contiguous_key, val);
+		}
 		last_contiguous_key = key;
 		wanted++;
 	}
