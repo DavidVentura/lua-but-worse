@@ -2,7 +2,7 @@ vector = {}
 vector.__index = vector
 
 function vector:len()
-	return sqrt(sqr(self.x) + sqr(self.y))
+	return sqrt((self.x * self.x) + (self.y * self.y))
 end
 
 function vector:normal()
