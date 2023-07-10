@@ -99,6 +99,7 @@ typedef struct SArena_s {
 #define TSTR(x)        ((TValue_t){.tag = STR,  .str_idx = (make_str(x))})
 #define TSTRi(i)       ((TValue_t){.tag = STR,  .str_idx = (i)})
 #define CONSTSTR(x)    ((Str_t){.data = (uint8_t*)(x), .len=(sizeof((x))-1), .refcount=1})
+// CONSTSTR has .refcount=1 because it must operate on `const char*`
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 #define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=UINT16_MAX})
 #define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=(y).table_idx})
