@@ -6,7 +6,7 @@ import textwrap
 from luaparser import ast
 from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
         AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
-        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr,
+        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr, Fornum,
         )
 
 from typing import Optional, TypeAlias
@@ -14,6 +14,8 @@ from typing import Optional, TypeAlias
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+_Scope: TypeAlias = Function | AnonymousFunction | Method | Fornum
+Scope = (Function, AnonymousFunction, Method, Fornum)
 _FunctionLike: TypeAlias = Function | AnonymousFunction | Method
 FunctionLike = (Function, AnonymousFunction, Method)
 
@@ -216,7 +218,7 @@ def transform_anonymous_tables(tree):
             # Regular table creation
             continue
 
-        _pt = _first_parent_of_type(n, (Table, Index, Call))  # TODO Call Block ?
+        _pt = _first_parent_of_type(n, (Table, Index, Call, Field))
         if _pt is None:
             continue
 
@@ -229,18 +231,12 @@ def transform_anonymous_tables(tree):
         _name_prefix = f'__subtable_{_name_prefix}_'
 
         _key = "idk_key"
-        idx, _closest_block = _find_index_at_closest_block(_pt)
         table_to_replace = None
-        if isinstance(_pt, Table):
-            # On nested tables, the value must be replaced
-            for f in _pt.fields:
-                if n != f.value:
-                    continue
-                if isinstance(f.key, String):
-                    _key = _name_prefix + f.key.s
-                table_to_replace = f.value
-                f.value = Name(_key)
-                break
+        if isinstance(_pt, Field):
+            if isinstance(_pt.key, String):
+                _key = _name_prefix + _pt.key.s
+            table_to_replace = _pt.value
+            _pt.value = Name(_key)
         elif isinstance(_pt, Index):
             if _pt.value == n:  # Anonymous table, being indexed by _pt.idx
                 table_to_replace = _pt.value
@@ -255,6 +251,7 @@ def transform_anonymous_tables(tree):
                     _pt.replace_child(arg, Name(_key))
                     anon_table_count += 1
 
+        idx, _closest_block = _find_index_at_closest_block(_pt)
         _closest_block.body.insert(idx, LocalAssign([Name(_key)], [table_to_replace], parent=_closest_block,
                                                     first_token=n.first_token, last_token=n.last_token,
                                                     ))
@@ -314,9 +311,13 @@ def transform_literal_tables_to_assignments(tree):
 
             """
             _target_table = Index(_target_table.idx, _target_table.value, _target_table.notation)
+
+
         for f in n.fields[::-1]:
             key = f.key
-            if isinstance(key, Name):
+            if isinstance(key, Name) and not f.between_brackets:
+                # a.x  -> SetTabValue(a, "x", val)
+                # a[x] -> SetTabValue(a,   x, val)
                 key = String(key.id)
             settabvalue = SetTabValue(_target_table, key, f.value, parent=_assign.parent,
                                       first_token=n.first_token, last_token=n.last_token)
@@ -513,7 +514,12 @@ def transform_index_assign(tree):
         else:
             assert False, "Only Assign and IAssign supported"
 
-        if not _assign in _assign.parent.body:
+        if isinstance(_assign.parent.body, Block):
+            _body = _assign.parent.body.body
+        else:
+            _body = _assign.parent.body
+
+        if not _assign in _body:
             # FIXME, why is this iterating over the same Assign twice?
             #assert False
             continue
@@ -570,9 +576,7 @@ def transform_table_functions(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, (Function)):
             continue
-        if not n.parent:
-            print("NO PARENT??")
-            continue
+        assert n.parent
         if not isinstance(n.name, Index):
             continue
 
@@ -589,6 +593,7 @@ def _find_table_key(t: Table, value):
     for f in t.fields:
         if f.value == value:
             return f.key.id # assuming it is always Name
+
 def transform_anonymous_functions(tree):
     """
     Rewrite AnonymousFunction (`a = function() ... end`) into:
@@ -604,9 +609,7 @@ def transform_anonymous_functions(tree):
     for n in tree_visitor.nodes:
         if not isinstance(n, (Function, AnonymousFunction)):
             continue
-        if not n.parent:
-            print("transform_anon_func NO PARENT??")
-            continue
+        assert n.parent
         if isinstance(n, Function):
             if not _is_inside(n, Function) and not _is_inside(n, Table):
                 continue
@@ -742,14 +745,39 @@ def set_parent_on_children(tree):
     for n in tree_visitor.nodes:
         n.set_parent_on_children()
 
+def transform_forloop_target_variables(tree):
+    """
+    Transform Fornum such that the assigned variable is moved _inside_ the loop,
+    as a LocalAssign
 
-def _first_parent_containing_assign_of_or_argument(t: Node, n: Name) -> tuple[Optional[_FunctionLike], bool]:
+    for actual_var=0,10 do | for(_secret = 0; _secret < 10; _secret++) {
+      ...                  |     TValue_t actual_var = _secret;
+    end                    | }
+
+
+    """
+    tree_visitor = ast.WalkVisitor()
+    tree_visitor.visit(tree)
+    for n in tree_visitor.nodes:
+        if not isinstance(n, Fornum):
+            continue
+        varname = n.target.copy()
+        # manually replace Fornum.target, it's a hack, as there are many other
+        # `replace_child` which call Fornum, and they should _mostly_ not replace
+        # the target
+        new_var = Name(f"_hidden_{varname.id}", parent=n)
+        n.target = new_var
+
+        n.replace_child(n.target, new_var.copy())
+        n.body.body.insert(0, LocalAssign([varname.copy()], [Name(f"_hidden_{varname.id}")], parent=n.body))
+
+def _first_parent_containing_assign_of_or_argument(t: Node, n: Name) -> tuple[Optional[_Scope], bool]:
     """
     Returns (Node?, was-argument)
     """
     if t.parent is None:
         return None, False
-    if isinstance(t.parent, FunctionLike):
+    if isinstance(t.parent, Scope):
         _body = t.parent.body.body
     else:
         return _first_parent_containing_assign_of_or_argument(t.parent, n)
@@ -760,13 +788,14 @@ def _first_parent_containing_assign_of_or_argument(t: Node, n: Name) -> tuple[Op
             continue
         if n.id not in [_t.id for _t in stmt.targets]:
             continue
-        if n.id in [_a.id for _a in t.parent.args]:
+        if not isinstance(t.parent, Fornum) and n.id in [_a.id for _a in t.parent.args]:
             continue
         return t.parent, False
 
-    for arg in t.parent.args:
-        if arg.id == n.id:
-            return t.parent, True
+    if not isinstance(t.parent, Fornum):
+        for arg in t.parent.args:
+            if arg.id == n.id:
+                return t.parent, True
 
     # didn't find a LocalAssign in the function, keep going up
     return _first_parent_containing_assign_of_or_argument(t.parent, n)
@@ -779,7 +808,7 @@ def _convert_local_name_to_lambda_env(block, name):
             continue
         # we are walking recursively down the tree, but only care for anything
         # directly within the scope of the original block; not for nested functions
-        if _first_parent_of_type(n, FunctionLike) != block:
+        if _first_parent_of_type(n, Scope) != block:
             continue
         assert n.parent, n.dump()
         if n.id != name.id:
@@ -791,8 +820,10 @@ def _convert_local_name_to_lambda_env(block, name):
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 
-def _localassign_of_lambda_args(f: Function) -> Optional[Node]:
-    for n in f.body.body:
+def _localassign_of_lambda_args(f: _FunctionLike) -> Optional[Node]:
+    _body = f.body.body
+
+    for n in _body:
         if not isinstance(n, LocalAssign):
             continue
         if len(n.targets) != 1:  # specifically looking for `local lambda_args = {}`
@@ -831,11 +862,24 @@ def transform_captured_variables(tree):
         # a LocalAssign can never be an UpValue
         if isinstance(n.parent, LocalAssign):
             continue
+        if isinstance(n.parent, Fornum):
+            continue
         defined_in, was_argument = _first_parent_containing_assign_of_or_argument(n, n)
         if not defined_in:
             continue
+
         _function_needing_upvalues = _first_parent_of_type(n, FunctionLike)
         if _function_needing_upvalues == defined_in:
+            continue
+
+        if isinstance(defined_in, Fornum) and _first_parent_of_type(defined_in, FunctionLike) == _function_needing_upvalues:
+            """
+            Fornum defines its iteration variable as a LocalAssign in its own body (Block).
+            If the parent-function that needs the value is the same as the one that defines the ForNum,
+            it's not really being used
+            TODO: Fornum should only define its own variable as a LocalAssign when it's clear
+            that it is captured
+            """
             continue
 
         # 1. Replace all references to the original var with lambda_args.var
@@ -850,7 +894,7 @@ def transform_captured_variables(tree):
 
         if was_argument:
             # copy the argument to the lambda-args
-            f = Field(Name(n.id), Name(n.id), between_brackets=False, parent=_la)
+            f = Field(n.copy(), Name(n.id), between_brackets=False, parent=_la)
             _la.values[0].fields.append(f)
 
         # 3. Inject `lambda_args` as argument in the closure
@@ -865,6 +909,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     set_parent_on_children(tree)
 
     rename_stdlib_calls(tree)
+    transform_forloop_target_variables(tree) # before transform_captured_variables
     transform_captured_variables(tree) # before transform_functions_to_vec_args, as it has to ignore args
                                        # before transform_anonymous_functions, as it has to walk upwards looking for UpValues
     transform_anonymous_functions(tree)
