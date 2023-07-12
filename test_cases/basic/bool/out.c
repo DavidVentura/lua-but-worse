@@ -3,9 +3,6 @@
 #include "lua_table.h"
 #include "pico8.h"
 #include "stdlib.h"
-TValue_t __tmp_and_var_2 = T_NULL;
-TValue_t __tmp_and_var_1 = T_NULL;
-TValue_t __tmp_and_var_0 = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 

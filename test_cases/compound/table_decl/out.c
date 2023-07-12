@@ -7,8 +7,8 @@ TValue_t func_in_tab = T_NULL;
 TValue_t this = T_NULL;
 TValue_t __str_value_top = T_NULL;
 TValue_t __str_func_in_tab = T_NULL;
-TValue_t __str_key = T_NULL;
 TValue_t __str_value_attr = T_NULL;
+TValue_t __str_key = T_NULL;
 TValue_t __str_attr = T_NULL;
 TValue_t __str_func = T_NULL;
 TValue_t __str_right = T_NULL;
@@ -19,7 +19,7 @@ TValue_t __str_y = T_NULL;
 TValue_t __str_x = T_NULL;
 TValue_t literals = T_NULL;
 TValue_t __preinit();
-TValue_t __anonymous_function_func_in_tab_func(TVSlice_t function_arguments);
+TValue_t __anonymous_function_0(TVSlice_t function_arguments);
 TValue_t __main();
 
 TValue_t __main() {
@@ -55,12 +55,12 @@ TValue_t __main() {
   return TNUM16(0);
 }
 
-TValue_t __anonymous_function_func_in_tab_func(TVSlice_t function_arguments) {
+TValue_t __anonymous_function_0(TVSlice_t function_arguments) {
   TValue_t gc this = T_NULL;
   _set(&this, __get_array_index_capped(function_arguments, 0));
   set_tabvalue(this, __str_attr, TTAB(make_table(1)));
   // Fields for table attr
-  set_tabvalue(get_tabvalue(this, __str_attr), __str_key, TSTR("value_attr"));
+  set_tabvalue(get_tabvalue(this, __str_attr), __str_key, __str_value_attr);
   printh(__str_func_in_tab);
 }
 
@@ -74,15 +74,15 @@ TValue_t __preinit() {
   _set(&__str_right, TSTRi(_store_str_at_or_die(CONSTSTR("right"), 6)));
   _set(&__str_func, TSTRi(_store_str_at_or_die(CONSTSTR("func"), 5)));
   _set(&__str_attr, TSTRi(_store_str_at_or_die(CONSTSTR("attr"), 4)));
-  _set(&__str_value_attr, TSTRi(_store_str_at_or_die(CONSTSTR("value_attr"), 3)));
-  _set(&__str_key, TSTRi(_store_str_at_or_die(CONSTSTR("key"), 2)));
+  _set(&__str_key, TSTRi(_store_str_at_or_die(CONSTSTR("key"), 3)));
+  _set(&__str_value_attr, TSTRi(_store_str_at_or_die(CONSTSTR("value_attr"), 2)));
   _set(&__str_func_in_tab, TSTRi(_store_str_at_or_die(CONSTSTR("func in tab"), 1)));
   _set(&__str_value_top, TSTRi(_store_str_at_or_die(CONSTSTR("value_top"), 0)));
   _set(&this, TTAB(make_table(1)));
   set_tabvalue(this, __str_attr, TTAB(make_table(1)));
   // Fields for table attr
-  set_tabvalue(get_tabvalue(this, __str_attr), __str_key, TSTR("value_top"));
+  set_tabvalue(get_tabvalue(this, __str_attr), __str_key, __str_value_top);
   _set(&func_in_tab, TTAB(make_table(2)));
   // Fields for table func_in_tab
-  set_tabvalue(func_in_tab, __str_func, TFUN(__anonymous_function_func_in_tab_func));
+  set_tabvalue(func_in_tab, __str_func, TFUN(__anonymous_function_0));
 }

@@ -4,4 +4,4 @@ function main()
 		local a = 100
 	end
 	printh(a) -- a 
-fi
+end

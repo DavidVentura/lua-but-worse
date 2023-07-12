@@ -1,3 +1,12 @@
+function test_empty_thing()
+  local an_empty_one = ""
+  local another_empty_one = ""
+
+  local n1 = 5
+  local n2 = 6
+  local a = an_empty_one..n1
+  local b = an_empty_one..n2
+end
 function test_sub()
   local s="something"
   printh("test_sub")
@@ -18,6 +27,7 @@ function test_concat()
   printh(""..5)
 end
 function main()
+	test_empty_thing()
 	test_sub()
-	--test_concat()
+	test_concat()
 end

@@ -1,3 +1,13 @@
+function test_enclosing_fornum_iterator()
+	printh("enclosing fornum iterator")
+	for i=1,2 do
+		function func()
+			printh(i)
+		end
+		func()
+	end
+end
+
 function test_enclosing_table_index()
 	printh("enclosing arg overlap")
 	function wrapper(x,y)
@@ -63,6 +73,7 @@ function main()
   test_returning_lambda()
   test_function_args_captured()
   test_enclosing_table_index()
+  test_enclosing_fornum_iterator()
   return 0
 end
 

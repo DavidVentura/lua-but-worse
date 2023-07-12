@@ -3,17 +3,33 @@
 #include "lua_table.h"
 #include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_ = T_NULL;
 TValue_t __str_22222222222222222222 = T_NULL;
 TValue_t __str_11111111111111111111 = T_NULL;
 TValue_t __str_b = T_NULL;
 TValue_t __str_a = T_NULL;
 TValue_t __str_test_sub = T_NULL;
 TValue_t __str_something = T_NULL;
+TValue_t __str_ = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 TValue_t test_concat(TVSlice_t function_arguments);
 TValue_t test_sub(TVSlice_t function_arguments);
+TValue_t test_empty_thing(TVSlice_t function_arguments);
+
+TValue_t test_empty_thing(TVSlice_t function_arguments) {
+  TValue_t gc b = T_NULL;
+  TValue_t gc a = T_NULL;
+  TValue_t gc n2 = T_NULL;
+  TValue_t gc n1 = T_NULL;
+  TValue_t gc another_empty_one = T_NULL;
+  TValue_t gc an_empty_one = T_NULL;
+  _set(&an_empty_one, __str_);
+  _set(&another_empty_one, __str_);
+  _set(&n1, TNUM16(5));
+  _set(&n2, TNUM16(6));
+  _set(&a, _concat(an_empty_one, n1));
+  _set(&b, _concat(an_empty_one, n2));
+}
 
 TValue_t test_sub(TVSlice_t function_arguments) {
   TValue_t gc s = T_NULL;
@@ -38,15 +54,19 @@ TValue_t test_concat(TVSlice_t function_arguments) {
   printh(_concat(__str_, TNUM16(5)));
 }
 
-TValue_t __main() { CALL((test_sub), ((TVSlice_t){.elems = NULL, .num = 0})); }
+TValue_t __main() {
+  CALL((test_empty_thing), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((test_sub), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((test_concat), ((TVSlice_t){.elems = NULL, .num = 0}));
+}
 
 TValue_t __preinit() {
   _grow_strings_to(7);
-  _set(&__str_something, TSTRi(_store_str_at_or_die(CONSTSTR("something"), 6)));
-  _set(&__str_test_sub, TSTRi(_store_str_at_or_die(CONSTSTR("test_sub"), 5)));
-  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 4)));
-  _set(&__str_b, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 3)));
-  _set(&__str_11111111111111111111, TSTRi(_store_str_at_or_die(CONSTSTR("11111111111111111111"), 2)));
-  _set(&__str_22222222222222222222, TSTRi(_store_str_at_or_die(CONSTSTR("22222222222222222222"), 1)));
-  _set(&__str_, TSTRi(_store_str_at_or_die(CONSTSTR(""), 0)));
+  _set(&__str_, TSTRi(_store_str_at_or_die(CONSTSTR(""), 6)));
+  _set(&__str_something, TSTRi(_store_str_at_or_die(CONSTSTR("something"), 5)));
+  _set(&__str_test_sub, TSTRi(_store_str_at_or_die(CONSTSTR("test_sub"), 4)));
+  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 3)));
+  _set(&__str_b, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 2)));
+  _set(&__str_11111111111111111111, TSTRi(_store_str_at_or_die(CONSTSTR("11111111111111111111"), 1)));
+  _set(&__str_22222222222222222222, TSTRi(_store_str_at_or_die(CONSTSTR("22222222222222222222"), 0)));
 }
