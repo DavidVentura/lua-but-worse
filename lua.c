@@ -564,7 +564,7 @@ void _grow_strings_to(uint16_t new_len) {
 uint16_t _store_str(Str_t s) {
 	uint16_t ret = UINT16_MAX;
 	for(uint16_t i = 0; i<_strings.len; i++) {
-		if (_strings.strings[i].len == 0) {
+		if (_strings.strings[i].refcount == 0) {
 			ret = i;
 			break;
 		}
