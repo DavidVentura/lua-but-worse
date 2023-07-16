@@ -864,6 +864,20 @@ def transform_captured_variables(tree):
             continue
         if isinstance(n.parent, Fornum):
             continue
+        if isinstance(n.parent, Field) and not n.parent.between_brackets and isinstance(n.parent.key, Name) and n.parent.key.id == n.id:
+            # Do not consider literal table values with "string" keys variables that can be captured
+            # a = {x=5}
+            # x is not a variable
+            continue
+        if isinstance(n.parent, Index) and isinstance(n.parent.value, Index) and n.parent.value.value.id == "lambda_args" and n.parent.notation is IndexNotation.DOT:
+            # When multiple variables in the same scope are captured, the scope
+            # will be visited multiple times. After the first iteration, `lambda_args.captured`
+            # itself looks like a captured argument, and would otherwise get captured again
+            continue
+        if isinstance(n.parent, Index) and n == n.parent.idx and n.parent.notation is IndexNotation.DOT:
+            # When doing index accesses, such as `table.idx`, do not consider `idx` as usage of the name `idx`
+            # in general, they may overlap with External-Local-ly variables
+            continue
         defined_in, was_argument = _first_parent_containing_assign_of_or_argument(n, n)
         if not defined_in:
             continue
