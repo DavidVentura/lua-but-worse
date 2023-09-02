@@ -176,8 +176,20 @@ void test_float() {
 	printf("FLOAT ok\n");
 }
 
+void test_ceil() {
+	assert_eq(fix32_ceil(ZERO), ZERO);
+	assert_eq(fix32_ceil(ONE), ONE);
+	assert_eq(fix32_ceil(ONE), ONE);
+	assert_eq(fix32_ceil(ONE_EIGHTH), ONE);
+	assert_eq(fix32_ceil(TWO_EIGHTHS), ONE);
+	assert_eq(fix32_ceil(HALF), ONE);
+	assert_eq(fix32_ceil(THREE_QUARTERS), ONE);
+	printf("ceil OK\n");
+}
+
 int main() {
 	test_invert_sign();
+	test_ceil();
 	test_cmp();
 	test_mod();
 	test_abs();

@@ -61,6 +61,7 @@ fix32_t fix32_sub(fix32_t a, fix32_t b) {
 }
 
 fix32_t fix32_ceil(fix32_t a) {
+	if(a.f==0) return a;
 	return (fix32_t){.i=(int16_t)(a.i+1), .f=0};
 }
 
