@@ -571,17 +571,16 @@ uint16_t _store_str(Str_t s) {
 }
 
 uint16_t make_str(char* c) {
-	uint16_t len = strlen(c);
-	uint8_t* data = malloc(len);
-	memcpy(data, c, len);
-	Str_t s = (Str_t){.len=len, .data=data};
-	uint16_t strindex = _find_str_index(s);
+
+	uint8_t len = strlen(c);
+	if (len > _concat_buf.len) {
+		_concat_buf.data = realloc(_concat_buf.data, len);
+	}
+	_concat_buf.len = len;
+	memcpy(_concat_buf.data, c, _concat_buf.len);
+	uint16_t strindex = _find_str_index(_concat_buf);
 	if (strindex == UINT16_MAX) {
-		strindex = _store_str(s);
-	} else {
-		// TODO(OPT): less disgusting way of finding temp strings
-		DEBUG_PRINT("Pointlessly allocated and freed '%s'\n", c);
-		free(data);
+		strindex = _store_str(_concat_buf);
 	}
 	return strindex;
 }
@@ -703,18 +702,19 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	if(alen==0) return b;
 	if(blen==0) return a;
 
-	uint8_t* data = malloc(alen+blen);
+	if ((alen+blen) > _concat_buf.len) {
+		_concat_buf.data = realloc(_concat_buf.data, alen+blen);
+	}
+	_concat_buf.len = alen+blen;
 
-	memcpy(data, 		GETSTR(a).data, alen);
-	memcpy(data+alen, 	GETSTR(b).data, blen);
-	Str_t ret = (Str_t){.len=alen+blen, .data=data};
+	memcpy(_concat_buf.data, 		GETSTR(a).data, alen);
+	memcpy(_concat_buf.data+alen, 	GETSTR(b).data, blen);
 
-	uint16_t strindex = _find_str_index(ret);
+	uint16_t strindex = _find_str_index(_concat_buf);
 	if (strindex == UINT16_MAX) {
-		strindex = _store_str(ret);
-	} else {
-		DEBUG_PRINT("Was an unnecessary allocation\n");
-		free(data);
+		// FIXME: store_str does not make its own copy
+		// this is now broken
+		strindex = _store_str(_concat_buf);
 	}
 
 	return (TValue_t){.tag=STR, .str_idx=strindex};
