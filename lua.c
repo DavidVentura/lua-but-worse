@@ -11,26 +11,9 @@
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
 
+Str_t _concat_buf = {.len=0, .data=NULL};
+
 #define dbg_assert(x)  do { if(!(x)) { print_trace(); assert(x); } } while (0)
-#define __DEBUG_PRINT(level, fmt, args...) do {\
-	    char buffer[150]; \
-	    sprintf(buffer, "%s:%d:%s():", __FILE__, __LINE__, __func__); \
-	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
-	} while (0)
-
-#ifdef DEBUG2
- #define DEBUG
- #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
-#else
-  #define DEBUG2_PRINT(...) do{ } while ( false )
-#endif
-
-
-#ifdef DEBUG
- #define DEBUG_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG", fmt, ##args)
-#else
-  #define DEBUG_PRINT(...) do{ } while ( false )
-#endif
 
 /* Pending optimizations:
  *
@@ -197,10 +180,12 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	}
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
-	// 5 = shortest metamethod = __add
 
 	if (key.tag == STR) {
 		Str_t _maybe_meta = GETSTR(key);
+		// 5 as "__str"/"__add" (shortest metamethod) is 5 long
+		// it's just a silly optiimization as most comparisons are usually against
+		// values like "x" or "y"
 		if (_maybe_meta.len >= 5 && _maybe_meta.data[0] == '_' && _maybe_meta.data[1] == '_') {
 			if (u->mm == NULL) {
 				u->mm = malloc(sizeof(Metamethod_t));

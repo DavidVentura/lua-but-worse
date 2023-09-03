@@ -4,6 +4,27 @@
 #include <stdint.h>
 #include "fix32.h"
 
+#define __DEBUG_PRINT(level, fmt, args...) do {\
+	    char buffer[150]; \
+	    sprintf(buffer, "%s:%d:%s():", __FILE__, __LINE__, __func__); \
+	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
+	} while (0)
+
+#define DEBUG2
+#ifdef DEBUG2
+ #define DEBUG
+ #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
+#else
+  #define DEBUG2_PRINT(...) do{ } while ( false )
+#endif
+
+
+#ifdef DEBUG
+ #define DEBUG_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG", fmt, ##args)
+#else
+  #define DEBUG_PRINT(...) do{ } while ( false )
+#endif
+
 // It is important that NUL=0 -- a bunch of places have 
 // memset(0) or calloc() and those zeroes are abused to 
 // ensure the containers are full of T_NULL
