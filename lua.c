@@ -593,7 +593,9 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
 	memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
-	memset(t->mm, 0, sizeof(Metamethod_t));
+	if (t->mm != NULL) {
+		memset(t->mm, 0, sizeof(Metamethod_t));
+	}
 	// this memset will set the `tag` on `key` and `value` to NUL
 	// which means that the backing array can later be assigned to a new
 	// table without an allocation
