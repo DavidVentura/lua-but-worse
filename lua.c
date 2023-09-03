@@ -208,7 +208,9 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 
 	for(uint16_t i=0; i<u->kvp.len; i++) {
 		if (equal(u->kvp.kvs[i].key, key)) {
+			_decref(u->kvp.kvs[i].value);
 			u->kvp.kvs[i].value = v;
+			_incref(v);
 			return;
 		}
 		if(u->kvp.kvs[i].key.tag == NUL && first_null == UINT16_MAX) {
@@ -218,6 +220,7 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	if (first_null < UINT16_MAX) {
 		u->kvp.kvs[first_null].key = key;
 		u->kvp.kvs[first_null].value = v;
+		_incref(v);
 		u->count++;
 		return;
 	}
@@ -612,10 +615,9 @@ void _decref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			// FIXME
-			//assert(GETTAB(v)->refcount > 0);
 			// FIXME(GC)
-			//_tab_decref(GETTAB(v), v.table_idx);
+			assert(GETTAB(v)->refcount > 0);
+			_tab_decref(GETTAB(v), v.table_idx);
 			break;
 		case STR:
 			assert(GETSTRP(v)->refcount > 0);
@@ -657,11 +659,12 @@ void _incref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			// FIXME(GC)
-			if (GETTAB(v)->refcount < 10) GETTAB(v)->refcount++;
+			assert(GETTAB(v)->refcount < 250);
+			GETTAB(v)->refcount++;
 			DEBUG2_PRINT("added refc on <tab %d>=%d\n", v.table_idx, GETTAB(v)->refcount);
 			break;
 		case STR:
+			assert(GETSTRP(v)->refcount < 250);
 			DEBUG2_PRINT("added refc on '%.*s'\n", GETSTRP(v)->len, GETSTRP(v)->data);
 			GETSTRP(v)->refcount++;
 			break;
