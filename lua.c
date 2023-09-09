@@ -8,6 +8,7 @@
 //#include "fix32.h"
 
 
+const uint16_t TBL_BMAP_LEN = 32;
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
 
@@ -435,11 +436,10 @@ TValue_t _and(TValue_t a, TValue_t b) {
 uint32_t free_tables;
 uint16_t make_table(uint16_t size) {
 	if(_tables.len == _tables.used) {
-		// 32 to be always >= bitmap len
-		uint16_t new_len = _tables.len == 0 ? 16 : _tables.len*2;
+		uint16_t new_len = _tables.len == 0 ? TBL_BMAP_LEN : _tables.len*2;
 		if (_tables.tables == NULL) {
 			_tables.tables = calloc(new_len, sizeof(Table_t));
-			free_tables = 0xffff;
+			free_tables = 0xffffffff;
 		} else {
 			uint16_t old_len = _tables.len;
 			assert(new_len > old_len);
@@ -450,14 +450,13 @@ uint16_t make_table(uint16_t size) {
 		_tables.len = new_len;
 	}
 
-	uint16_t retval;
+	uint16_t retval = 0xfafa;
 	if (free_tables > 0) {
-		// if free_tables == 0, retval would be -1
 		retval = __builtin_ffs(free_tables) - 1;
 		free_tables ^= (1 << retval);
 	} else {
 		// TODO(PERF): use `used`+1 if just resized
-		for(uint16_t i = 16; i<_tables.len; i++) {
+		for(uint16_t i = TBL_BMAP_LEN; i<_tables.len; i++) {
 			if(_tables.tables[i].refcount==0) {
 				retval = i;
 				break;
@@ -467,14 +466,13 @@ uint16_t make_table(uint16_t size) {
 
 	Table_t* tp = &_tables.tables[retval];
 	if (tp->kvp.kvs == NULL && size > 0) {
-		tp->kvp.kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
+		tp->kvp.kvs = calloc(size, sizeof(KV_t)); // this sets key->tag to 0 (NUL)
 	}
 
 	tp->kvp.len = size;
 	tp->metatable_idx = UINT16_MAX;
 	tp->mm = NULL;
 
-	//_tables.tables[retval] = ret;
 	_tables.used++;
 	DEBUG_PRINT("Created <tab %d>\n", retval);
 	return retval;
@@ -617,7 +615,7 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		memset(t->mm, 0, sizeof(Metamethod_t));
 	}
 
-	if (cur_idx < 16)
+	if (cur_idx < TBL_BMAP_LEN)
 		free_tables |= (1 << cur_idx);
 	_tables.used--;
 	// this memset will set the `tag` on `key` and `value` to NUL
