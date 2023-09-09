@@ -92,7 +92,7 @@ TValue_t printh_lambda(TVSlice_t a) {
 	return print_tvalue(a.elems[0]);
 }
 TValue_t print_tvalue(TValue_t v) {
-	char buf[12] = {0};
+	char buf[MAX_STR_LEN_FIX32] = {0};
 	switch(v.tag) {
 		case NUM:
 			print_fix32(v.num, buf);
@@ -762,12 +762,12 @@ TValue_t tostring(TValue_t v) {
 	// TODO(OPT): use a static buff
 	TValue_t ret;
 	assert(v.tag == NUM);
-	char* buf = calloc(12, 1);
+	char buf[MAX_STR_LEN_FIX32] = {0};
 	print_fix32(v.num, buf);
 	ret = TSTR(buf); // TSTR makes its own copy
-	free(buf);
 	return ret;
 }
+
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	bool eq = equal(got, expected);
 	if (eq) return;

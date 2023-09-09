@@ -11,6 +11,7 @@ typedef struct __attribute__((__packed__))fix32_s {
 } fix32_t;
 
 
+#define MAX_STR_LEN_FIX32 12
 static const fix32_t __ZERO = (fix32_t){.i=0, .f=0};
 static const fix32_t __ONE = (fix32_t){.i=1, .f=0};
 // grep -P '^\w+.*{$' fix32.c | sed 's/\s\+{/;/'
