@@ -48,10 +48,22 @@ float fix32_to_float(fix32_t a) {
 	return a.i + (float)((float)a.f/0xFFFF);
 }
 
+uint16_t uint_pow(uint16_t base, uint16_t exp) {
+    unsigned result = 1;
+    while (exp)
+    {
+        if (exp % 2)
+           result *= base;
+        exp /= 2;
+        base *= base;
+    }
+    return result;
+}
+
 fix32_t fix32_pow(fix32_t a, fix32_t b) {
-	int32_t _a = fix32_to_bits(a);
-	int32_t _b = fix32_to_bits(b);
-	return fix32_from_bits(_a - _b);
+	assert(a.f == 0);
+	assert(b.f == 0);
+	return fix32_from_uint16(uint_pow(a.i, b.i));
 }
 
 fix32_t fix32_sub(fix32_t a, fix32_t b) {
