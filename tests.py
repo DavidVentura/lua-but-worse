@@ -53,6 +53,7 @@ def _extract_pragmas(src: str) -> dict:
         line = line.replace("-- pragma: ", "")
         ret[line] = 1
     return ret
+
 @pytest.mark.parametrize("test_dir, test_case", find_case_pairs())
 def test_cases(test_dir, test_case: str):
     in_f, expected_f, stdout_f = (Path(f'{test_dir}/{test_case}/in.lua'), Path(f'{test_dir}/{test_case}/out.c'), Path(f'{test_dir}/{test_case}/expected_stdout'))
