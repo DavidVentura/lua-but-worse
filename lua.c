@@ -432,11 +432,14 @@ TValue_t _and(TValue_t a, TValue_t b) {
 	return __bool(a) ? b : a ;
 }
 
+uint32_t free_tables;
 uint16_t make_table(uint16_t size) {
 	if(_tables.len == _tables.used) {
+		// 32 to be always >= bitmap len
 		uint16_t new_len = _tables.len == 0 ? 16 : _tables.len*2;
 		if (_tables.tables == NULL) {
 			_tables.tables = calloc(new_len, sizeof(Table_t));
+			free_tables = 0xffff;
 		} else {
 			uint16_t old_len = _tables.len;
 			assert(new_len > old_len);
@@ -447,22 +450,33 @@ uint16_t make_table(uint16_t size) {
 		_tables.len = new_len;
 	}
 
-	KV_t* kvs = NULL;
-	if (size > 0)
-		kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
+	uint16_t retval;
+	if (free_tables > 0) {
+		// if free_tables == 0, retval would be -1
+		retval = __builtin_ffs(free_tables) - 1;
+		free_tables ^= (1 << retval);
+	} else {
+		// TODO(PERF): use `used`+1 if just resized
+		for(uint16_t i = 16; i<_tables.len; i++) {
+			if(_tables.tables[i].refcount==0) {
+				retval = i;
+				break;
+			}
+		}
+	}
 
-	Table_t ret = {
-		.kvp.kvs = kvs,
-		.kvp.len = size,
-		.metatable_idx = UINT16_MAX,
-		.mm = NULL,
-	};
+	Table_t* tp = &_tables.tables[retval];
+	if (tp->kvp.kvs == NULL && size > 0) {
+		tp->kvp.kvs = calloc(sizeof(KV_t), size); // this sets key->tag to 0 (NUL)
+	}
 
-	// TODO(CORR): find correct index for table
-	uint16_t retval = _tables.used;
-	_tables.tables[retval] = ret;
+	tp->kvp.len = size;
+	tp->metatable_idx = UINT16_MAX;
+	tp->mm = NULL;
+
+	//_tables.tables[retval] = ret;
 	_tables.used++;
-	DEBUG_PRINT("Created <tab %d>\n", _tables.used);
+	DEBUG_PRINT("Created <tab %d>\n", retval);
 	return retval;
 }
 
@@ -594,10 +608,16 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		return;
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
-	memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
+	if (t->kvp.len > 0)
+		memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
+
 	if (t->mm != NULL) {
 		memset(t->mm, 0, sizeof(Metamethod_t));
 	}
+
+	if (cur_idx < 16)
+		free_tables |= (1 << cur_idx);
+	_tables.used--;
 	// this memset will set the `tag` on `key` and `value` to NUL
 	// which means that the backing array can later be assigned to a new
 	// table without an allocation
