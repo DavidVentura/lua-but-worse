@@ -1,3 +1,14 @@
+function test_double_enclosing_fornum_iterator()
+	printh("double_enclosing fornum iterator")
+	for x=1,2 do
+		for y=1,2 do
+			function whatever_func()
+				printh(x*y)
+			end
+			whatever_func()
+		end
+	end
+end
 function test_enclosing_fornum_iterator()
 	printh("enclosing fornum iterator")
 	for i=1,2 do
@@ -74,6 +85,6 @@ function main()
   test_function_args_captured()
   test_enclosing_table_index()
   test_enclosing_fornum_iterator()
+  test_double_enclosing_fornum_iterator()
   return 0
 end
-

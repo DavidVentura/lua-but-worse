@@ -2,8 +2,8 @@ function _inner()
 	local s = "$"
 	local intermediate
 	for i=1,10 do
-		intermediate = tostring(i)
-		s = "#"..intermediate
+		-- intermediate = tostring(i)
+		s = "#"..i -- tostring(i)
 	end
 	-- 3 strings exist: "#10" "#" "10" and "$"
 	-- i would expect "10" to not exist

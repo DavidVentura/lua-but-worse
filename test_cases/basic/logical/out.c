@@ -12,7 +12,15 @@ TValue_t __str_also_visible = T_NULL;
 TValue_t __str_visible2 = T_NULL;
 TValue_t __str_visible = T_NULL;
 TValue_t __str__dash__dash__dash__dash_ = T_NULL;
+TValue_t __tmp_and_var_6 = T_NULL;
+TValue_t __tmp_or_var_0 = T_NULL;
+TValue_t __tmp_and_var_5 = T_NULL;
+TValue_t __tmp_and_var_4 = T_NULL;
+TValue_t __tmp_and_var_3 = T_NULL;
+TValue_t __tmp_and_var_2 = T_NULL;
+TValue_t __tmp_and_var_1 = T_NULL;
 TValue_t a = T_NULL;
+TValue_t __tmp_and_var_0 = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 

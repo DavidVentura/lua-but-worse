@@ -28,6 +28,7 @@ TValue_t c2 = T_NULL;
 TValue_t c1 = T_NULL;
 TValue_t wrapper = T_NULL;
 TValue_t func = T_NULL;
+TValue_t whatever_func = T_NULL;
 TValue_t __preinit();
 TValue_t __nested_func_b(TVSlice_t function_arguments);
 TValue_t __anonymous_function_a(TVSlice_t function_arguments);
@@ -37,12 +38,32 @@ TValue_t __anonymous_function_0(TVSlice_t function_arguments);
 TValue_t __nested_func_wrapped(TVSlice_t function_arguments);
 TValue_t __nested_func_wrapper(TVSlice_t function_arguments);
 TValue_t __nested_func_func(TVSlice_t function_arguments);
+TValue_t __nested_func_whatever_func(TVSlice_t function_arguments);
 TValue_t __main();
 TValue_t test_function_args_captured(TVSlice_t function_arguments);
 TValue_t newCounter(TVSlice_t function_arguments);
 TValue_t test_returning_lambda(TVSlice_t function_arguments);
 TValue_t test_enclosing_table_index(TVSlice_t function_arguments);
 TValue_t test_enclosing_fornum_iterator(TVSlice_t function_arguments);
+TValue_t test_double_enclosing_fornum_iterator(TVSlice_t function_arguments);
+
+TValue_t test_double_enclosing_fornum_iterator(TVSlice_t function_arguments) {
+  printh(__str_double_enclosing_fornum_iterator);
+
+  for (TValue_t _hidden_x = TNUM16(1); __bool(_leq(_hidden_x, TNUM16(2))); _hidden_x = _add(_hidden_x, TNUM16(1))) {
+    TValue_t gc lambda_args = T_NULL;
+    _set(&lambda_args, TTAB(make_table(1)));
+    set_tabvalue(lambda_args, __str_x, _hidden_x);
+
+    for (TValue_t _hidden_y = TNUM16(1); __bool(_leq(_hidden_y, TNUM16(2))); _hidden_y = _add(_hidden_y, TNUM16(1))) {
+      TValue_t gc lambda_args = T_NULL;
+      _set(&lambda_args, TTAB(make_table(1)));
+      set_tabvalue(lambda_args, __str_y, _hidden_y);
+      _set(&whatever_func, TCLOSURE(__nested_func_whatever_func, lambda_args));
+      CALL((whatever_func), ((TVSlice_t){.elems = NULL, .num = 0}));
+    }
+  }
+}
 
 TValue_t test_enclosing_fornum_iterator(TVSlice_t function_arguments) {
   printh(__str_enclosing_fornum_iterator);
@@ -105,7 +126,14 @@ TValue_t __main() {
   CALL((test_function_args_captured), ((TVSlice_t){.elems = NULL, .num = 0}));
   CALL((test_enclosing_table_index), ((TVSlice_t){.elems = NULL, .num = 0}));
   CALL((test_enclosing_fornum_iterator), ((TVSlice_t){.elems = NULL, .num = 0}));
+  CALL((test_double_enclosing_fornum_iterator), ((TVSlice_t){.elems = NULL, .num = 0}));
   return TNUM16(0);
+}
+
+TValue_t __nested_func_whatever_func(TVSlice_t function_arguments) {
+  TValue_t gc lambda_args = T_NULL;
+  _set(&lambda_args, __get_array_index_capped(function_arguments, 0));
+  printh(_mult(get_tabvalue(lambda_args, __str_x), get_tabvalue(lambda_args, __str_y)));
 }
 
 TValue_t __nested_func_func(TVSlice_t function_arguments) {
