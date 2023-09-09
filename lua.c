@@ -596,7 +596,9 @@ uint16_t make_str(char* c) {
 	memcpy(_concat_buf.data, c, _concat_buf.len);
 	uint16_t strindex = _find_str_index(_concat_buf);
 	if (strindex == UINT16_MAX) {
-		strindex = _store_str(_concat_buf);
+		uint8_t* buf = malloc(_concat_buf.len);
+		memcpy(buf, _concat_buf.data, _concat_buf.len);
+		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
 	}
 	return strindex;
 }
@@ -738,7 +740,9 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	if (strindex == UINT16_MAX) {
 		// FIXME: store_str does not make its own copy
 		// this is now broken
-		strindex = _store_str(_concat_buf);
+		uint8_t* buf = malloc(_concat_buf.len);
+		memcpy(buf, _concat_buf.data, _concat_buf.len);
+		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
 	}
 
 	return (TValue_t){.tag=STR, .str_idx=strindex};
