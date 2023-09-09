@@ -585,18 +585,13 @@ uint16_t _store_str(Str_t s) {
 }
 
 uint16_t make_str(char* c) {
-
 	uint8_t len = strlen(c);
-	if (len > _concat_buf.len) {
-		_concat_buf.data = realloc(_concat_buf.data, len);
-	}
-	_concat_buf.len = len;
-	memcpy(_concat_buf.data, c, _concat_buf.len);
-	uint16_t strindex = _find_str_index(_concat_buf);
+	Str_t s = (Str_t){.data=(uint8_t*)c, .len=len, .refcount=1};
+	uint16_t strindex = _find_str_index(s);
 	if (strindex == UINT16_MAX) {
-		uint8_t* buf = malloc(_concat_buf.len);
-		memcpy(buf, _concat_buf.data, _concat_buf.len);
-		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
+		uint8_t* buf = malloc(len);
+		memcpy(buf, c, len);
+		strindex = _store_str((Str_t){.len=len, .data=buf, .refcount=1});
 	}
 	return strindex;
 }
@@ -703,41 +698,46 @@ void _set(TValue_t* dst, TValue_t src) {
 }
 
 TValue_t _concat(TValue_t a, TValue_t b) {
-	// FIXME: this is bugged:
-	// when a string is "", its length is 0
-	// making it overwritable
-	// TODO(OPT): how to prevent unnecessary allocation
-	// when the key exists?
 	if (a.tag==NUL || b.tag==NUL) {
 		DEBUG_PRINT("attempt to concatenate a nil value\n");
 		assert(false);
 	}
-	assert(a.tag == STR);
-	if(b.tag != STR) {
-		assert(b.tag == NUM);
-		b = tostring(b);
-		GETSTRP(b)->refcount = 1; // FIXME: this is terrible, unsure of its purpose
+
+	uint8_t* a_data;
+	uint8_t* b_data;
+	uint16_t blen;
+	uint16_t alen;
+	char anumbuf[MAX_STR_LEN_FIX32] = {0};
+	char bnumbuf[MAX_STR_LEN_FIX32] = {0};
+
+	if(a.tag == NUM) {
+		print_fix32(a.num, anumbuf);
+		alen = strlen(anumbuf);
+		a_data = (uint8_t*)anumbuf;
+	} else {
+		a_data = GETSTR(a).data;
+		alen = GETSTR(a).len;
 	}
-	assert(b.tag == STR);
 
-	uint16_t alen = GETSTR(a).len;
-	uint16_t blen = GETSTR(b).len;
-
-	if(alen==0) return b;
-	if(blen==0) return a;
+	if(b.tag == NUM) {
+		print_fix32(b.num, bnumbuf);
+		blen = strlen(bnumbuf);
+		b_data = (uint8_t*)bnumbuf;
+	} else {
+		b_data = GETSTR(b).data;
+		blen = GETSTR(b).len;
+	}
 
 	if ((alen+blen) > _concat_buf.len) {
 		_concat_buf.data = realloc(_concat_buf.data, alen+blen);
 	}
 	_concat_buf.len = alen+blen;
 
-	memcpy(_concat_buf.data, 		GETSTR(a).data, alen);
-	memcpy(_concat_buf.data+alen, 	GETSTR(b).data, blen);
+	memcpy(_concat_buf.data, 		a_data, alen);
+	memcpy(_concat_buf.data+alen, 	b_data, blen);
 
 	uint16_t strindex = _find_str_index(_concat_buf);
 	if (strindex == UINT16_MAX) {
-		// FIXME: store_str does not make its own copy
-		// this is now broken
 		uint8_t* buf = malloc(_concat_buf.len);
 		memcpy(buf, _concat_buf.data, _concat_buf.len);
 		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
@@ -753,13 +753,15 @@ TValue_t __internal_debug_str_len() {
 TValue_t __internal_debug_str_used() {
 	uint16_t ret = 0;
 	for(uint16_t i = 0; i<_strings.len; i++) {
-		if(_strings.strings[i].len != 0) ret++;
+		if(_strings.strings[i].refcount != 0) ret++;
 	}
 	return TNUM(ret);
 }
 
 TValue_t tostring(TValue_t v) {
-	// TODO(OPT): use a static buff
+	if (v.tag == STR) {
+		return v;
+	}
 	TValue_t ret;
 	assert(v.tag == NUM);
 	char buf[MAX_STR_LEN_FIX32] = {0};
@@ -882,7 +884,7 @@ TValue_t sub(TVSlice_t args) {
 	uint8_t* new_data = malloc(end-start+1);
 	// `start` and `end` are 1-based -- need to start copying 1 byte before
 	memcpy(new_data, str->data+start-1, end-start+1);
-	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=0};
+	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=1};
 	return TSTRi(_store_str(substr));
 }
 
