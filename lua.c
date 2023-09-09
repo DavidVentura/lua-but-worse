@@ -161,7 +161,9 @@ void grow_table(uint16_t idx)  {
 	if(t->kvp.len) {
 		memcpy(new_kvs, t->kvp.kvs, sizeof(KV_t) * t->kvp.len);
 	}
-	free(t->kvp.kvs);
+	if(t->kvp.kvs != NULL) {
+		free(t->kvp.kvs);
+	}
 	t->kvp.kvs = new_kvs;
 	t->kvp.len = new_len;
 	// t->count does not change
