@@ -18,11 +18,9 @@ Str_t _concat_buf = {.len=0, .data=NULL};
 
 /* Pending optimizations:
  *
- * Bitmap for "free table slot"
- * Instead of iterating over the entire `tables` array to find a free slot,
- * keep a 32-bit bitmap that represents the availability of the first 32 entries.
- * Allocations will continue to be slow when there are >32 live tables.
- * Using `__cntlz` (`nsau`) should make the lookup only cost 1 instruction.
+ * Bitmap for "free table slot":
+ *   - Should probably use up to 4 bitmaps, as L1$ in ESP32 is 32 bytes.
+ *   - Check that `__builtin_ffs` maps to `__cntlz` (`nsau`).
  *
  * Fix32 to_bits and from_bits could return the internal representation of a 32-bit value
  * which saves some masking & shifting
@@ -61,6 +59,9 @@ TValue_t __call(TValue_t t, TVSlice_t args) {
 	}
 	assert(t.fun != NULL);
 	if(t.env_table_idx != UINT16_MAX) {
+		// This is not stack allocated as _most_ of the time the code-path isn't taken
+		// This can't use a static, shared buffer as it must be re-entrant, closures
+		// can call other closures.
 		TValue_t* argarray = calloc(args.num+1, sizeof(TValue_t));
 		memcpy(argarray, args.elems, sizeof(TValue_t)*args.num);
 		argarray[args.num] = TTAB(t.env_table_idx);
@@ -417,7 +418,7 @@ TValue_t _mod(TValue_t a, TValue_t b) {
 bool __mbool(bool b) {
 	return b;
 }
-bool __bool(TValue_t a) {
+inline bool __bool(TValue_t a) {
 	if(a.tag == NUL)
 		return false;
 	if(a.tag == BOOL)
@@ -455,7 +456,7 @@ uint16_t make_table(uint16_t size) {
 		retval = __builtin_ffs(free_tables) - 1;
 		free_tables ^= (1 << retval);
 	} else {
-		// TODO(PERF): use `used`+1 if just resized
+		// TODO(OPT): use `used`+1 if just resized
 		for(uint16_t i = TBL_BMAP_LEN; i<_tables.len; i++) {
 			if(_tables.tables[i].refcount==0) {
 				retval = i;
@@ -564,6 +565,7 @@ void _grow_strings_to(uint16_t new_len) {
 }
 
 uint16_t _store_str(Str_t s) {
+	// TODO(PERF): bitmap
 	uint16_t ret = UINT16_MAX;
 	for(uint16_t i = 0; i<_strings.len; i++) {
 		if (_strings.strings[i].refcount == 0) {
@@ -633,7 +635,6 @@ void _decref(TValue_t v) {
 			// these are value types
 			break;
 		case TAB:
-			// FIXME(GC)
 			assert(GETTAB(v)->refcount > 0);
 			_tab_decref(GETTAB(v), v.table_idx);
 			break;
