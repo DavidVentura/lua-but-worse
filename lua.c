@@ -481,7 +481,8 @@ uint16_t make_table(uint16_t size) {
 	if (tp->kvp.kvs == NULL && size > 0) {
 		tp->kvp.kvs = calloc(size, sizeof(KV_t)); // this sets key->tag to 0 (NUL)
 	} else if (tp->kvp.kvs != NULL && size > tp->kvp.len) {
-		tp->kvp.kvs = realloc(tp->kvp.kvs, size * sizeof(KV_t)); // this sets key->tag to 0 (NUL)
+		free(tp->kvp.kvs);
+		tp->kvp.kvs = calloc(size, sizeof(KV_t));
 	}
 
 	tp->kvp.len = size;
