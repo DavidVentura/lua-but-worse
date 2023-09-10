@@ -6,7 +6,7 @@ import textwrap
 from luaparser import ast
 from luaparser.astnodes import (Assign, If, LocalAssign, Index, Function, Call, String, Name, IndexNotation, Method, Invoke, Block, SetTabValue, Table, Node, Comment,
         AnonymousFunction, FunctionReference, ArrayIndex, Number, NumberType, Type, IAssign, InplaceOp, IAddTab, ISubTab, IMulTab, IDivTab,
-        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr, Fornum,
+        AndLoOp, OrLoOp, ULNotOp, Field, StringRef, StringDecl, TrueExpr, FalseExpr, Fornum, Return,
         )
 
 from typing import Optional, TypeAlias
@@ -264,10 +264,83 @@ def transform_anonymous_tables(tree):
                                                     first_token=n.first_token, last_token=n.last_token,
                                                     ))
 
+def _literal_table_return(n):
+    _return = n.parent
+    assert isinstance(_return, Return)
+    # assuming Assign can only happen in Block
+    assert isinstance(_return.parent, Block)
+
+    return_idx = _return.parent.body.index(_return)
+    temp_var = Name("_anon_return_table")
+    la = LocalAssign([temp_var], [n])
+    _return.parent.body.insert(return_idx, la)
+    la_idx = _return.parent.body.index(la)
+    for f in n.fields[::-1]:
+        key = f.key
+        if isinstance(key, Name) and not f.between_brackets:
+            # a.x  -> SetTabValue(a, "x", val)
+            # a[x] -> SetTabValue(a,   x, val)
+            key = String(key.id)
+        settabvalue = SetTabValue(temp_var, key, f.value, parent=_return.parent,
+                                  first_token=n.first_token, last_token=n.last_token)
+        _return.parent.body.insert(la_idx+1, settabvalue)
+    if len(n.fields) > 0:
+        _return.parent.body.insert(la_idx+1, Comment(f"Fields for returned table", parent=_return.parent))
+    _return.values = [temp_var]
+
+def _literal_table_assign(n):
+    _assign = n.parent
+    if n not in _assign.values:
+        return
+    # TODO also allow asymmetric
+    assert len(_assign.targets) == len(_assign.values)
+    # some day
+
+    # assuming Assign can only happen in Block
+    assert isinstance(_assign.parent, Block)
+
+    _table_value_idx = _assign.values.index(n)
+
+    _assign_idx = _assign.parent.body.index(_assign)
+    _target_table = _assign.targets[_table_value_idx]
+    if isinstance(_target_table, Index):
+        """
+        this function (transform_literal_tables_to_assignments) does not _replace_ the existing node,
+        instead it _adds_ a new node.
+
+        if isinstance(_assign.targets[0], Index),
+        it is `a.b.c = 1`, which should be serialized as `set_tabvalue(get_tabvalue(..), key, value)`
+
+        Mutating the original reference node (the get_tabvalue, Index) is problematic, as that node's `parent`
+        attribute will get out of sync, when the AST looks like
+
+        Assign
+            Index (gettabvalue)
+        SetTabValue
+            Index (gettabvalue)
+
+        when calling `SetTabValue`, it sets the `parent` attribute on all the passed arguments to itself
+        so instead we pass `SetTabValue` a copy of the original node
+
+        """
+        _target_table = Index(_target_table.idx, _target_table.value, _target_table.notation)
+
+
+    for f in n.fields[::-1]:
+        key = f.key
+        if isinstance(key, Name) and not f.between_brackets:
+            # a.x  -> SetTabValue(a, "x", val)
+            # a[x] -> SetTabValue(a,   x, val)
+            key = String(key.id)
+        settabvalue = SetTabValue(_target_table, key, f.value, parent=_assign.parent,
+                                  first_token=n.first_token, last_token=n.last_token)
+        _assign.parent.body.insert(_assign_idx+1, settabvalue)
+    if len(n.fields) > 0:
+        _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}", parent=_assign.parent))
 
 def transform_literal_tables_to_assignments(tree):
     """
-    Rewrite literal tables `a = {x=5, y=6}` into
+    Rewrite literal tables `a = {x=5, y=6}` or `return {x=5, y=6}` into
     ```
     a = {}
     SetTabValue(a, "x", 5)
@@ -282,57 +355,13 @@ def transform_literal_tables_to_assignments(tree):
             continue
         if not n.parent:
             assert False
-        if not isinstance(n.parent, Assign):
+        if isinstance(n.parent, Assign):
+            _literal_table_assign(n)
             continue
-        _assign = n.parent
-        if n not in _assign.values:
+        elif isinstance(n.parent, Return):
+            _literal_table_return(n)
+        else:
             continue
-        # TODO also allow asymmetric
-        assert len(_assign.targets) == len(_assign.values)
-        # some day
-
-        # assuming Assign can only happen in Block
-        assert isinstance(_assign.parent, Block)
-
-        _table_value_idx = _assign.values.index(n)
-
-        _assign_idx = _assign.parent.body.index(_assign)
-        _target_table = _assign.targets[_table_value_idx]
-        if isinstance(_target_table, Index):
-            """
-            this function (transform_literal_tables_to_assignments) does not _replace_ the existing node,
-            instead it _adds_ a new node.
-
-            if isinstance(_assign.targets[0], Index),
-            it is `a.b.c = 1`, which should be serialized as `set_tabvalue(get_tabvalue(..), key, value)`
-
-            Mutating the original reference node (the get_tabvalue, Index) is problematic, as that node's `parent`
-            attribute will get out of sync, when the AST looks like
-
-            Assign
-                Index (gettabvalue)
-            SetTabValue
-                Index (gettabvalue)
-
-            when calling `SetTabValue`, it sets the `parent` attribute on all the passed arguments to itself
-            so instead we pass `SetTabValue` a copy of the original node
-
-            """
-            _target_table = Index(_target_table.idx, _target_table.value, _target_table.notation)
-
-
-        for f in n.fields[::-1]:
-            key = f.key
-            if isinstance(key, Name) and not f.between_brackets:
-                # a.x  -> SetTabValue(a, "x", val)
-                # a[x] -> SetTabValue(a,   x, val)
-                key = String(key.id)
-            settabvalue = SetTabValue(_target_table, key, f.value, parent=_assign.parent,
-                                      first_token=n.first_token, last_token=n.last_token)
-            _assign.parent.body.insert(_assign_idx+1, settabvalue)
-        if len(n.fields) > 0:
-            _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}", parent=_assign.parent))
-
 
 
 def ensure_table_fields(tree):
