@@ -167,10 +167,10 @@ void grow_table(uint16_t idx)  {
 	assert(false);
 #else
 	Table_t* t = &_tables.tables[idx];
-	uint16_t new_len = t->kvp.len * 2;
-	new_len = (t->kvp.len == 0) ? 2 : new_len;
+	uint16_t new_len = t->kvp.len == 0 ? 2 : t->kvp.len * 2;
+	DEBUG2_PRINT("Growing table %d len to %d\n", idx, new_len);
 	// this sets key->tag to 0 (NUL) for all new spaces in KVs
-	KV_t* new_kvs = calloc(sizeof(KV_t), new_len);
+	KV_t* new_kvs = calloc(new_len, sizeof(KV_t));
 	if(t->kvp.len) {
 		memcpy(new_kvs, t->kvp.kvs, sizeof(KV_t) * t->kvp.len);
 	}
@@ -196,6 +196,7 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
 
+	DEBUG2_PRINT("Assigning on table idx %d\n", t.table_idx);
 	if (key.tag == STR) {
 		Str_t _maybe_meta = GETSTR(key);
 		// 5 as "__str"/"__add" (shortest metamethod) is 5 long
@@ -479,6 +480,8 @@ uint16_t make_table(uint16_t size) {
 	Table_t* tp = &_tables.tables[retval];
 	if (tp->kvp.kvs == NULL && size > 0) {
 		tp->kvp.kvs = calloc(size, sizeof(KV_t)); // this sets key->tag to 0 (NUL)
+	} else if (tp->kvp.kvs != NULL && size > tp->kvp.len) {
+		tp->kvp.kvs = realloc(tp->kvp.kvs, size * sizeof(KV_t)); // this sets key->tag to 0 (NUL)
 	}
 
 	tp->kvp.len = size;

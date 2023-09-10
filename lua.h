@@ -61,8 +61,7 @@ typedef struct  TVRefSlice_s {
 	uint16_t len;
 } TVRefSlice_t;
 
-_Static_assert(sizeof(TValue_t) <= 64, "too big");
-_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 2 for table_idx, 1 for enum, 3 for padding.
+_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit (union), 2 for env, 1 for enum, 3 for padding.
 #if UINTPTR_MAX == UINT32_MAX
 _Static_assert(sizeof(TValue_t) <= 12, "too big"); // 12 total size on 32bit
 #endif
@@ -94,7 +93,7 @@ typedef struct Table_s {
 	Metamethod_t* mm;
 	KVSlice_t kvp;
 	uint16_t metatable_idx;
-	uint16_t count;
+	uint16_t count; 		// used for "# of valid key-value pairs", where kvp->len is "key-value capacity"
 	uint8_t refcount;
 } Table_t;
 
