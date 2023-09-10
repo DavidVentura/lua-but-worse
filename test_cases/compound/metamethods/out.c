@@ -42,7 +42,7 @@ TValue_t __table_func_vector_new(TVSlice_t function_arguments) {
   set_tabvalue(o, __str_x, x);
   set_tabvalue(o, __str_y, y);
   setmetatable(o, vector);
-  _incref(o);
+  _mark_for_gc(o);
   return o;
 }
 
@@ -55,7 +55,7 @@ TValue_t __table_func_vector___add(TVSlice_t function_arguments) {
   _set(&v, CALL((get_tabvalue(vector, __str_new)), ((TVSlice_t){.elems = (TValue_t[2]){TNUM16(0), TNUM16(0)}, .num = 2})));
   set_tabvalue(v, __str_x, _add(get_tabvalue(v0, __str_x), get_tabvalue(v1, __str_x)));
   set_tabvalue(v, __str_y, _add(get_tabvalue(v0, __str_y), get_tabvalue(v1, __str_y)));
-  _incref(v);
+  _mark_for_gc(v);
   return v;
 }
 
@@ -68,7 +68,7 @@ TValue_t __table_func_vector___sub(TVSlice_t function_arguments) {
   _set(&v, CALL((get_tabvalue(vector, __str_new)), ((TVSlice_t){.elems = (TValue_t[2]){TNUM16(0), TNUM16(0)}, .num = 2})));
   set_tabvalue(v, __str_x, _sub(get_tabvalue(v0, __str_x), get_tabvalue(v1, __str_x)));
   set_tabvalue(v, __str_y, _sub(get_tabvalue(v0, __str_y), get_tabvalue(v1, __str_y)));
-  _incref(v);
+  _mark_for_gc(v);
   return v;
 }
 

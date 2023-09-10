@@ -21,8 +21,16 @@ FunctionLike = (Function, AnonymousFunction, Method)
 
 """
 # TODO
-## Syntax
-print(3..a) dead
+
+Function call optiimzation:
+When a function is:
+ - never stored in a table
+ - always called with the same # of arguments
+ - always match arg # at caller and definition
+
+then it can be optimized to remove `CALL` _and_ to pass the arguments directly
+
+remove `_bool()` on `if(_bool(_equal(...)))`
 """
 def const_strings(tree):
     """
@@ -771,13 +779,13 @@ def transform_forloop_target_variables(tree):
         n.replace_child(n.target, new_var.copy())
         n.body.body.insert(0, LocalAssign([varname.copy()], [Name(f"_hidden_{varname.id}")], parent=n.body))
 
-def _first_parent_containing_assign_of_or_argument(t: Node, n: Name) -> tuple[Optional[_Scope], bool]:
+def _first_parent_containing_assign_of_or_argument(t: Node, n: Name, acceptable_scope=Scope) -> tuple[Optional[_Scope], bool]:
     """
     Returns (Node?, was-argument)
     """
     if t.parent is None:
         return None, False
-    if isinstance(t.parent, Scope):
+    if isinstance(t.parent, acceptable_scope):
         _body = t.parent.body.body
     else:
         return _first_parent_containing_assign_of_or_argument(t.parent, n)
@@ -901,9 +909,13 @@ def transform_captured_variables(tree):
         _convert_local_name_to_lambda_env(_function_needing_upvalues, n)
 
         # 2. Define a `lambda_args` table in the original environment
+        # TODO: As long as it's not been locally defined in parent scopes
+        # This should be a single LocalAssign in the function
+        # and a SetTabValue in the correct body
         _la = _localassign_of_lambda_args(defined_in)
         if _la is None:
             _la = LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body)
+            # This should not get extra MakeTables
             defined_in.body.body.insert(0, _la)
 
         if was_argument:
@@ -923,7 +935,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     set_parent_on_children(tree)
 
     rename_stdlib_calls(tree)
-    transform_forloop_target_variables(tree) # before transform_captured_variables
+    transform_forloop_target_variables(tree) # before transform_captured_variables, the iterators should be captured
     transform_captured_variables(tree) # before transform_functions_to_vec_args, as it has to ignore args
                                        # before transform_anonymous_functions, as it has to walk upwards looking for UpValues
     transform_anonymous_functions(tree)

@@ -10,7 +10,7 @@ TValue_t something(TVSlice_t function_arguments);
 TValue_t something(TVSlice_t function_arguments) {
   TValue_t gc arg = T_NULL;
   _set(&arg, __get_array_index_capped(function_arguments, 0));
-  _incref(arg);
+  _mark_for_gc(arg);
   return arg;
 }
 

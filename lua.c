@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <dlfcn.h> // debug symbols from functions
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,6 +13,7 @@
 const uint16_t TBL_BMAP_LEN = 32;
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
+TVRefSlice_t _gc_to_visit = {.len=0, .ref=NULL};
 
 Str_t _concat_buf = {.len=0, .data=NULL};
 
@@ -45,9 +48,17 @@ void print_trace (void) {
 }
 
 Table_t* ENV;
-TValue_t __direct_call(Func_t f, TVSlice_t args) {
+void _debug_callstack(Func_t f) {
+	Dl_info info;
+	dladdr(f, &info);
+	printf("eeey %s:%s\n", info.dli_fname, info.dli_sname);
+}
+inline TValue_t __direct_call(Func_t f, TVSlice_t args) {
 	// can never be closure
+#ifdef DEBUG
 	dbg_assert(f != NULL);
+#endif
+	// _debug_callstack(f);
 	return f(args);
 }
 
@@ -598,6 +609,60 @@ uint16_t make_str(char* c) {
 	return strindex;
 }
 
+void add_to_gc(TValue_t val) {
+	TVRef_t ref;
+	if (val.tag == STR) {
+		ref = (TVRef_t){.idx = val.str_idx, .tag = val.tag };
+	} else {
+		ref = (TVRef_t){.idx = val.table_idx, .tag = val.tag };
+	}
+
+	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
+		if (_gc_to_visit.ref[i].tag == NUL) {
+			_gc_to_visit.ref[i] = ref;
+			DEBUG2_PRINT("Added to GC!\n");
+			return;
+		}
+	}
+	uint16_t new_len = _gc_to_visit.len == 0 ? 16 : _gc_to_visit.len * 2;
+	_gc_to_visit.ref = reallocarray(_gc_to_visit.ref, new_len, sizeof(TVRef_t));
+	_gc_to_visit.ref[_gc_to_visit.len] = ref;
+	_gc_to_visit.len = new_len;
+	DEBUG2_PRINT("Added to resized GC!\n");
+}
+
+void run_gc() {
+	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
+		TVRef_t* ref = &_gc_to_visit.ref[i];
+		TValue_t v = T_NULL;
+		if (ref->tag == NUL) continue;
+		if (ref->tag == TAB) {
+			if(_tables.tables[ref->idx].refcount > 0) {
+				DEBUG2_PRINT("Decref table %d by GC!\n", ref->idx);
+				_tab_decref(&_tables.tables[ref->idx], ref->idx);
+			}
+		}
+		if (ref->tag == STR) {
+			if(_strings.strings[ref->idx].refcount > 0) {
+				DEBUG2_PRINT("Decref string %d by GC!\n", ref->idx);
+				_str_decref(&_strings.strings[ref->idx]);
+			}
+		}
+		ref->tag = NUL;
+	}
+}
+
+void _mark_for_gc(TValue_t val) {
+	// This is called when returning values, we have to bump their
+	// refcount so they survive going out of scope (automatic _decref)
+	// and add them to the list of "objects to clean" -- if the
+	// returned value still has exactly 1 reference by the time the GC runs,
+	// it's the lingering reference that we add here.
+	if(val.tag != TAB && val.tag != STR) return;
+	_incref(val);
+	add_to_gc(val);
+}
+
 void _tab_decref(Table_t* t, uint16_t cur_idx) {
 	DEBUG2_PRINT("decref <tab %d> %d->%d\n", cur_idx, t->refcount, t->refcount-1);
 	t->refcount--;
@@ -626,6 +691,15 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		_tab_decref(meta, t->metatable_idx);
 	}
 }
+void _str_decref(Str_t* s) {
+	s->refcount--;
+	if(s->refcount==0) {
+		DEBUG2_PRINT("nuked %.*s\n", s->len, s->data);
+		s->len = 0;
+		free(s->data);
+	}
+}
+
 void _decref(TValue_t v) {
 	switch(v.tag) {
 		case NUL:
@@ -640,12 +714,7 @@ void _decref(TValue_t v) {
 			break;
 		case STR:
 			assert(GETSTRP(v)->refcount > 0);
-			GETSTRP(v)->refcount--;
-			if(GETSTRP(v)->refcount==0) {
-				DEBUG2_PRINT("nuked %.*s\n", GETSTRP(v)->len, GETSTRP(v)->data);
-				GETSTRP(v)->len = 0;
-				free(GETSTRP(v)->data);
-			}
+			_str_decref(GETSTRP(v));
 			break;
 	}
 }
@@ -755,6 +824,14 @@ TValue_t __internal_debug_str_used() {
 	uint16_t ret = 0;
 	for(uint16_t i = 0; i<_strings.len; i++) {
 		if(_strings.strings[i].refcount != 0) ret++;
+	}
+	return TNUM(ret);
+}
+
+TValue_t __internal_debug_tables_used() {
+	uint16_t ret = 0;
+	for(uint16_t i = 0; i<_tables.len; i++) {
+		if(_tables.tables[i].refcount != 0) ret++;
 	}
 	return TNUM(ret);
 }

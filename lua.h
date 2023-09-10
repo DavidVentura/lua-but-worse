@@ -10,7 +10,7 @@
 	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
 	} while (0)
 
-#define DEBUG2
+//#define DEBUG2
 #ifdef DEBUG2
  #define DEBUG
  #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
@@ -29,13 +29,15 @@
 // memset(0) or calloc() and those zeroes are abused to 
 // ensure the containers are full of T_NULL
 // The remaining values don't need to be in any particular order
-enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5};
+enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5} __attribute__ ((__packed__));
+_Static_assert(sizeof(enum typetag_t) == 1, "too big");
 
 typedef struct TValue_s TValue_t;
 typedef struct TVSlice_s {
 	TValue_t* elems;
 	uint16_t num;
 } TVSlice_t;
+
 typedef TValue_t (*Func_t)(TVSlice_t);
 
 struct TValue_s {
@@ -48,6 +50,16 @@ struct TValue_s {
 	uint16_t env_table_idx; // closure env for `fun`. putting these in a struct takes way more space
 	enum typetag_t tag; // 3 bits used only
 };
+
+typedef struct TVRef_s {
+	uint16_t idx: 13;
+	enum typetag_t tag: 3;
+} TVRef_t;
+_Static_assert(sizeof(TVRef_t) == 2, "too big");
+typedef struct  TVRefSlice_s {
+	TVRef_t* ref;
+	uint16_t len;
+} TVRefSlice_t;
 
 _Static_assert(sizeof(TValue_t) <= 64, "too big");
 _Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 2 for table_idx, 1 for enum, 3 for padding.
@@ -199,14 +211,18 @@ uint16_t _store_str(Str_t s);
 uint16_t _store_str_at_or_die(Str_t s, uint16_t idx);
 void _grow_strings_to(uint16_t new_len);
 uint16_t make_str(char* c);
+void run_gc();
+void _str_decref(Str_t* s);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
 void _decref(TValue_t v);
 void __decref(TValue_t* v);
 void _incref(TValue_t v);
 void _set(TValue_t* dst, TValue_t src);
+void _mark_for_gc(TValue_t val);
 TValue_t _concat(TValue_t a, TValue_t b);
 TValue_t __internal_debug_str_len();
 TValue_t __internal_debug_str_used();
+TValue_t __internal_debug_tables_used();
 TValue_t tostring(TValue_t v);
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected);
 TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx);

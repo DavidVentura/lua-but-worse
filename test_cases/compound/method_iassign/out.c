@@ -37,7 +37,7 @@ TValue_t __table_func_vector_new(TVSlice_t function_arguments) {
   set_tabvalue(o, __str_x, x);
   set_tabvalue(o, __str_y, y);
   setmetatable(o, vector);
-  _incref(o);
+  _mark_for_gc(o);
   return o;
 }
 

@@ -180,7 +180,7 @@ TValue_t __nested_func_f(TVSlice_t function_arguments) {
   // Fields for table lambda_args
   set_tabvalue(lambda_args, __str_arg, arg);
   _set(&f2, TCLOSURE(__nested_func_f2, lambda_args));
-  _incref(f2);
+  _mark_for_gc(f2);
   return f2;
 }
 
