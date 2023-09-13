@@ -31,6 +31,8 @@ When a function is:
 then it can be optimized to remove `CALL` _and_ to pass the arguments directly
 
 remove `_bool()` on `if(_bool(_equal(...)))`
+
+remove the indirection ? with lambda_args requiring a dict lookup? could be constant int+vector?
 """
 def const_strings(tree):
     """
@@ -845,7 +847,7 @@ def _convert_local_name_to_lambda_env(block, name):
             continue
         # we are walking recursively down the tree, but only care for anything
         # directly within the scope of the original block; not for nested functions
-        if _first_parent_of_type(n, Scope) != block:
+        if _first_parent_of_type(n, FunctionLike) != block:
             continue
         assert n.parent, n.dump()
         if n.id != name.id:
