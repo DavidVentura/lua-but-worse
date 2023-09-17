@@ -185,6 +185,7 @@ void grow_table(uint16_t idx)  {
 
 
 void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
+	DEBUG2_PRINT("Assigning on table idx %d\n", t.table_idx);
 	assert(t.tag == TAB);
 	Table_t* u = GETTAB(t);
 	assert(u != NULL);
@@ -196,7 +197,6 @@ void set_tabvalue(TValue_t t, TValue_t key, TValue_t v) {
 	assert(key.tag != NUL); // lua throws "table index is nil"
 	uint16_t first_null = UINT16_MAX;
 
-	DEBUG2_PRINT("Assigning on table idx %d\n", t.table_idx);
 	if (key.tag == STR) {
 		Str_t _maybe_meta = GETSTR(key);
 		// 5 as "__str"/"__add" (shortest metamethod) is 5 long
@@ -488,6 +488,8 @@ uint16_t make_table(uint16_t size) {
 	tp->kvp.len = size;
 	tp->metatable_idx = UINT16_MAX;
 	tp->mm = NULL;
+	tp->count = 0;
+	tp->refcount = 0;
 
 	_tables.used++;
 	DEBUG_PRINT("Created <tab %d>\n", retval);
@@ -609,17 +611,14 @@ uint16_t make_str(char* c) {
 		uint8_t* buf = malloc(len);
 		memcpy(buf, c, len);
 		strindex = _store_str((Str_t){.len=len, .data=buf, .refcount=1});
+		add_to_gc(strindex, STR);
 	}
 	return strindex;
 }
 
-void add_to_gc(TValue_t val) {
+void add_to_gc(uint16_t idx, enum typetag_t tag) {
 	TVRef_t ref;
-	if (val.tag == STR) {
-		ref = (TVRef_t){.idx = val.str_idx, .tag = val.tag };
-	} else {
-		ref = (TVRef_t){.idx = val.table_idx, .tag = val.tag };
-	}
+	ref = (TVRef_t){.idx = idx, .tag = tag };
 
 	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
 		if (_gc_to_visit.ref[i].tag == NUL) {
@@ -662,9 +661,14 @@ void _mark_for_gc(TValue_t val) {
 	// and add them to the list of "objects to clean" -- if the
 	// returned value still has exactly 1 reference by the time the GC runs,
 	// it's the lingering reference that we add here.
-	if(val.tag != TAB && val.tag != STR) return;
-	_incref(val);
-	add_to_gc(val);
+	if(val.tag == TAB) {
+		_incref(val);
+		add_to_gc(val.table_idx, val.tag);
+	}
+	if(val.tag == STR) {
+		_incref(val);
+		add_to_gc(val.str_idx, val.tag);
+	}
 }
 
 void _tab_decref(Table_t* t, uint16_t cur_idx) {
@@ -811,13 +815,19 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 	memcpy(_concat_buf.data+alen, 	b_data, blen);
 
 	uint16_t strindex = _find_str_index(_concat_buf);
+	TValue_t ret;
 	if (strindex == UINT16_MAX) {
 		uint8_t* buf = malloc(_concat_buf.len);
 		memcpy(buf, _concat_buf.data, _concat_buf.len);
 		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
+		ret = (TValue_t){.tag=STR, .str_idx=strindex};
+		add_to_gc(strindex, STR);
+	} else {
+		ret = (TValue_t){.tag=STR, .str_idx=strindex};
 	}
 
-	return (TValue_t){.tag=STR, .str_idx=strindex};
+
+	return ret;
 }
 
 TValue_t __internal_debug_str_len() {
@@ -844,11 +854,16 @@ TValue_t tostring(TValue_t v) {
 	if (v.tag == STR) {
 		return v;
 	}
+	if (v.tag == TAB) {
+		printf("tab %d\n", v.table_idx);
+		return T_NULL;
+	}
 	TValue_t ret;
 	assert(v.tag == NUM);
 	char buf[MAX_STR_LEN_FIX32] = {0};
 	print_fix32(v.num, buf);
 	ret = TSTR(buf); // TSTR makes its own copy
+    add_to_gc(ret.str_idx, STR);
 	return ret;
 }
 
@@ -954,6 +969,7 @@ TValue_t type(TValue_t arg) {
 		case FUN:
 			return TSTR("function");
 	}
+	assert(false);
 }
 TValue_t sub(TVSlice_t args) {
 	Str_t* str = __get_str(args, 0);
@@ -967,7 +983,9 @@ TValue_t sub(TVSlice_t args) {
 	// `start` and `end` are 1-based -- need to start copying 1 byte before
 	memcpy(new_data, str->data+start-1, end-start+1);
 	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=1};
-	return TSTRi(_store_str(substr));
+	uint16_t strindex = _store_str(substr);
+	add_to_gc(strindex, STR);
+	return TSTRi(strindex);
 }
 
 TValue_t _length(TValue_t arg) {
