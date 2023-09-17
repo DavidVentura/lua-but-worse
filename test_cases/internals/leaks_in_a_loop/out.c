@@ -5,7 +5,6 @@
 #include "stdlib.h"
 TValue_t __str__hash_ = T_NULL;
 TValue_t __str__dollar_ = T_NULL;
-TValue_t s = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
 TValue_t _inner(TVSlice_t function_arguments);
@@ -18,9 +17,10 @@ TValue_t _inner(TVSlice_t function_arguments) {
   for (TValue_t _hidden_i = TNUM16(1); __bool(_leq(_hidden_i, TNUM16(10))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
     TValue_t gc i = T_NULL;
     _set(&i, _hidden_i);
-    _set(&s, _concat(__str__hash_, i));
+    _set(&s, _concat(__str__hash_, tostring(i)));
   }
-  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(4));
+  run_gc();
+  __internal_debug_assert_eq(__internal_debug_str_used(), TNUM16(3));
 }
 
 TValue_t __main() {

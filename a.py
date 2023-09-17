@@ -61,6 +61,12 @@ def const_strings(tree):
             #assert n.parent is not None, f"{n} has no parent"
             #n.parent.replace_child(n, Name(f'__str_{n.s.replace(" ", "_")}'))
 
+def all_parent_scopes(elem):
+    ret = [elem.scope()]
+    if elem.parent is not None:
+        ret.extend(all_parent_scopes(elem.parent))
+    return ret
+
 def add_decls(tree):
     """
     Adds variable declarations in corresponding blocks. Globals are declared at the root chunk.
@@ -87,8 +93,13 @@ def add_decls(tree):
             for t in n.targets:
                 if isinstance(t, Index):
                     continue
-                local_key = id(t.scope())
-                if t.id in [a.id for _, a, _ in seen.get(local_key, [])]:
+                # Need to look for any local-assign on _every_ scope going up, as there could be an assign
+                # in an If branch or similar sub-scope, for a variable defined in the same function
+                _scopes = all_parent_scopes(t)
+                _scope_ids = [id(s) for s in _scopes]
+                _nested_vars = [seen.get(_scope_id, []) for _scope_id in _scope_ids]
+                _vars_ids = [var.id for items in _nested_vars for _, var, _ in items]
+                if t.id in _vars_ids:
                     # a LocalAssign (local var = ..) has been seen in the same scope
                     # as this variable; do not create a global
                     continue

@@ -7,15 +7,15 @@ TValue_t __str_arg = T_NULL;
 TValue_t __str_wrapped = T_NULL;
 TValue_t __str_not_wrapped = T_NULL;
 TValue_t __str_obj = T_NULL;
+TValue_t __str_y = T_NULL;
+TValue_t __str_x = T_NULL;
 TValue_t __str_captured = T_NULL;
 TValue_t __str_captured_args = T_NULL;
+TValue_t __str_i = T_NULL;
 TValue_t __str_newCounter = T_NULL;
 TValue_t __str_a = T_NULL;
 TValue_t __str_enclosing_arg_overlap = T_NULL;
-TValue_t __str_i = T_NULL;
 TValue_t __str_enclosing_fornum_iterator = T_NULL;
-TValue_t __str_y = T_NULL;
-TValue_t __str_x = T_NULL;
 TValue_t __str_double_enclosing_fornum_iterator = T_NULL;
 TValue_t f2 = T_NULL;
 TValue_t wrapped = T_NULL;
@@ -51,14 +51,16 @@ TValue_t test_double_enclosing_fornum_iterator(TVSlice_t function_arguments) {
   printh(__str_double_enclosing_fornum_iterator);
 
   for (TValue_t _hidden_x = TNUM16(1); __bool(_leq(_hidden_x, TNUM16(2))); _hidden_x = _add(_hidden_x, TNUM16(1))) {
+    TValue_t gc x = T_NULL;
     TValue_t gc lambda_args = T_NULL;
-    _set(&lambda_args, TTAB(make_table(1)));
-    set_tabvalue(lambda_args, __str_x, _hidden_x);
+    _set(&lambda_args, TTAB(make_table(0)));
+    _set(&x, _hidden_x);
 
     for (TValue_t _hidden_y = TNUM16(1); __bool(_leq(_hidden_y, TNUM16(2))); _hidden_y = _add(_hidden_y, TNUM16(1))) {
+      TValue_t gc y = T_NULL;
       TValue_t gc lambda_args = T_NULL;
-      _set(&lambda_args, TTAB(make_table(1)));
-      set_tabvalue(lambda_args, __str_y, _hidden_y);
+      _set(&lambda_args, TTAB(make_table(0)));
+      _set(&y, _hidden_y);
       _set(&whatever_func, TCLOSURE(__nested_func_whatever_func, lambda_args));
       CALL((whatever_func), ((TVSlice_t){.elems = NULL, .num = 0}));
     }
@@ -69,9 +71,10 @@ TValue_t test_enclosing_fornum_iterator(TVSlice_t function_arguments) {
   printh(__str_enclosing_fornum_iterator);
 
   for (TValue_t _hidden_i = TNUM16(1); __bool(_leq(_hidden_i, TNUM16(2))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
+    TValue_t gc i = T_NULL;
     TValue_t gc lambda_args = T_NULL;
-    _set(&lambda_args, TTAB(make_table(1)));
-    set_tabvalue(lambda_args, __str_i, _hidden_i);
+    _set(&lambda_args, TTAB(make_table(0)));
+    _set(&i, _hidden_i);
     _set(&func, TCLOSURE(__nested_func_func, lambda_args));
     CALL((func), ((TVSlice_t){.elems = NULL, .num = 0}));
   }
@@ -207,15 +210,15 @@ TValue_t __nested_func_b(TVSlice_t function_arguments) {
 TValue_t __preinit() {
   _grow_strings_to(14);
   _set(&__str_double_enclosing_fornum_iterator, TSTRi(_store_str_at_or_die(CONSTSTR("double_enclosing fornum iterator"), 13)));
-  _set(&__str_x, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 12)));
-  _set(&__str_y, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 11)));
-  _set(&__str_enclosing_fornum_iterator, TSTRi(_store_str_at_or_die(CONSTSTR("enclosing fornum iterator"), 10)));
-  _set(&__str_i, TSTRi(_store_str_at_or_die(CONSTSTR("i"), 9)));
-  _set(&__str_enclosing_arg_overlap, TSTRi(_store_str_at_or_die(CONSTSTR("enclosing arg overlap"), 8)));
-  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 7)));
-  _set(&__str_newCounter, TSTRi(_store_str_at_or_die(CONSTSTR("newCounter"), 6)));
-  _set(&__str_captured_args, TSTRi(_store_str_at_or_die(CONSTSTR("captured args"), 5)));
-  _set(&__str_captured, TSTRi(_store_str_at_or_die(CONSTSTR("captured"), 4)));
+  _set(&__str_enclosing_fornum_iterator, TSTRi(_store_str_at_or_die(CONSTSTR("enclosing fornum iterator"), 12)));
+  _set(&__str_enclosing_arg_overlap, TSTRi(_store_str_at_or_die(CONSTSTR("enclosing arg overlap"), 11)));
+  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 10)));
+  _set(&__str_newCounter, TSTRi(_store_str_at_or_die(CONSTSTR("newCounter"), 9)));
+  _set(&__str_i, TSTRi(_store_str_at_or_die(CONSTSTR("i"), 8)));
+  _set(&__str_captured_args, TSTRi(_store_str_at_or_die(CONSTSTR("captured args"), 7)));
+  _set(&__str_captured, TSTRi(_store_str_at_or_die(CONSTSTR("captured"), 6)));
+  _set(&__str_x, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 5)));
+  _set(&__str_y, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 4)));
   _set(&__str_obj, TSTRi(_store_str_at_or_die(CONSTSTR("obj"), 3)));
   _set(&__str_not_wrapped, TSTRi(_store_str_at_or_die(CONSTSTR("not wrapped"), 2)));
   _set(&__str_wrapped, TSTRi(_store_str_at_or_die(CONSTSTR("wrapped"), 1)));
