@@ -40,14 +40,21 @@ typedef struct TVSlice_s {
 
 typedef TValue_t (*Func_t)(TVSlice_t);
 
+typedef struct TFunc_s {
+	Func_t fun;
+#ifdef DEBUG
+	const char* name;
+#endif
+	uint16_t env_table_idx;
+} TFunc_t;
+
 struct TValue_s {
 	union {
 		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
 		uint16_t table_idx;
-		Func_t fun;
+		uint16_t fun_idx;
 	};
-	uint16_t env_table_idx; // closure env for `fun`. putting these in a struct takes way more space
 	enum typetag_t tag; // 3 bits used only
 };
 
@@ -61,9 +68,15 @@ typedef struct  TVRefSlice_s {
 	uint16_t len;
 } TVRefSlice_t;
 
-_Static_assert(sizeof(TValue_t) <= 16, "too big"); // 8 for pointer on 64bit (union), 2 for env, 1 for enum, 3 for padding.
+_Static_assert(sizeof(TValue_t) == 6, "too big"); // 4 for fix32, 1 for enum, 1 for padding?
+#ifdef DEBUG
+_Static_assert(sizeof(TFunc_t) <= 24, "too big"); // (2)8 for pointer on 64bit, 2 for env, 4 for padding
+#else
+_Static_assert(sizeof(TFunc_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 4 for padding
+#endif
+
 #if UINTPTR_MAX == UINT32_MAX
-_Static_assert(sizeof(TValue_t) <= 12, "too big"); // 12 total size on 32bit
+_Static_assert(sizeof(TFunc_t) <= 8, "too big"); // 4 for pointer on 32bit, 2 for env, 2 for padding.
 #endif
 
 
@@ -124,6 +137,11 @@ typedef struct SArena_s {
 	uint16_t len;
 } SArena_t;
 
+typedef struct FArena_s {
+	TFunc_t* funcs;
+	uint16_t len;
+} FArena_t;
+
 
 #define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
 #define TNUM8(x)       ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
@@ -133,8 +151,15 @@ typedef struct SArena_s {
 #define CONSTSTR(x)    ((Str_t){.data = (uint8_t*)(x), .len=(sizeof((x))-1), .refcount=1})
 // CONSTSTR has .refcount=1 because it must operate on `const char*`
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=UINT16_MAX})
-#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun = (x), .env_table_idx=(y).table_idx})
+
+#ifdef DEBUG
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, UINT16_MAX, #x))})
+#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, (y).table_idx, #x))})
+#else
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, UINT16_MAX))})
+#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, (y).table_idx))})
+#endif
+
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
 
 #define CALL(x, y)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)((x), (y))
@@ -210,6 +235,11 @@ uint16_t _store_str(Str_t s);
 uint16_t _store_str_at_or_die(Str_t s, uint16_t idx);
 void _grow_strings_to(uint16_t new_len);
 uint16_t make_str(char* c);
+#ifdef DEBUG
+uint16_t make_fun(Func_t f, uint16_t env_table_idx, const char* name);
+#else
+uint16_t make_fun(Func_t f, uint16_t env_table_idx);
+#endif
 void run_gc();
 void _str_decref(Str_t* s);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
@@ -242,5 +272,6 @@ TValue_t _length(TValue_t arg);
 Str_t* GETSTRP(TValue_t x);
 Str_t GETSTR(TValue_t x);
 Table_t* GETTAB(TValue_t x);
+TFunc_t* GETTFUN(TValue_t x);
 Table_t GETMETATAB(Table_t x);
 #endif

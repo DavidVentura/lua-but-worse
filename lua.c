@@ -13,6 +13,8 @@
 const uint16_t TBL_BMAP_LEN = 32;
 TArena_t _tables = {.tables=NULL, .len=0, .used=0};
 SArena_t _strings = {.strings=NULL, .len=0};
+FArena_t _funcs = {.funcs=NULL, .len=0};
+
 TVRefSlice_t _gc_to_visit = {.len=0, .ref=NULL};
 
 Str_t _concat_buf = {.len=0, .data=NULL};
@@ -68,19 +70,22 @@ TValue_t __call(TValue_t t, TVSlice_t args) {
 		print_trace();
 		assert(false);
 	}
-	assert(t.fun != NULL);
-	if(t.env_table_idx != UINT16_MAX) {
+	TFunc_t* f = GETTFUN(t);
+	DEBUG2_PRINT("Calling %s\n", f->name);
+	assert(f->fun != NULL);
+	if(f->env_table_idx != UINT16_MAX) {
 		// This is not stack allocated as _most_ of the time the code-path isn't taken
 		// This can't use a static, shared buffer as it must be re-entrant, closures
 		// can call other closures.
+		// TODO: move to another function duh
 		TValue_t* argarray = calloc(args.num+1, sizeof(TValue_t));
 		memcpy(argarray, args.elems, sizeof(TValue_t)*args.num);
-		argarray[args.num] = TTAB(t.env_table_idx);
-		TValue_t ret = t.fun((TVSlice_t){.elems=argarray, .num=args.num+1});
+		argarray[args.num] = TTAB(f->env_table_idx);
+		TValue_t ret = f->fun((TVSlice_t){.elems=argarray, .num=args.num+1});
 		free(argarray);
 		return ret;
 	}
-	return t.fun(args);
+	return f->fun(args);
 }
 
 TVSlice_t concat_slice(TVSlice_t a, TVSlice_t b) {
@@ -262,6 +267,12 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 		TValue_t __index = meta.mm->__index;
 		switch(__index.tag) {
 			case TAB:
+				if(__index.table_idx == u.table_idx) {
+					// we've got `tab.__index = tab`
+					// and have gotten all the way down the inheritance tree
+					// up to `tab` itself, still not found the key -> is not there
+					return T_NULL;
+				}
 				return get_tabvalue(TTAB(__index.table_idx), key);
 			case FUN:
 				return CALL(__index, ((TVSlice_t){.elems=(TValue_t[]){key}, .num=1}));
@@ -609,6 +620,41 @@ uint16_t _store_str(Str_t s) {
 	DEBUG2_PRINT("Storing str '%.*s' at %d\n", s.len, s.data, ret);
 	_strings.strings[ret] = s;
 	return ret;
+}
+
+#ifdef DEBUG
+uint16_t make_fun(Func_t f, uint16_t env_table_idx, const char* name) {
+	TFunc_t t = (TFunc_t){.fun=f, .name=name, .env_table_idx=env_table_idx};
+#else
+uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
+	TFunc_t t = (TFunc_t){.fun=f, .env_table_idx=env_table_idx};
+#endif
+	uint16_t new_len = _funcs.len == 0 ? 32 : _funcs.len*2;
+	uint16_t first_null = UINT16_MAX;
+
+	if (_funcs.funcs == NULL) {
+		_funcs.funcs = calloc(32, sizeof(TFunc_t));
+		first_null = 0;
+		_funcs.len = new_len;
+	} else {
+		for(uint16_t i=0; i<_funcs.len; i++) {
+			if (_funcs.funcs[i].fun == f) return i; // already stored
+			if (_funcs.funcs[i].fun == NULL) {
+				first_null = i;
+				break;
+			}
+		}
+	}
+	if (first_null == UINT16_MAX) {
+		_funcs.funcs = realloc(_funcs.funcs, new_len * sizeof(TFunc_t));
+		memset(_funcs.funcs+_funcs.len, 0, (new_len-_funcs.len)*sizeof(TFunc_t));
+		_funcs.len = new_len;
+		first_null = 0;
+	}
+
+	_funcs.funcs[first_null] = t;
+
+	return first_null;
 }
 
 uint16_t make_str(char* c) {
@@ -965,6 +1011,10 @@ Str_t GETSTR(TValue_t x) {
 Table_t* GETTAB(TValue_t x) {
 	return &_tables.tables[x.table_idx];
 }
+TFunc_t* GETTFUN(TValue_t x) {
+	return &_funcs.funcs[x.fun_idx];
+}
+
 Table_t GETMETATAB(Table_t x) {
 	assert(x.metatable_idx != UINT16_MAX);
 	return _tables.tables[x.metatable_idx];
