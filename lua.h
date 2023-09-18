@@ -10,7 +10,7 @@
 	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
 	} while (0)
 
-//#define DEBUG2
+#define DEBUG2
 #ifdef DEBUG2
  #define DEBUG
  #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
@@ -218,6 +218,7 @@ void __decref(TValue_t* v);
 void _incref(TValue_t v);
 void _set(TValue_t* dst, TValue_t src);
 void _mark_for_gc(TValue_t val);
+void add_to_gc(uint16_t idx, enum typetag_t tag);
 TValue_t _concat(TValue_t a, TValue_t b);
 TValue_t __internal_debug_str_len();
 TValue_t __internal_debug_str_used();
