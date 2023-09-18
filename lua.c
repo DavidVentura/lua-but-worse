@@ -282,6 +282,13 @@ TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 	for(uint16_t i=0; i<t->kvp.len; i++) {
 		if (equal(t->kvp.kvs[i].key, key)) {
 			TValue_t ret = t->kvp.kvs[i].value;
+			// Add `ret` to gc instead of immediately calling `_decref` on it
+			// as we must return the deleted value to the caller of `del`.
+			if (ret.tag == TAB) {
+				add_to_gc(ret.table_idx, TAB);
+			} else if (ret.tag == STR) {
+				add_to_gc(ret.str_idx, STR);
+			}
 			t->kvp.kvs[i].key = T_NULL;
 			t->kvp.kvs[i].value = T_NULL;
 			t->count--;
@@ -489,7 +496,8 @@ uint16_t make_table(uint16_t size) {
 	tp->metatable_idx = UINT16_MAX;
 	tp->mm = NULL;
 	tp->count = 0;
-	tp->refcount = 0;
+	tp->refcount = 1;
+	add_to_gc(retval, TAB);
 
 	_tables.used++;
 	DEBUG_PRINT("Created <tab %d>\n", retval);
@@ -627,6 +635,7 @@ void add_to_gc(uint16_t idx, enum typetag_t tag) {
 			return;
 		}
 	}
+	// if we didn't find a slot so far, the array is full
 	uint16_t new_len = _gc_to_visit.len == 0 ? 16 : _gc_to_visit.len * 2;
 	_gc_to_visit.ref = reallocarray(_gc_to_visit.ref, new_len, sizeof(TVRef_t));
 	_gc_to_visit.ref[_gc_to_visit.len] = ref;
@@ -678,8 +687,16 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		return;
 	}
 	DEBUG_PRINT("GC <tab %d>\n", cur_idx);
-	if (t->kvp.len > 0)
+
+	if (t->kvp.len > 0) {
+		for(uint16_t i=0; i<t->kvp.len; i++) {
+			if(t->kvp.kvs[i].key.tag != NUL) {
+				// FIXME(CORR): _decref(t->kvp.kvs[i].key);
+				_decref(t->kvp.kvs[i].value);
+			}
+		}
 		memset(t->kvp.kvs, 0, t->kvp.len * sizeof(KV_t));
+	}
 
 	if (t->mm != NULL) {
 		memset(t->mm, 0, sizeof(Metamethod_t));
