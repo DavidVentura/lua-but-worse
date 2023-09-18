@@ -42,7 +42,10 @@ int16_t _sequential_until(TValue_t tab) {
 
 TValue_t add(TValue_t tab, TValue_t v) {
 	// TODO: optional index field
-	assert(tab.tag == TAB);
+	if(tab.tag != TAB) {
+		// PICO-8 ignores `add(nil, X)`
+		return T_NULL;
+	}
 	int16_t wanted = _sequential_until(tab) + 1;
 	set_tabvalue(tab, TNUM(wanted), v);
 	return v;
