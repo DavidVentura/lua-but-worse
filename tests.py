@@ -10,7 +10,6 @@ from a import transform
 
 here = Path(__file__).parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
-DO_NOT_GENERATE_CODE = os.environ.get("DO_NOT_GENERATE_CODE", None)
 
 def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict):
     _target_temp = Path(dest_dir / 'out.c')
@@ -68,18 +67,6 @@ def test_cases(test_dir: str, test_case: str, test_name: str):
 
     testing_params = _extract_pragmas(i)
 
-    if not DO_NOT_GENERATE_CODE:
-        code = transform(i).strip()
-        actual = code.splitlines()
-        if SHOULD_REGENERATE_OUTPUT:
-            with expected_f.open('w') as fd:
-                print(code, file=fd)
-                expected = code
-
-        with expected_f.open() as fd:
-            expected = fd.read()
-
-        assert actual == expected.strip().splitlines()
 
     with stdout_f.open() as fd:
         expected_stdout = fd.read()
@@ -92,3 +79,17 @@ def test_cases(test_dir: str, test_case: str, test_name: str):
         exec_output = _compile_and_run(_patched_src, Path(td), testing_params)
 
     assert expected_stdout.strip().splitlines() == exec_output
+
+    code = transform(i).strip()
+    actual = code.splitlines()
+
+    if SHOULD_REGENERATE_OUTPUT:
+        with expected_f.open('w') as fd:
+            fd.write(code)
+            expected = code
+    else:
+        with expected_f.open() as fd:
+            expected = fd.read()
+
+    if actual != expected.strip().splitlines():
+        assert False, f"The code for {expected_f} is different from generation. Run with SHOULD_REGENERATE_OUTPUT=1 to regenerate."
