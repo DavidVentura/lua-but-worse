@@ -677,7 +677,7 @@ void add_to_gc(uint16_t idx, enum typetag_t tag) {
 	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
 		if (_gc_to_visit.ref[i].tag == NUL) {
 			_gc_to_visit.ref[i] = ref;
-			DEBUG2_PRINT("Added to GC!\n");
+			DEBUG2_PRINT("Added to GC at %d!\n", i);
 			return;
 		}
 	}
