@@ -21,7 +21,6 @@ TValue_t __main() {
   TValue_t gc numtab = T_NULL;
   TValue_t gc tab = T_NULL;
   _set(&tab, TTAB(make_table(12)));
-  // Fields for table tab
   set_tabvalue(tab, __str_a, TNUM16(1));
   set_tabvalue(tab, __str_b, TNUM16(1));
   set_tabvalue(tab, __str_c, TNUM16(2));
@@ -61,7 +60,6 @@ TValue_t __main() {
 
   printh(__str_ipairs_over_num_table);
   _set(&numtab, TTAB(make_table(9)));
-  // Fields for table numtab
   set_tabvalue(numtab, TNUM16(1), TNUM16(123));
   set_tabvalue(numtab, TNUM16(2), TNUM16(456));
   set_tabvalue(numtab, __str_n, TNUM16(42));

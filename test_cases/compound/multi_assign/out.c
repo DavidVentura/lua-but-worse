@@ -31,9 +31,7 @@ TValue_t __main() {
   _set(&state, TTAB(make_table(2)));
   _set(&next_state, TTAB(make_table(2)));
   _set(&change_state, T_FALSE);
-  // Fields for table state
   set_tabvalue(next_state, __str_b, TNUM16(2));
-  // Fields for table state
   set_tabvalue(state, __str_a, TNUM16(1));
   printh(get_tabvalue(state, __str_a));
   printh(get_tabvalue(next_state, __str_b));

@@ -28,9 +28,7 @@ TValue_t __anonymous_function_move_y(TVSlice_t function_arguments) {
   _set(&lambda_args, __get_array_index_capped(function_arguments, 1));
   set_tabvalue(get_tabvalue(lambda_args, __str_obj), __str_y, TNUM16(0));
 
-  for (TValue_t _hidden_i = TNUM16(0); __bool(_leq(_hidden_i, TNUM16(2))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
-    TValue_t gc i = T_NULL;
-    _set(&i, _hidden_i);
+  for (TValue_t i = TNUM16(0); __bool(_leq(i, TNUM16(2))); i = _add(i, TNUM16(1))) {
     set_tabvalue(get_tabvalue(lambda_args, __str_obj), __str_x, TNUM16(0));
   }
 }

@@ -27,7 +27,6 @@ TValue_t test_add(TVSlice_t function_arguments) {
 TValue_t test_del2(TVSlice_t function_arguments) {
   TValue_t gc t = T_NULL;
   _set(&t, TTAB(make_table(6)));
-  // Fields for table t
   set_tabvalue(t, TNUM16(1), TNUM16(1));
   set_tabvalue(t, TNUM16(2), TNUM16(2));
   set_tabvalue(t, TNUM16(3), TNUM16(3));

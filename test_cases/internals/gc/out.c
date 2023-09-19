@@ -17,7 +17,6 @@ TValue_t returned_tables_1(TVSlice_t function_arguments);
 TValue_t returned_tables_1(TVSlice_t function_arguments) {
   TValue_t gc var = T_NULL;
   _set(&var, TTAB(make_table(2)));
-  // Fields for table var
   set_tabvalue(var, __str_field, TNUM16(1));
   _mark_for_gc(var);
   return var;
@@ -67,17 +66,13 @@ TValue_t deleted_tables(TVSlice_t function_arguments) {
   _set(&tab, TTAB(make_table(0)));
   __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(1));
 
-  for (TValue_t _hidden_i = TNUM16(1); __bool(_leq(_hidden_i, TNUM16(5))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
-    TValue_t gc i = T_NULL;
-    _set(&i, _hidden_i);
+  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(5))); i = _add(i, TNUM16(1))) {
     set_tabvalue(tab, i, TTAB(make_table(0)));
   }
   run_gc();
   __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(6));
 
-  for (TValue_t _hidden_i = TNUM16(1); __bool(_leq(_hidden_i, TNUM16(5))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
-    TValue_t gc i = T_NULL;
-    _set(&i, _hidden_i);
+  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(5))); i = _add(i, TNUM16(1))) {
     del(tab, TNUM16(1));
   }
   run_gc();

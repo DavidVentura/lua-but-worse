@@ -11,7 +11,6 @@ TValue_t __main() {
   TValue_t gc a = T_NULL;
   _set(&a, TNUM16(5));
   _set(&t, TTAB(make_table(4)));
-  // Fields for table t
   set_tabvalue(t, TNUM16(1), TNUM16(1));
   set_tabvalue(t, TNUM16(2), TNUM16(2));
   set_tabvalue(t, TNUM16(3), TNUM16(3));

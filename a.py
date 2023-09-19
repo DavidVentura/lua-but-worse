@@ -22,7 +22,9 @@ FunctionLike = (Function, AnonymousFunction, Method)
 """
 # TODO
 
-Function call optiimzation:
+Initialize TFUN once; now that it's not just a pointer to function, it's kinda expensive
+
+Function call optimization:
 When a function is:
  - never stored in a table
  - always called with the same # of arguments
@@ -297,8 +299,6 @@ def _literal_table_return(n):
         settabvalue = SetTabValue(temp_var, key, f.value, parent=_return.parent,
                                   first_token=n.first_token, last_token=n.last_token)
         _return.parent.body.insert(la_idx+1, settabvalue)
-    if len(n.fields) > 0:
-        _return.parent.body.insert(la_idx+1, Comment(f"Fields for returned table", parent=_return.parent))
     _return.values = [temp_var]
 
 def _literal_table_assign(n):
@@ -348,8 +348,6 @@ def _literal_table_assign(n):
         settabvalue = SetTabValue(_target_table, key, f.value, parent=_assign.parent,
                                   first_token=n.first_token, last_token=n.last_token)
         _assign.parent.body.insert(_assign_idx+1, settabvalue)
-    if len(n.fields) > 0:
-        _assign.parent.body.insert(_assign_idx+1, Comment(f"Fields for table {_assign.targets[0].id}", parent=_assign.parent))
 
 def transform_literal_tables_to_assignments(tree):
     """
@@ -795,32 +793,6 @@ def set_parent_on_children(tree):
     for n in tree_visitor.nodes:
         n.set_parent_on_children()
 
-def transform_forloop_target_variables(tree):
-    """
-    Transform Fornum such that the assigned variable is moved _inside_ the loop,
-    as a LocalAssign
-
-    for actual_var=0,10 do | for(_secret = 0; _secret < 10; _secret++) {
-      ...                  |     TValue_t actual_var = _secret;
-    end                    | }
-
-
-    """
-    tree_visitor = ast.WalkVisitor()
-    tree_visitor.visit(tree)
-    for n in tree_visitor.nodes:
-        if not isinstance(n, Fornum):
-            continue
-        varname = n.target.copy()
-        # manually replace Fornum.target, it's a hack, as there are many other
-        # `replace_child` which call Fornum, and they should _mostly_ not replace
-        # the target
-        new_var = Name(f"_hidden_{varname.id}", parent=n)
-        n.target = new_var
-
-        n.replace_child(n.target, new_var.copy())
-        n.body.body.insert(0, LocalAssign([varname.copy()], [Name(f"_hidden_{varname.id}")], parent=n.body))
-
 def _first_parent_containing_assign_of_or_argument(t: Node, n: Name, acceptable_scope=Scope) -> tuple[Optional[_Scope], bool]:
     """
     Returns (Node?, was-argument)
@@ -842,6 +814,11 @@ def _first_parent_containing_assign_of_or_argument(t: Node, n: Name, acceptable_
             continue
         return t.parent, False
 
+    if isinstance(t.parent, Fornum):
+        if t.parent.target.id == n.id:
+            return t.parent, True
+
+    # Function?
     if not isinstance(t.parent, Fornum):
         for arg in t.parent.args:
             if arg.id == n.id:
@@ -870,21 +847,27 @@ def _convert_local_name_to_lambda_env(block, name):
         new_child = Index(Name(n.id), Name("lambda_args"), IndexNotation.DOT)
         n.parent.replace_child(n, new_child)
 
-def _localassign_of_lambda_args(f: _FunctionLike) -> Optional[Node]:
-    _body = f.body.body
+def _localassign_of_lambda_args(f: _Scope) -> Optional[Node]:
+    _scopes = [f] + all_parent_scopes(f)
 
-    for n in _body:
-        if not isinstance(n, LocalAssign):
-            continue
-        if len(n.targets) != 1:  # specifically looking for `local lambda_args = {}`
-            continue
-        t = n.targets[0]
-        if not isinstance(t, Name) or t.id != "lambda_args":
-            continue
-        v = n.values[0]
-        if not isinstance(v, Table):
-            continue
-        return n
+    for scope in _scopes:
+        if isinstance(scope, Block):
+            _body = scope.body
+        else:
+            _body = scope.body.body
+
+        for n in _body:
+            if not isinstance(n, LocalAssign):
+                continue
+            if len(n.targets) != 1:  # specifically looking for `local lambda_args = {}`
+                continue
+            t = n.targets[0]
+            if not isinstance(t, Name) or t.id != "lambda_args":
+                continue
+            v = n.values[0]
+            if not isinstance(v, Table):
+                continue
+            return n
     return None
 
 def transform_captured_variables(tree):
@@ -951,19 +934,26 @@ def transform_captured_variables(tree):
         _convert_local_name_to_lambda_env(_function_needing_upvalues, n)
 
         # 2. Define a `lambda_args` table in the original environment
-        # TODO: As long as it's not been locally defined in parent scopes
-        # This should be a single LocalAssign in the function
         # and a SetTabValue in the correct body
         _la = _localassign_of_lambda_args(defined_in)
         if _la is None:
+            # lambda_args has not been locally defined in recursive parent scopes
+            # we walk the scopes downwards, so if it was necessary it'd already be defined
+            # => it should be defined as LocalAssign in the function
             _la = LocalAssign([Name("lambda_args")], [Table([])], parent=defined_in.body)
             # This should not get extra MakeTables
             defined_in.body.body.insert(0, _la)
 
         if was_argument:
             # copy the argument to the lambda-args
-            f = Field(n.copy(), Name(n.id), between_brackets=False, parent=_la)
-            _la.values[0].fields.append(f)
+            if _la.parent == defined_in.body:
+                f = Field(n.copy(), Name(n.id), between_brackets=False, parent=_la)
+                _la.values[0].fields.append(f)
+            else:
+                # lambda_args _has_ been defined in a parent scope, we only need 
+                # to assign a field value to it
+                stv = SetTabValue(Name("lambda_args"), String(n.id), n.copy(), parent=defined_in.body)
+                defined_in.body.body.insert(0, stv)
 
         # 3. Inject `lambda_args` as argument in the closure
         if not any(_a.id == "lambda_args" for _a in _function_needing_upvalues.args):
@@ -977,7 +967,6 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
     set_parent_on_children(tree)
 
     rename_stdlib_calls(tree)
-    transform_forloop_target_variables(tree) # before transform_captured_variables, the iterators should be captured
     transform_captured_variables(tree) # before transform_functions_to_vec_args, as it has to ignore args
                                        # before transform_anonymous_functions, as it has to walk upwards looking for UpValues
     transform_anonymous_functions(tree)
@@ -1023,7 +1012,7 @@ def transform(src, pretty=True, dump_ast=False, testing_params=None):
 
 def prettify(src):
     p = subprocess.Popen(['clang-format', '--style={ColumnLimit: 150}'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, err = p.communicate(input=src.encode(), timeout=2)
+    out, err = p.communicate(input=src.encode(), timeout=3)
     return out.decode()
 
 

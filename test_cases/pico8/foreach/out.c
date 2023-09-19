@@ -10,7 +10,6 @@ TValue_t __main();
 
 TValue_t __main() {
   _set(&t, TTAB(make_table(5)));
-  // Fields for table t
   set_tabvalue(t, TNUM16(1), TNUM16(1));
   set_tabvalue(t, TNUM16(2), TNUM16(3));
   set_tabvalue(t, TNUM16(3), __str_hello);

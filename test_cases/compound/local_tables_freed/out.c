@@ -17,10 +17,8 @@ TValue_t __main() {
   _set(&o, TTAB(make_table(1)));
   set_tabvalue(o, __str_key, __str_value);
   _set(&u, TTAB(make_table(2)));
-  // Fields for table u
   set_tabvalue(u, __str_a, TNUM16(1));
   _set(&_anonymous_table_0, TTAB(make_table(2)));
-  // Fields for table _anonymous_table_0
   set_tabvalue(_anonymous_table_0, TNUM16(7), TNUM16(8));
   set_tabvalue(_anonymous_table_0, TNUM16(8), TNUM16(7));
   _set(&t, get_tabvalue(_anonymous_table_0, TNUM16(7)));

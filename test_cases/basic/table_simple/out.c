@@ -18,14 +18,12 @@ TValue_t __main();
 
 TValue_t __main() {
   _set(&squares, TTAB(make_table(5)));
-  // Fields for table squares
   set_tabvalue(squares, TNUM16(1), TNUM16(1));
   set_tabvalue(squares, TNUM16(2), TNUM16(4));
   set_tabvalue(squares, TNUM16(3), TNUM16(9));
   set_tabvalue(squares, TNUM16(4), TNUM16(16));
   set_tabvalue(squares, TNUM16(5), TNUM16(25));
   _set(&member, TTAB(make_table(4)));
-  // Fields for table member
   set_tabvalue(member, __str_x, _invert_sign(TNUM(fix32_from_float(1.5f))));
   set_tabvalue(member, __str_y, TNUM16(66));
   _set(&empty, TTAB(make_table(0)));

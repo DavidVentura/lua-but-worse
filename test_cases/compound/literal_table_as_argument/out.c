@@ -18,7 +18,6 @@ TValue_t add_particle(TVSlice_t function_arguments) {
   _set(&x, __get_array_index_capped(function_arguments, 0));
   _set(&y, __get_array_index_capped(function_arguments, 1));
   _set(&_anonymous_table_0, TTAB(make_table(4)));
-  // Fields for table _anonymous_table_0
   set_tabvalue(_anonymous_table_0, __str_x, x);
   set_tabvalue(_anonymous_table_0, __str_y, y);
   add(particles, _anonymous_table_0);

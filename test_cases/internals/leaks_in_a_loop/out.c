@@ -14,9 +14,7 @@ TValue_t _inner(TVSlice_t function_arguments) {
   TValue_t gc s = T_NULL;
   _set(&s, __str__dollar_);
 
-  for (TValue_t _hidden_i = TNUM16(1); __bool(_leq(_hidden_i, TNUM16(10))); _hidden_i = _add(_hidden_i, TNUM16(1))) {
-    TValue_t gc i = T_NULL;
-    _set(&i, _hidden_i);
+  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(10))); i = _add(i, TNUM16(1))) {
     _set(&s, _concat(__str__hash_, tostring(i)));
   }
   run_gc();

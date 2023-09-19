@@ -29,7 +29,6 @@ TValue_t __main() {
   _set(&e, TNUM16(2));
   _set(&o, TTAB(make_table(1)));
   _set(&u, TTAB(make_table(2)));
-  // Fields for table u
   set_tabvalue(u, __str_a, TNUM16(123));
   set_tabvalue(o, __str_a, TNUM16(333));
   _set(&oof, TNUM(fix32_from_float(0.5f)));

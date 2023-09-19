@@ -12,7 +12,6 @@ TValue_t returned_tables_1(TVSlice_t function_arguments);
 TValue_t returned_tables_1(TVSlice_t function_arguments) {
   TValue_t gc var = T_NULL;
   _set(&var, TTAB(make_table(2)));
-  // Fields for table var
   set_tabvalue(var, __str_field, TNUM16(1));
   _mark_for_gc(var);
   return var;
@@ -21,7 +20,6 @@ TValue_t returned_tables_1(TVSlice_t function_arguments) {
 TValue_t returned_tables_2(TVSlice_t function_arguments) {
   TValue_t gc _anon_return_table = T_NULL;
   _set(&_anon_return_table, TTAB(make_table(2)));
-  // Fields for returned table
   set_tabvalue(_anon_return_table, __str_field, TNUM16(1));
   _mark_for_gc(_anon_return_table);
   return _anon_return_table;

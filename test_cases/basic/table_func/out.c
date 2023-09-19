@@ -27,7 +27,6 @@ TValue_t __table_func_vector_new(TVSlice_t function_arguments) {
   _set(&x, __get_array_index_capped(function_arguments, 0));
   _set(&y, __get_array_index_capped(function_arguments, 1));
   _set(&o, TTAB(make_table(4)));
-  // Fields for table o
   set_tabvalue(o, __str_x, x);
   set_tabvalue(o, __str_y, y);
   setmetatable(o, vector);

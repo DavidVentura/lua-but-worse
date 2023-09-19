@@ -11,7 +11,6 @@ TValue_t __main();
 
 TValue_t __main() {
   _set(&member, TTAB(make_table(3)));
-  // Fields for table member
   set_tabvalue(member, __str_x, TNUM16(1));
   _set(&empty, TTAB(make_table(0)));
   set_tabvalue(member, empty, TNUM16(5));
