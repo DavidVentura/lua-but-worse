@@ -10,7 +10,6 @@
 	    fprintf(stderr, level ": %-30s " fmt, buffer, ##args);\
 	} while (0)
 
-#define DEBUG2
 #ifdef DEBUG2
  #define DEBUG
  #define DEBUG2_PRINT(fmt, args...) __DEBUG_PRINT("DEBUG2", fmt, ##args)
