@@ -683,7 +683,10 @@ void add_to_gc(uint16_t idx, enum typetag_t tag) {
 	}
 	// if we didn't find a slot so far, the array is full
 	uint16_t new_len = _gc_to_visit.len == 0 ? 16 : _gc_to_visit.len * 2;
-	_gc_to_visit.ref = reallocarray(_gc_to_visit.ref, new_len, sizeof(TVRef_t));
+	TVRef_t* new_buf = calloc(new_len, sizeof(TVRef_t));
+	memcpy(new_buf, _gc_to_visit.ref, _gc_to_visit.len*sizeof(TVRef_t));
+	free(_gc_to_visit.ref);
+	_gc_to_visit.ref = new_buf;
 	_gc_to_visit.ref[_gc_to_visit.len] = ref;
 	_gc_to_visit.len = new_len;
 	DEBUG2_PRINT("Added to resized GC!\n");
