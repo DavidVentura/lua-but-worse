@@ -6,6 +6,7 @@
 TValue_t __str_field = T_NULL;
 TValue_t __preinit();
 TValue_t __main();
+TValue_t returned_tables_3(TVSlice_t function_arguments);
 TValue_t returned_tables_2(TVSlice_t function_arguments);
 TValue_t returned_tables_1(TVSlice_t function_arguments);
 
@@ -25,13 +26,23 @@ TValue_t returned_tables_2(TVSlice_t function_arguments) {
   return _anon_return_table;
 }
 
+TValue_t returned_tables_3(TVSlice_t function_arguments) {
+  TValue_t gc _anon_return_table = T_NULL;
+  _set(&_anon_return_table, TTAB(make_table(0)));
+  _mark_for_gc(_anon_return_table);
+  return _anon_return_table;
+}
+
 TValue_t __main() {
+  TValue_t gc t3 = T_NULL;
   TValue_t gc t2 = T_NULL;
   TValue_t gc t = T_NULL;
   _set(&t, CALL((returned_tables_1), ((TVSlice_t){.elems = NULL, .num = 0})));
   printh(get_tabvalue(t, __str_field));
   _set(&t2, CALL((returned_tables_2), ((TVSlice_t){.elems = NULL, .num = 0})));
   printh(get_tabvalue(t2, __str_field));
+  _set(&t3, CALL((returned_tables_3), ((TVSlice_t){.elems = NULL, .num = 0})));
+  printh(_length(t3));
 }
 
 TValue_t __preinit() {
