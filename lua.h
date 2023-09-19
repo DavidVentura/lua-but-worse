@@ -31,23 +31,7 @@
 enum typetag_t {NUL=0, STR=1, TAB=2, FUN=3, NUM=4, BOOL=5} __attribute__ ((__packed__));
 _Static_assert(sizeof(enum typetag_t) == 1, "too big");
 
-typedef struct TValue_s TValue_t;
-typedef struct TVSlice_s {
-	TValue_t* elems;
-	uint16_t num;
-} TVSlice_t;
-
-typedef TValue_t (*Func_t)(TVSlice_t);
-
-typedef struct TFunc_s {
-	Func_t fun;
-#ifdef DEBUG
-	const char* name;
-#endif
-	uint16_t env_table_idx;
-} TFunc_t;
-
-struct TValue_s {
+typedef struct TValue_s {
 	union {
 		uint16_t str_idx; // maybe high bit for short/long str?
 		fix32_t num;
@@ -55,7 +39,9 @@ struct TValue_s {
 		uint16_t fun_idx;
 	};
 	enum typetag_t tag; // 3 bits used only
-};
+} TValue_t;
+
+_Static_assert(sizeof(TValue_t) == 6, "too big"); // 4 for fix32, 1 for enum, 1 for padding?
 
 typedef struct TVRef_s {
 	uint16_t idx: 13;
@@ -67,7 +53,21 @@ typedef struct  TVRefSlice_s {
 	uint16_t len;
 } TVRefSlice_t;
 
-_Static_assert(sizeof(TValue_t) == 6, "too big"); // 4 for fix32, 1 for enum, 1 for padding?
+
+typedef struct TVSlice_s {
+	TValue_t* elems;
+	uint16_t num;
+} TVSlice_t;
+
+typedef TValue_t (*Func_t)(TVSlice_t);
+typedef struct TFunc_s {
+	Func_t fun;
+#ifdef DEBUG
+	const char* name;
+#endif
+	uint16_t env_table_idx;
+} TFunc_t;
+
 #ifdef DEBUG
 _Static_assert(sizeof(TFunc_t) <= 24, "too big"); // (2)8 for pointer on 64bit, 2 for env, 4 for padding
 #else
