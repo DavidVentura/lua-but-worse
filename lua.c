@@ -689,14 +689,18 @@ void add_to_gc(uint16_t idx, enum typetag_t tag) {
 	_gc_to_visit.ref = new_buf;
 	_gc_to_visit.ref[_gc_to_visit.len] = ref;
 	_gc_to_visit.len = new_len;
-	DEBUG2_PRINT("Added to resized GC!\n");
+	DEBUG_PRINT("Resized GC pool to %d!\n", new_len);
 }
 
 void run_gc() {
 	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
 		TVRef_t* ref = &_gc_to_visit.ref[i];
 		TValue_t v = T_NULL;
-		if (ref->tag == NUL) continue;
+		if (ref->tag == NUL) {
+			// all entries must be densely packed; on any call to `run_gc`,
+			// all non-NULL entries get set to null
+			break;
+		}
 		if (ref->tag == TAB) {
 			if(_tables.tables[ref->idx].refcount > 0) {
 				DEBUG2_PRINT("Decref table %d by GC!\n", ref->idx);
