@@ -688,14 +688,15 @@ void add_to_gc(uint16_t idx, enum typetag_t tag) {
 		}
 	}
 	// if we didn't find a slot so far, the array is full
-	uint16_t new_len = _gc_to_visit.len == 0 ? 16 : _gc_to_visit.len * 2;
+	uint16_t new_len = _gc_to_visit.len == 0 ? 128 : _gc_to_visit.len * 2;
+	assert(new_len != 0); // OVERFLOW
 	TVRef_t* new_buf = calloc(new_len, sizeof(TVRef_t));
+	DEBUG_PRINT("Expanding GC to %d\n", new_len);
 	memcpy(new_buf, _gc_to_visit.ref, _gc_to_visit.len*sizeof(TVRef_t));
 	free(_gc_to_visit.ref);
 	_gc_to_visit.ref = new_buf;
 	_gc_to_visit.ref[_gc_to_visit.len] = ref;
 	_gc_to_visit.len = new_len;
-	DEBUG_PRINT("Resized GC pool to %d!\n", new_len);
 }
 
 void run_gc() {
@@ -708,16 +709,11 @@ void run_gc() {
 			break;
 		}
 		if (ref->tag == TAB) {
-			if(_tables.tables[ref->idx].refcount > 0) {
-				DEBUG2_PRINT("Decref table %d by GC!\n", ref->idx);
-				_tab_decref(&_tables.tables[ref->idx], ref->idx);
-			}
-		}
-		if (ref->tag == STR) {
-			if(_strings.strings[ref->idx].refcount > 0) {
-				DEBUG2_PRINT("Decref string %d by GC!\n", ref->idx);
-				_str_decref(&_strings.strings[ref->idx]);
-			}
+			DEBUG2_PRINT("Decref table %d by GC!\n", ref->idx);
+			_tab_decref(&_tables.tables[ref->idx], ref->idx);
+		} else if (ref->tag == STR) {
+			DEBUG2_PRINT("Decref string %d by GC!\n", ref->idx);
+			_str_decref(&_strings.strings[ref->idx]);
 		}
 		ref->tag = NUL;
 	}
@@ -726,9 +722,8 @@ void run_gc() {
 void _mark_for_gc(TValue_t val) {
 	// This is called when returning values, we have to bump their
 	// refcount so they survive going out of scope (automatic _decref)
-	// and add them to the list of "objects to clean" -- if the
-	// returned value still has exactly 1 reference by the time the GC runs,
-	// it's the lingering reference that we add here.
+	// and add them to the list of "objects to clean";
+	// basically a way to do a deferred decref
 	if(val.tag == TAB) {
 		_incref(val);
 		add_to_gc(val.table_idx, val.tag);
@@ -938,7 +933,7 @@ TValue_t tostring(TValue_t v) {
 	char buf[MAX_STR_LEN_FIX32] = {0};
 	print_fix32(v.num, buf);
 	ret = TSTR(buf); // TSTR makes its own copy
-    add_to_gc(ret.str_idx, STR);
+					 // TSTR also does add_to_gc
 	return ret;
 }
 
