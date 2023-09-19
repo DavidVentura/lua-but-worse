@@ -1,4 +1,5 @@
 from pathlib import Path
+import glob
 import os
 import tempfile
 import subprocess
@@ -40,8 +41,9 @@ def find_case_pairs():
     marks = ['basic', 'compound', 'internals', 'pico8', 'syntax', 'regression']
     ret = []
     for m in marks:
-        per_mark = [pytest.param(f'test_cases/{m}', d, marks=getattr(pytest.mark, m)) for d in os.listdir(f'test_cases/{m}')]
-        #per_mark = [(f'test_cases/{m}', d) for d in os.listdir(f'test_cases/{m}')]
+        per_mark = []
+        for d in glob.glob(f'test_cases/{m}/*/*.lua'):
+            per_mark.append(pytest.param(f'test_cases/{m}', os.path.basename(os.path.dirname(d)), os.path.splitext(os.path.basename(d))[0], marks=getattr(pytest.mark, m)))
         ret += per_mark
     return ret
 
@@ -55,9 +57,12 @@ def _extract_pragmas(src: str) -> dict:
         ret[line] = 1
     return ret
 
-@pytest.mark.parametrize("test_dir, test_case", find_case_pairs())
-def test_cases(test_dir, test_case: str):
-    in_f, expected_f, stdout_f = (Path(f'{test_dir}/{test_case}/in.lua'), Path(f'{test_dir}/{test_case}/out.c'), Path(f'{test_dir}/{test_case}/expected_stdout'))
+@pytest.mark.parametrize("test_dir, test_case, test_name", find_case_pairs())
+def test_cases(test_dir: str, test_case: str, test_name: str):
+    in_f = Path(f'{test_dir}/{test_case}/{test_name}.lua')
+    expected_f = Path(f'{test_dir}/{test_case}/{test_name}.c')
+    stdout_f = Path(f'{test_dir}/{test_case}/{test_name}.out')
+
     with in_f.open() as fd:
         i = fd.read()
 
@@ -76,17 +81,12 @@ def test_cases(test_dir, test_case: str):
 
         assert actual == expected.strip().splitlines()
 
-    if stdout_f is None:
-        # not all test cases have expected outputs
-        return
     with stdout_f.open() as fd:
         expected_stdout = fd.read()
 
     _patched_src = transform(i, testing_params=testing_params).strip()
     with open('patched_out.c', 'w') as fd:
         print(_patched_src, file=fd)
-
-    print(_patched_src)
 
     with tempfile.TemporaryDirectory() as td:
         exec_output = _compile_and_run(_patched_src, Path(td), testing_params)
