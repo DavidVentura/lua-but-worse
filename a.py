@@ -287,7 +287,7 @@ def _literal_table_return(n):
 
     return_idx = _return.parent.body.index(_return)
     temp_var = Name("_anon_return_table")
-    la = LocalAssign([temp_var], [n])
+    la = LocalAssign([temp_var], [n], parent=_return.parent)
     _return.parent.body.insert(return_idx, la)
     la_idx = _return.parent.body.index(la)
     for f in n.fields[::-1]:
