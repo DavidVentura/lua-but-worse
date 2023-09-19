@@ -10,8 +10,7 @@
 //#include "fix32.h"
 
 
-const uint16_t TBL_BMAP_LEN = 32;
-TArena_t _tables = {.tables=NULL, .len=0, .used=0};
+TArena_t _tables = {.tables=NULL, .len=0, .used=0, .free_tables=NULL};
 SArena_t _strings = {.strings=NULL, .len=0};
 FArena_t _funcs = {.funcs=NULL, .len=0};
 
@@ -464,36 +463,43 @@ TValue_t _and(TValue_t a, TValue_t b) {
 	return __bool(a) ? b : a ;
 }
 
-uint32_t free_tables;
+uint16_t first_free_table_idx() {
+	uint16_t retval;
+	for(uint16_t i=0; i<_tables.len/32; i++) {
+		if(_tables.free_tables[i] == 0) continue;
+		return (32*i)+(__builtin_ffs(_tables.free_tables[i]) - 1);
+	}
+	return UINT16_MAX;
+}
+
 uint16_t make_table(uint16_t size) {
 	if(_tables.len == _tables.used) {
-		uint16_t new_len = _tables.len == 0 ? TBL_BMAP_LEN : _tables.len*2;
+		uint16_t new_len = _tables.len == 0 ? 128 : _tables.len*2;
 		if (_tables.tables == NULL) {
 			_tables.tables = calloc(new_len, sizeof(Table_t));
-			free_tables = 0xffffffff;
+
+			_tables.free_tables = malloc(new_len/8); // new_len = 128 => 4 bytes :(
+			memset(_tables.free_tables, 0xff, new_len/8);
+			//memset(_tables.free_tables, 0xff, new_len/32);
 		} else {
 			uint16_t old_len = _tables.len;
 			assert(new_len > old_len);
 			_tables.tables = realloc(_tables.tables, new_len*sizeof(Table_t));
 			// only zero out the new part of the buffer
 			memset(_tables.tables+old_len, 0, (new_len-old_len)*sizeof(Table_t));
+
+			_tables.free_tables = realloc(_tables.free_tables, new_len/8);
+			memset(_tables.free_tables+(old_len/32), 0xff, (new_len-old_len)/8);
 		}
 		_tables.len = new_len;
 	}
 
-	uint16_t retval = 0xfafa;
-	if (free_tables > 0) {
-		retval = __builtin_ffs(free_tables) - 1;
-		free_tables ^= (1 << retval);
-	} else {
-		// TODO(OPT): use `used`+1 if just resized
-		for(uint16_t i = TBL_BMAP_LEN; i<_tables.len; i++) {
-			if(_tables.tables[i].refcount==0) {
-				retval = i;
-				break;
-			}
-		}
-	}
+	uint16_t retval = first_free_table_idx();
+	// this is infallible -- if it was not possible to find a slot, we'd have resized above
+	assert(retval != UINT16_MAX);
+
+	//printf("found slot at %d, using bitmap %d with idx %d\n", retval, retval / 32, retval % 32);
+	_tables.free_tables[retval / 32] ^= (1 << (retval % 32));
 
 	Table_t* tp = &_tables.tables[retval];
 	if (tp->kvp.kvs == NULL && size > 0) {
@@ -755,8 +761,7 @@ void _tab_decref(Table_t* t, uint16_t cur_idx) {
 		memset(t->mm, 0, sizeof(Metamethod_t));
 	}
 
-	if (cur_idx < TBL_BMAP_LEN)
-		free_tables |= (1 << cur_idx);
+	_tables.free_tables[cur_idx / 32] |= (1 << (cur_idx % 32));
 	_tables.used--;
 	// this memset will set the `tag` on `key` and `value` to NUL
 	// which means that the backing array can later be assigned to a new

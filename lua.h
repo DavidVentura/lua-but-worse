@@ -121,6 +121,7 @@ _Static_assert(sizeof(Table_t) <= 16, "too big");
 
 typedef struct TArena_s {
 	Table_t* tables;
+	uint32_t* free_tables;
 	uint16_t len;
 	uint16_t used;
 } TArena_t;
