@@ -13,7 +13,7 @@ def load_grammar():
 @lru_cache
 def create_parser():
     grammar = load_grammar()
-    return Lark(grammar, parser='lalr', start='start')
+    return Lark(grammar, parser='earley', start='start')
 
 
 def parse(code):

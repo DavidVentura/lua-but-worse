@@ -9,23 +9,24 @@ statement: function_def
          | assignment
          | expr_stmt
 
-function_def: "function" NAME "(" [param_list] ")" block "end"
-            | "function" NAME ":" NAME "(" [param_list] ")" block "end"
+function_def: "function" function_name "(" [param_list] ")" block "end"
+            | "function" function_name ":" NAME "(" [param_list] ")" block "end"
+
+function_name: NAME ("." NAME)*
 
 param_list: NAME ("," NAME)*
 
 local_decl: "local" NAME ("," NAME)* ["=" expr_list]
 
 if_stmt: "if" expr "then" block elif_parts else_part "end"
-       | "if" "(" expr ")" statement
-       | "if" "(" expr ")" statement "else" statement+
+       | "if" "(" expr ")" statement ["else" statement+]
 
 elif_parts: ("elseif" expr "then" block)*
 
 else_part: ["else" block]
 
 for_stmt: "for" NAME "=" expr "," expr ["," expr] "do" block "end"
-        | "for" NAME "in" expr "do" block "end"
+        | "for" NAME ("," NAME)* "in" expr "do" block "end"
 
 while_stmt: "while" expr "do" block "end"
           | "while" "(" expr ")" statement
@@ -34,23 +35,18 @@ return_stmt: "return" [expr_list]
 
 block: statement*
 
-expr_stmt: expr
+?expr_stmt: expr
 
-assignment: lvalue_list "=" expr_list
-          | lvalue "+=" expr
-          | lvalue "-=" expr
-          | lvalue "*=" expr
-          | lvalue "/=" expr
-          | lvalue "%=" expr
+assignment: assignable ("," assignable)* "=" expr_list
+          | assignable "+=" expr
+          | assignable "-=" expr
+          | assignable "*=" expr
+          | assignable "/=" expr
+          | assignable "%=" expr
 
-lvalue_list: lvalue ("," lvalue)*
+assignable: NAME table_suffix*
 
 expr_list: expr ("," expr)*
-
-lvalue: NAME table_suffix*
-
-table_suffix: "." NAME
-            | "[" expr "]"
 
 expr: or_expr
 
@@ -79,7 +75,13 @@ unary: "-" unary
      | "#" unary
      | atom
 
-atom: primary (table_suffix | function_call)*
+atom: primary suffix*
+
+suffix: table_suffix
+      | function_call
+
+table_suffix: "." NAME
+            | "[" expr "]"
 
 function_call: "(" [expr_list] ")"
              | ":" NAME "(" [expr_list] ")"

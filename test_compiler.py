@@ -642,5 +642,108 @@ end
     assert tree.data == "start"
 
 
+# Additional Features
+
+def test_function_table_notation():
+    """Test function definition with table.field notation"""
+    code = """
+function vector.new(x, y)
+    return {x=x, y=y}
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_metamethod():
+    """Test function definition with __metamethod names"""
+    code = """
+function vector.__add(v0, v1)
+    return vector.new(v0.x + v1.x, v0.y + v1.y)
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_nested_table_notation():
+    """Test function with deeply nested table notation"""
+    code = """
+function a.b.c.method()
+    x = 5
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_for_in_multiple_vars():
+    """Test for-in loop with multiple variables"""
+    code = """
+for k, v in pairs(tab) do
+    printh(k)
+    printh(v)
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_for_in_three_vars():
+    """Test for-in loop with three variables"""
+    code = """
+for i, k, v in iterator(tab) do
+    printh(i)
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_expression_as_callable():
+    """Test calling result of an expression"""
+    code = """
+(obj or nil)(arg)
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_complex_table_with_functions():
+    """Test table with functions and bracket notation"""
+    code = """
+func_in_tab = {
+    func = function(this)
+        this.attr = {key="value"}
+    end,
+}
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_table_literal_with_string_keys():
+    """Test table with string keys in brackets"""
+    code = """
+literals = {
+    ["top"] = {x=0, y=-68},
+    ["bottom"] = {x=0, y=68}
+}
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_compound_assignment_to_method_result():
+    """Test compound assignment with method call on right side"""
+    code = """
+function test()
+    self.x /= self:len()
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
