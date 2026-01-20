@@ -4,6 +4,8 @@ from lark import Lark
 from pathlib import Path
 from functools import lru_cache
 
+from ast_builder import ASTBuilder
+
 
 def load_grammar():
     grammar_path = Path(__file__).parent / "grammar.lark"
@@ -26,3 +28,6 @@ if __name__ == "__main__":
 
     tree = parse(test_code)
     print(tree.pretty())
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+    print(ast)

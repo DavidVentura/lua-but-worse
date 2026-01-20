@@ -12,14 +12,14 @@ def test_simple_assignment():
     assert len(tree.children) == 1
 
     statement = tree.children[0]
-    assert statement.data == "statement"
+    assert statement.data == "assignment"
 
 
 def test_variable_assignment_to_variable():
     code = "x = y"
     tree = parse(code)
 
-    assignment = tree.children[0].children[0]
+    assignment = tree.children[0]
     assert assignment.data == "assignment"
 
 
@@ -27,7 +27,7 @@ def test_float_assignment():
     code = "pi = 3.14"
     tree = parse(code)
 
-    assignment = tree.children[0].children[0]
+    assignment = tree.children[0]
     assert assignment.data == "assignment"
 
 

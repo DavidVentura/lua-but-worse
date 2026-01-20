@@ -1,13 +1,13 @@
 start: statement*
 
-statement: function_def
-         | local_decl
-         | if_stmt
-         | for_stmt
-         | while_stmt
-         | return_stmt
-         | assignment
-         | expr_stmt
+?statement: function_def
+          | local_decl
+          | if_stmt
+          | for_stmt
+          | while_stmt
+          | return_stmt
+          | assignment
+          | expr_stmt
 
 function_def: "function" function_name "(" [param_list] ")" block "end"
             | "function" function_name ":" NAME "(" [param_list] ")" block "end"
@@ -57,19 +57,19 @@ expr_list: expr ("," expr)*
 ?not_expr: "not" not_expr
          | comparison
 
-?comparison: concat (comp_op concat)*
+?comparison: concat (COMP_OP concat)*
 
-comp_op: "==" | "~=" | "<=" | ">=" | "<" | ">"
+COMP_OP: "==" | "~=" | "<=" | ">=" | "<" | ">"
 
 ?concat: add_expr (".." add_expr)*
 
-?add_expr: mult_expr (add_op mult_expr)*
+?add_expr: mult_expr (ADD_OP mult_expr)*
 
-add_op: "+" | "-"
+ADD_OP: "+" | "-"
 
-?mult_expr: unary (mult_op unary)*
+?mult_expr: unary (MULT_OP unary)*
 
-mult_op: "*" | "/" | "%" | "\\"
+MULT_OP: "*" | "/" | "%" | "\\"
 
 ?unary: "-" unary
       | "#" unary
