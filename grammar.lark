@@ -48,37 +48,37 @@ assignable: NAME table_suffix*
 
 expr_list: expr ("," expr)*
 
-expr: or_expr
+?expr: or_expr
 
-or_expr: and_expr ("or" and_expr)*
+?or_expr: and_expr ("or" and_expr)*
 
-and_expr: not_expr ("and" not_expr)*
+?and_expr: not_expr ("and" not_expr)*
 
-not_expr: "not" not_expr
-        | comparison
+?not_expr: "not" not_expr
+         | comparison
 
-comparison: concat (comp_op concat)*
+?comparison: concat (comp_op concat)*
 
 comp_op: "==" | "~=" | "<=" | ">=" | "<" | ">"
 
-concat: add_expr (".." add_expr)*
+?concat: add_expr (".." add_expr)*
 
-add_expr: mult_expr (add_op mult_expr)*
+?add_expr: mult_expr (add_op mult_expr)*
 
 add_op: "+" | "-"
 
-mult_expr: unary (mult_op unary)*
+?mult_expr: unary (mult_op unary)*
 
 mult_op: "*" | "/" | "%" | "\\"
 
-unary: "-" unary
-     | "#" unary
-     | atom
+?unary: "-" unary
+      | "#" unary
+      | atom
 
-atom: primary suffix*
+?atom: primary suffix*
 
-suffix: table_suffix
-      | function_call
+?suffix: table_suffix
+       | function_call
 
 table_suffix: "." NAME
             | "[" expr "]"
