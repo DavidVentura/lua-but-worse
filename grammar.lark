@@ -1,14 +1,82 @@
 start: statement*
 
 statement: assignment
+         | expr_stmt
 
-assignment: NAME "=" value
+expr_stmt: expr
 
-value: NUMBER
-     | NAME
+assignment: lvalue "=" expr
+          | lvalue "+=" expr
+          | lvalue "-=" expr
+          | lvalue "*=" expr
+          | lvalue "/=" expr
+          | lvalue "%=" expr
+
+lvalue: NAME table_suffix*
+
+table_suffix: "." NAME
+            | "[" expr "]"
+
+expr: or_expr
+
+or_expr: and_expr ("or" and_expr)*
+
+and_expr: not_expr ("and" not_expr)*
+
+not_expr: "not" not_expr
+        | comparison
+
+comparison: concat (comp_op concat)*
+
+comp_op: "==" | "~=" | "<=" | ">=" | "<" | ">"
+
+concat: add_expr (".." add_expr)*
+
+add_expr: mult_expr (add_op mult_expr)*
+
+add_op: "+" | "-"
+
+mult_expr: unary (mult_op unary)*
+
+mult_op: "*" | "/" | "%" | "\\"
+
+unary: "-" unary
+     | "#" unary
+     | atom
+
+atom: primary table_suffix*
+
+primary: NUMBER
+       | STRING
+       | BOOLEAN
+       | NIL
+       | table_constructor
+       | NAME
+       | "(" expr ")"
+
+table_constructor: "{" [table_fields] "}"
+
+table_fields: table_field ("," table_field)* [","]
+
+table_field: "[" expr "]" "=" expr
+           | NAME "=" expr
+           | expr
+
+HEX_DECIMAL: /0x[0-9a-fA-F]*\.[0-9a-fA-F]+/
+BINARY_DECIMAL: /0b[01]+\.[01]+/
+HEX_NUMBER: /0x[0-9a-fA-F]+/
+BINARY_NUMBER: /0b[01]+/
+DECIMAL_NUMBER: /\d+\.\d+/ | /\.\d+/ | /\d+/
+
+NUMBER: HEX_DECIMAL | BINARY_DECIMAL | HEX_NUMBER | BINARY_NUMBER | DECIMAL_NUMBER
+
+STRING: /"[^"]*"/ | /'[^']*'/
+
+BOOLEAN: "true" | "false"
+
+NIL: "nil"
 
 NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /\d+(\.\d+)?/
 
 %import common.WS
 %ignore WS
