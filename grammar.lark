@@ -1,16 +1,51 @@
 start: statement*
 
-statement: assignment
+statement: function_def
+         | local_decl
+         | if_stmt
+         | for_stmt
+         | while_stmt
+         | return_stmt
+         | assignment
          | expr_stmt
+
+function_def: "function" NAME "(" [param_list] ")" block "end"
+            | "function" NAME ":" NAME "(" [param_list] ")" block "end"
+
+param_list: NAME ("," NAME)*
+
+local_decl: "local" NAME ("," NAME)* ["=" expr_list]
+
+if_stmt: "if" expr "then" block elif_parts else_part "end"
+       | "if" "(" expr ")" statement
+       | "if" "(" expr ")" statement "else" statement+
+
+elif_parts: ("elseif" expr "then" block)*
+
+else_part: ["else" block]
+
+for_stmt: "for" NAME "=" expr "," expr ["," expr] "do" block "end"
+        | "for" NAME "in" expr "do" block "end"
+
+while_stmt: "while" expr "do" block "end"
+          | "while" "(" expr ")" statement
+
+return_stmt: "return" [expr_list]
+
+block: statement*
 
 expr_stmt: expr
 
-assignment: lvalue "=" expr
+assignment: lvalue_list "=" expr_list
           | lvalue "+=" expr
           | lvalue "-=" expr
           | lvalue "*=" expr
           | lvalue "/=" expr
           | lvalue "%=" expr
+
+lvalue_list: lvalue ("," lvalue)*
+
+expr_list: expr ("," expr)*
 
 lvalue: NAME table_suffix*
 
@@ -44,15 +79,21 @@ unary: "-" unary
      | "#" unary
      | atom
 
-atom: primary table_suffix*
+atom: primary (table_suffix | function_call)*
+
+function_call: "(" [expr_list] ")"
+             | ":" NAME "(" [expr_list] ")"
 
 primary: NUMBER
        | STRING
        | BOOLEAN
        | NIL
        | table_constructor
+       | anonymous_function
        | NAME
        | "(" expr ")"
+
+anonymous_function: "function" "(" [param_list] ")" block "end"
 
 table_constructor: "{" [table_fields] "}"
 
@@ -78,5 +119,10 @@ NIL: "nil"
 
 NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 
+COMMENT: /--[^\n]*/
+C_COMMENT: /\/\/[^\n]*/
+
 %import common.WS
 %ignore WS
+%ignore COMMENT
+%ignore C_COMMENT

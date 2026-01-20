@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from lark import Lark, Tree
+from lark import Lark
 from pathlib import Path
+from functools import lru_cache
 
 
 def load_grammar():
@@ -9,6 +10,7 @@ def load_grammar():
     return grammar_path.read_text()
 
 
+@lru_cache
 def create_parser():
     grammar = load_grammar()
     return Lark(grammar, parser='lalr', start='start')

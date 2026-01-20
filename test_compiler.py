@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import pytest
-from lark import Tree, Token
 from compiler import parse
 
 
@@ -271,6 +270,374 @@ def test_compound_assignment():
 
 def test_compound_assignment_table_field():
     code = "obj.field += 5"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 5: Functions
+
+def test_function_definition():
+    code = """
+function test()
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_with_params():
+    code = """
+function add(a, b)
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_with_body():
+    code = """
+function greet(name)
+    x = 5
+    y = 10
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_call():
+    code = "result = func()"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_call_with_args():
+    code = "result = add(1, 2, 3)"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_nested_function_calls():
+    code = "result = outer(inner(5))"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_anonymous_function():
+    code = """
+f = function(x)
+    y = x
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_function_in_table():
+    code = """
+t = {
+    func = function()
+    end
+}
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_return_statement():
+    code = """
+function test()
+    return
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_return_with_value():
+    code = """
+function test()
+    return 5
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_return_multiple_values():
+    code = """
+function test()
+    return 1, 2, 3
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 6: Control Flow
+
+def test_if_statement():
+    code = """
+if x then
+    y = 1
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_if_else_statement():
+    code = """
+if x then
+    y = 1
+else
+    y = 2
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_if_elseif_else():
+    code = """
+if x then
+    y = 1
+elseif z then
+    y = 2
+else
+    y = 3
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_pico8_short_if():
+    code = "if (x) y = 1"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_pico8_short_if_else():
+    code = "if (x) y = 1 else y = 2"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_pico8_short_if_multiple_else():
+    code = "if (x) y = 1 else y = 2 z = 3"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_for_loop_numeric():
+    code = """
+for i=1,10 do
+    x = i
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_for_loop_with_step():
+    code = """
+for i=1,10,2 do
+    x = i
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_for_loop_iterator():
+    code = """
+for item in all(t) do
+    x = item
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_while_loop():
+    code = """
+while x do
+    y = 1
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_pico8_short_while():
+    code = "while (x) y = 1"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 7: Local Variables
+
+def test_local_declaration():
+    code = "local x"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_local_with_assignment():
+    code = "local x = 5"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_local_multiple():
+    code = "local a, b, c"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_local_multiple_with_values():
+    code = "local a, b = 1, 2"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 8: Multi-assignment
+
+def test_multi_assignment():
+    code = "a, b = 1, 2"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_multi_assignment_functions():
+    code = "a, b = func1(), func2()"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_multi_assignment_table_fields():
+    code = "t.x, t.y = 1, 2"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 9: Methods
+
+def test_method_definition():
+    code = """
+function obj:method()
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_method_with_params():
+    code = """
+function obj:method(a, b)
+    x = a
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_method_call():
+    code = "obj:method()"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_method_call_with_args():
+    code = "obj:method(1, 2)"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_chained_method_calls():
+    code = "result = obj:method1():method2()"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Phase 10: Comments
+
+def test_lua_comment():
+    code = """
+-- this is a comment
+x = 5
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_pico8_comment():
+    code = """
+// this is a pico8 comment
+x = 5
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_inline_comment():
+    code = "x = 5 -- inline comment"
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+# Integration Tests
+
+def test_complete_function():
+    code = """
+function main()
+    local x = 5
+    if x > 3 then
+        return x * 2
+    else
+        return 0
+    end
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_closure():
+    code = """
+function main()
+    local captured = 7
+    a = function(x)
+        return x * captured
+    end
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_nested_structures():
+    code = """
+function test()
+    for i=1,10 do
+        if i > 5 then
+            x = i
+        end
+    end
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+
+def test_method_with_table():
+    code = """
+function a:method(value)
+    self.x = value
+    return nil
+end
+"""
     tree = parse(code)
     assert tree.data == "start"
 
