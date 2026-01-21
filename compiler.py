@@ -5,7 +5,9 @@ from pathlib import Path
 from functools import lru_cache
 
 from ast_builder import ASTBuilder
+from code_generator import CCodeGenerator
 from escape_analyzer import EscapeAnalyzer
+from ir_lowering import IRLowering
 from scope_resolver import ScopeResolver
 from capture_detector import CaptureDetector
 
@@ -47,4 +49,10 @@ end
 
     e = EscapeAnalyzer(scopes, global_scope)
     e.analyze(ast)
-    print(e.escaping_vars)
+
+    lowering = IRLowering(scopes, global_scope, e.escaping_vars)
+    globals, functions = lowering.lower(ast)
+
+    c = CCodeGenerator()
+    code = c.generate(globals, functions)
+    print(code)

@@ -31,11 +31,11 @@ for_stmt: FOR NAME "=" expr "," expr ["," expr] DO block END
 while_stmt: WHILE expr DO block END
           | WHILE "(" expr ")" statement
 
-return_stmt: RETURN [expr_list]
+return_stmt.10: RETURN [expr_list]
 
 block: statement*
 
-?expr_stmt: expr
+?expr_stmt: atom
 
 assignment: assignable ("," assignable)* "=" expr_list
           | assignable "+=" expr

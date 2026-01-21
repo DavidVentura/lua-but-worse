@@ -124,10 +124,11 @@ class CaptureDetector:
                 self._visit_expr(operand)
 
             case TableConstructor(fields):
-                for field in fields:
-                    if field.key:
-                        self._visit_expr(field.key)
-                    self._visit_expr(field.value)
+                if fields:
+                    for field in fields:
+                        if field.key:
+                            self._visit_expr(field.key)
+                        self._visit_expr(field.value)
 
             case TableAccess(table, key, is_dot):
                 self._visit_expr(table)

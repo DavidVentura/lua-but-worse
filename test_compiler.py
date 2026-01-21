@@ -745,5 +745,51 @@ end
     assert tree.data == "start"
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+def test_return_with_function_calls_after_if():
+    """Test that return statement after if correctly parses function calls
+
+    This is a regression test for a grammar ambiguity where:
+        return fib(n - 1) + fib(n - 2)
+    was incorrectly parsed as:
+        return fib
+        (n - 1) + fib(n - 2)  // treated as separate statement
+    """
+    code = """
+function fib(n)
+    if n <= 1 then
+        return n
+    end
+    return fib(n - 1) + fib(n - 2)
+end
+"""
+    tree = parse(code)
+    assert tree.data == "start"
+
+    # Verify the structure: should have one function with one if and one return
+    func_def = tree.children[0]
+
+    # Find the block (it's the child before the "end" token)
+    block = None
+    for child in func_def.children:
+        if hasattr(child, 'data') and child.data == 'block':
+            block = child
+            break
+
+    assert block is not None, "Could not find block in function_def"
+
+    # Block should have exactly 2 statements: if and return
+    # Not 3 (which would be: if, return, expr)
+    assert len(block.children) == 2, f"Expected 2 statements in block, got {len(block.children)}"
+
+    # Second statement should be a return_stmt
+    return_stmt = block.children[1]
+    assert return_stmt.data == "return_stmt"
+
+    # The return should have an add_expr in its expr_list
+    # return_stmt children: [Token(RETURN), expr_list]
+    expr_list = return_stmt.children[1]
+    assert expr_list.data == "expr_list"
+
+    # The expr should be an add_expr (fib(...) + fib(...))
+    add_expr = expr_list.children[0]
+    assert add_expr.data == "add_expr"
