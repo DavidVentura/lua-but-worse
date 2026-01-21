@@ -197,3 +197,46 @@ end
     # Should have both function definitions
     assert 'TValue_t foo(TVSlice_t args) {' in result
     assert 'TValue_t bar(TVSlice_t args) {' in result
+
+
+def test_table_initialization():
+    code = """
+local u = {a=123}
+"""
+    result = generate_code(code)
+
+    # Should create table with TTAB macro
+    assert 'TTAB(make_table(1))' in result
+
+    # Should set field value
+    assert 'set_tabvalue(u, TSTR("a"), TNUM(123))' in result
+
+
+def test_table_array_initialization():
+    code = """
+local t = {1, 2, 3}
+"""
+    result = generate_code(code)
+
+    # Should create table with size hint
+    assert 'TTAB(make_table(3))' in result
+
+    # Should set array elements with numeric keys
+    assert 'set_tabvalue(t, TNUM(1), TNUM(1))' in result
+    assert 'set_tabvalue(t, TNUM(2), TNUM(2))' in result
+    assert 'set_tabvalue(t, TNUM(3), TNUM(3))' in result
+
+
+def test_table_mixed_initialization():
+    code = """
+local m = {10, 20, x=30}
+"""
+    result = generate_code(code)
+
+    # Should create table with size hint
+    assert 'TTAB(make_table(3))' in result
+
+    # Should set both array and named fields
+    assert 'set_tabvalue(m, TNUM(1), TNUM(10))' in result
+    assert 'set_tabvalue(m, TNUM(2), TNUM(20))' in result
+    assert 'set_tabvalue(m, TSTR("x"), TNUM(30))' in result
