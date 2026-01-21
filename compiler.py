@@ -5,6 +5,9 @@ from pathlib import Path
 from functools import lru_cache
 
 from ast_builder import ASTBuilder
+from escape_analyzer import EscapeAnalyzer
+from scope_resolver import ScopeResolver
+from capture_detector import CaptureDetector
 
 
 def load_grammar():
@@ -24,10 +27,24 @@ def parse(code):
 
 
 if __name__ == "__main__":
-    test_code = "a = 5"
+    test_code = """
+a = 5
+function b()
+    local x = 5
+    c(x)
+    -- return x
+end
+    """
 
     tree = parse(test_code)
-    print(tree.pretty())
     builder = ASTBuilder()
     ast = builder.transform(tree)
-    print(ast)
+    # print(ast)
+    s = ScopeResolver(ast)
+    scopes, global_scope = s.analyze()
+    detector = CaptureDetector(scopes, global_scope)
+    detector.analyze(ast)
+
+    e = EscapeAnalyzer(scopes, global_scope)
+    e.analyze(ast)
+    print(e.escaping_vars)
