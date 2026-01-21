@@ -23,10 +23,6 @@ class CaptureDetector:
         self.current_scope_stack.pop()
 
     def _check_var_reference(self, var_info: VarInfo):
-        """Check if this variable reference crosses function boundary"""
-        if not var_info:
-            return
-
         if var_info.kind == VarKind.GLOBAL:
             return
 
@@ -107,6 +103,12 @@ class CaptureDetector:
 
             case ExprStmt(expr):
                 self._visit_expr(expr)
+
+            case FunctionCall(func, args):
+                self._visit_expr(stmt)
+
+            case MethodCall(obj, method, args):
+                self._visit_expr(stmt)
 
     def _visit_expr(self, expr: Expr):
         match expr:

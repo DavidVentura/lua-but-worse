@@ -96,13 +96,20 @@ class ASTBuilder(Transformer):
             return ('table_suffix', (items[0], False))
 
     def function_call(self, items):
-        """function_call: '(' [expr_list] ')' | ':' NAME '(' [expr_list] ')'"""
-        if len(items) >= 2 and isinstance(items[0], Token) and items[0].value == ':':
-            method_name = items[1].value
-            args = items[2] if len(items) > 2 else []
+        """function_call: '(' [expr_list] ')' | ':' NAME '(' [expr_list] ')'
+
+        For method calls, the ':' is consumed by grammar, so items are:
+        [NAME_token (method name), expr_list or None]
+
+        For regular calls, items are:
+        [expr_list or None]
+        """
+        if len(items) >= 1 and isinstance(items[0], Token) and items[0].type == 'NAME':
+            method_name = items[0].value
+            args = items[1] if len(items) > 1 and isinstance(items[1], list) else []
             return ('function_call', (args, (method_name, args)))
         else:
-            args = items[0] if items else []
+            args = items[0] if items and isinstance(items[0], list) else []
             return ('function_call', (args, None))
 
     def expr_list(self, items):
