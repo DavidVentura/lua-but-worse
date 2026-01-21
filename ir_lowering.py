@@ -241,8 +241,9 @@ class IRLowering:
                 stmts = []
                 table_var = self._new_temp()
 
-                # Create empty table
-                result = CFunctionCall("make_table", [CLiteral("0", INT)])
+                # Create table with size hint
+                size_hint = len(fields) if fields else 0
+                result = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
 
                 # For each field, call set_tabvalue
                 # TODO: This needs to be done in statements, not in an expression

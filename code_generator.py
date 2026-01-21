@@ -168,6 +168,9 @@ class CCodeGenerator:
                     else:
                         # No args
                         return f"__call({func_expr}, (TVSlice_t){{NULL, 0}})"
+                elif func_name == "make_table":
+                    args_str = ", ".join(self._generate_expr(a) for a in args)
+                    return f"TTAB({func_name}({args_str}))"
                 else:
                     # Normal runtime function call
                     args_str = ", ".join(self._generate_expr(a) for a in args)
