@@ -9,29 +9,29 @@ start: statement*
           | assignment
           | expr_stmt
 
-function_def: "function" function_name "(" [param_list] ")" block "end"
-            | "function" function_name ":" NAME "(" [param_list] ")" block "end"
+function_def: FUNCTION function_name "(" [param_list] ")" block END
+            | FUNCTION function_name ":" NAME "(" [param_list] ")" block END
 
 function_name: NAME ("." NAME)*
 
 param_list: NAME ("," NAME)*
 
-local_decl: "local" NAME ("," NAME)* ["=" expr_list]
+local_decl: LOCAL NAME ("," NAME)* ["=" expr_list]
 
-if_stmt: "if" expr "then" block elif_parts else_part "end"
-       | "if" "(" expr ")" statement ["else" statement+]
+if_stmt: IF expr THEN block elif_parts else_part END
+       | IF "(" expr ")" statement [ELSE statement+]
 
-elif_parts: ("elseif" expr "then" block)*
+elif_parts: (ELSEIF expr THEN block)*
 
-else_part: ["else" block]
+else_part: [ELSE block]
 
-for_stmt: "for" NAME "=" expr "," expr ["," expr] "do" block "end"
-        | "for" NAME ("," NAME)* "in" expr "do" block "end"
+for_stmt: FOR NAME "=" expr "," expr ["," expr] DO block END
+        | FOR NAME ("," NAME)* IN expr DO block END
 
-while_stmt: "while" expr "do" block "end"
-          | "while" "(" expr ")" statement
+while_stmt: WHILE expr DO block END
+          | WHILE "(" expr ")" statement
 
-return_stmt: "return" [expr_list]
+return_stmt: RETURN [expr_list]
 
 block: statement*
 
@@ -95,7 +95,7 @@ primary: NUMBER
        | NAME
        | "(" expr ")"
 
-anonymous_function: "function" "(" [param_list] ")" block "end"
+anonymous_function: FUNCTION "(" [param_list] ")" block END
 
 table_constructor: "{" [table_fields] "}"
 
@@ -118,6 +118,20 @@ STRING: /"[^"]*"/ | /'[^']*'/
 BOOLEAN: "true" | "false"
 
 NIL: "nil"
+
+// Keywords must be defined before NAME to take priority
+FUNCTION.2: "function"
+LOCAL.2: "local"
+IF.2: "if"
+THEN.2: "then"
+ELSE.2: "else"
+ELSEIF.2: "elseif"
+END.2: "end"
+DO.2: "do"
+WHILE.2: "while"
+FOR.2: "for"
+IN.2: "in"
+RETURN.2: "return"
 
 NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 

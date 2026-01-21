@@ -167,23 +167,30 @@ class ASTBuilder(Transformer):
         return result
 
     def local_decl(self, items):
-        """local_decl: 'local' NAME (',' NAME)* ['=' expr_list]"""
+        """local_decl: LOCAL NAME (',' NAME)* ['=' expr_list]
+
+        items = [LOCAL_token, NAME_token, ..., expr_list_or_None]
+        """
         names = []
         values = []
         for item in items:
             if isinstance(item, Token):
-                names.append(item.value)
+                if item.type == 'NAME':
+                    names.append(item.value)
             elif isinstance(item, list):
                 values = item
         return LocalDecl(names, values)
 
     def function_def(self, items):
         """
-        function_def: 'function' function_name '(' [param_list] ')' block 'end'
-                    | 'function' function_name ':' NAME '(' [param_list] ')' block 'end'
+        function_def: FUNCTION function_name '(' [param_list] ')' block END
+                    | FUNCTION function_name ':' NAME '(' [param_list] ')' block END
+
+        items now include keyword tokens: [FUNCTION_token, function_name_list, param_list_or_None, block, END_token]
+        or for methods: [FUNCTION_token, function_name_list, NAME, param_list_or_None, block, END_token]
         """
-        name_parts = items[0]
-        idx = 1
+        name_parts = items[1]
+        idx = 2
         is_method = False
         params = []
 
@@ -193,8 +200,10 @@ class ASTBuilder(Transformer):
             params = ['self']
             idx += 1
 
-        if idx < len(items) and isinstance(items[idx], list) and all(isinstance(x, str) for x in items[idx]):
+        if idx < len(items) and items[idx] is not None and isinstance(items[idx], list):
             params.extend(items[idx])
+            idx += 1
+        elif idx < len(items) and items[idx] is None:
             idx += 1
 
         body = items[idx]
@@ -215,89 +224,107 @@ class ASTBuilder(Transformer):
 
     def if_stmt(self, items):
         """
-        if_stmt: 'if' expr 'then' block elif_parts else_part 'end'
-               | 'if' '(' expr ')' statement ['else' statement+]
-        """
-        condition = items[0]
+        if_stmt: IF expr THEN block elif_parts else_part END
+               | IF '(' expr ')' statement [ELSE statement+]
 
-        if isinstance(items[1], Block):
-            then_block = items[1]
-            elif_parts = items[2] if len(items) > 2 and isinstance(items[2], list) else []
-            else_block = items[3] if len(items) > 3 else None
+        items = [IF_token, expr, THEN_token, block, elif_parts, else_part, END_token]
+        or [IF_token, expr, statement, ELSE_token?, statement*]
+        """
+        condition = items[1]
+
+        if len(items) > 5:
+            then_block = items[3]
+            elif_parts = items[4] if isinstance(items[4], list) else []
+            else_block = items[5] if isinstance(items[5], Block) else None
             return If(condition, then_block, elif_parts, else_block)
         else:
-            then_stmt = items[1]
-            else_stmts = items[2:] if len(items) > 2 else []
+            then_stmt = items[2]
+            else_stmts = items[3:] if len(items) > 3 else []
 
             then_block = Block([then_stmt])
             else_block = Block(else_stmts) if else_stmts else None
             return If(condition, then_block, [], else_block)
 
     def elif_parts(self, items):
-        """elif_parts: ('elseif' expr 'then' block)*"""
+        """elif_parts: (ELSEIF expr THEN block)*
+
+        items = [ELSEIF_token, expr, THEN_token, block, ...]
+        """
         result = []
-        for i in range(0, len(items), 2):
-            if i + 1 < len(items):
-                condition = items[i]
-                block = items[i + 1]
+        for i in range(0, len(items), 4):
+            if i + 3 < len(items):
+                condition = items[i + 1]
+                block = items[i + 3]
                 result.append((condition, block))
         return result
 
     def else_part(self, items):
-        """else_part: ['else' block]"""
-        return items[0] if items else None
+        """else_part: [ELSE block]
+
+        items = [ELSE_token, block] or []
+        """
+        return items[1] if items else None
 
     def for_stmt(self, items):
         """
-        for_stmt: 'for' NAME '=' expr ',' expr [',' expr] 'do' block 'end'
-                | 'for' NAME (',' NAME)* 'in' expr 'do' block 'end'
+        for_stmt: FOR NAME '=' expr ',' expr [',' expr] DO block END
+                | FOR NAME (',' NAME)* IN expr DO block END
 
-        Numeric for receives: [NAME, start_expr, stop_expr, step_expr_or_None, block]
-        Iterator for receives: [NAME, NAME*, iterator_expr, block]
+        For-in items: [FOR_token, NAME, NAME*, IN_token, expr, DO_token, block, END_token]
+        For-num items: [FOR_token, NAME, expr, expr, step_or_None, DO_token, block, END_token]
         """
-        var = items[0].value
+        var = items[1].value
 
-        if isinstance(items[1], Token):
+        if isinstance(items[2], Token) and items[2].type == 'NAME':
             vars = [var]
-            idx = 1
-            while isinstance(items[idx], Token):
+            idx = 2
+            while idx < len(items) and isinstance(items[idx], Token) and items[idx].type == 'NAME':
                 vars.append(items[idx].value)
                 idx += 1
+            idx += 1
             iterator = items[idx]
-            body = items[idx + 1]
+            body = items[idx + 2]
             return ForIn(vars, iterator, body)
         else:
-            start = items[1]
-            stop = items[2]
-            step = items[3]
-            body = items[4]
+            start = items[2]
+            stop = items[3]
+            step = items[4]
+            body = items[6]
             return ForNum(var, start, stop, step, body)
 
     def while_stmt(self, items):
         """
-        while_stmt: 'while' expr 'do' block 'end'
-                  | 'while' '(' expr ')' statement
+        while_stmt: WHILE expr DO block END
+                  | WHILE '(' expr ')' statement
+
+        items = [WHILE_token, expr, DO_token, block, END_token] or [WHILE_token, expr, statement]
         """
-        condition = items[0]
-        if isinstance(items[1], Block):
-            body = items[1]
+        condition = items[1]
+        if len(items) > 3:
+            body = items[3]
         else:
-            body = Block([items[1]])
+            body = Block([items[2]])
         return While(condition, body)
 
     def return_stmt(self, items):
-        """return_stmt: 'return' [expr_list]"""
-        values = items[0] if items else []
+        """return_stmt: RETURN [expr_list]
+
+        items = [RETURN_token] or [RETURN_token, expr_list]
+        """
+        values = items[1] if len(items) > 1 else []
         return Return(values)
 
     def anonymous_function(self, items):
-        """anonymous_function: 'function' '(' [param_list] ')' block 'end'"""
-        if len(items) == 1:
+        """anonymous_function: FUNCTION '(' [param_list] ')' block END
+
+        items = [FUNCTION_token, param_list_or_None, block, END_token]
+        """
+        if items[1] is None:
             params = []
-            body = items[0]
+            body = items[2]
         else:
-            params = items[0]
-            body = items[1]
+            params = items[1]
+            body = items[2]
         return AnonymousFunction(params, body)
 
     def start(self, items):
