@@ -84,7 +84,11 @@ class ScopeResolver:
 
             case FunctionDef(name_parts, is_method, params, body, scope_id):
                 func_name = name_parts[0]
-                self._declare_var(func_name)
+                current_scope = self._current_scope()
+                if current_scope == self.global_scope:
+                    self._declare_var(func_name, VarKind.GLOBAL)
+                else:
+                    self._declare_var(func_name)
 
                 func_scope = self._push_scope(is_function=True)
                 object.__setattr__(stmt, 'scope_id', func_scope.scope_id)

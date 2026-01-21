@@ -340,3 +340,35 @@ end
 
     func_scope = scopes[1]
     assert x_var in func_scope.captures
+
+
+def test_global_function_not_captured():
+    """Test that global functions are not marked as captured when called from other functions"""
+    code = """
+function something(arg)
+    return arg
+end
+
+function main()
+    something(5)
+end
+"""
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+
+    resolver = ScopeResolver(ast)
+    scopes, global_scope = resolver.analyze()
+
+    detector = CaptureDetector(scopes, global_scope)
+    detector.analyze(ast)
+
+    # something is defined in global scope
+    something_var = global_scope.vars['something']
+    
+    # main is also in global scope
+    main_scope = scopes[2]  # scope 0=global, 1=something, 2=main
+    
+    # something should NOT be captured by main
+    assert something_var not in main_scope.captures, f"Global function 'something' should not be captured, but main.captures = {main_scope.captures}"

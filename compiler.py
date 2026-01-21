@@ -29,6 +29,7 @@ def parse(code):
 
 
 if __name__ == "__main__":
+    import sys
     test_code = """
 a = 5
 function b()
@@ -37,6 +38,8 @@ function b()
     -- return x
 end
     """
+    if len(sys.argv) > 1:
+        test_code = open(sys.argv[1]).read()
 
     tree = parse(test_code)
     builder = ASTBuilder()
