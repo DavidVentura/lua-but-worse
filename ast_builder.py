@@ -46,8 +46,8 @@ class ASTBuilder(Transformer):
 
     def concat(self, items):
         result = items[0]
-        for i in range(1, len(items), 2):
-            result = BinOp('..', result, items[i + 1])
+        for i in range(1, len(items)):
+            result = BinOp('..', result, items[i])
         return result
 
     def add_expr(self, items):
@@ -276,19 +276,23 @@ class ASTBuilder(Transformer):
                 | FOR NAME (',' NAME)* IN expr DO block END
 
         For-in items: [FOR_token, NAME, NAME*, IN_token, expr, DO_token, block, END_token]
-        For-num items: [FOR_token, NAME, expr, expr, step_or_None, DO_token, block, END_token]
+        For-num items: [FOR_token, NAME, '=', expr, ',', expr, [',', expr], DO_token, block, END_token]
         """
         var = items[1].value
 
-        if isinstance(items[2], Token) and items[2].type == 'NAME':
+        if isinstance(items[2], Token) and items[2].type == 'IN':
+            vars = [var]
+            iterator = items[3]
+            body = items[5]
+            return ForIn(vars, iterator, body)
+        elif isinstance(items[2], Token) and items[2].type == 'NAME':
             vars = [var]
             idx = 2
             while idx < len(items) and isinstance(items[idx], Token) and items[idx].type == 'NAME':
                 vars.append(items[idx].value)
                 idx += 1
-            idx += 1
-            iterator = items[idx]
-            body = items[idx + 2]
+            iterator = items[idx + 1]
+            body = items[idx + 3]
             return ForIn(vars, iterator, body)
         else:
             start = items[2]

@@ -46,11 +46,11 @@ expr_list: expr ("," expr)*
 
 ?expr: or_expr
 
-?or_expr: and_expr ("or" and_expr)*
+?or_expr: and_expr (OR and_expr)*
 
-?and_expr: not_expr ("and" not_expr)*
+?and_expr: not_expr (AND not_expr)*
 
-?not_expr: "not" not_expr
+?not_expr: NOT not_expr
          | comparison
 
 ?comparison: concat (COMP_OP concat)*
@@ -130,6 +130,9 @@ WHILE.2: "while"
 FOR.2: "for"
 IN.2: "in"
 RETURN.2: "return"
+AND.2: "and"
+OR.2: "or"
+NOT.2: "not"
 
 NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 

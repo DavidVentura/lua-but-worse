@@ -75,9 +75,10 @@ class EscapeAnalyzer:
                 self._visit_block(body)
 
             case Return(values):
-                for val in values:
-                    self._mark_expr_as_escaping(val)
-                    self._visit_expr(val)
+                if values:
+                    for val in values:
+                        self._mark_expr_as_escaping(val)
+                        self._visit_expr(val)
 
             case ExprStmt(expr):
                 self._visit_expr(expr)

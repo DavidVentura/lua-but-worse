@@ -141,8 +141,9 @@ class ScopeResolver:
                 self._visit_block(body)
 
             case Return(values):
-                for val in values:
-                    self._visit_expr(val)
+                if values:
+                    for val in values:
+                        self._visit_expr(val)
 
             case ExprStmt(expr):
                 self._visit_expr(expr)
