@@ -141,11 +141,9 @@ class ASTBuilder(Transformer):
     def assignment(self, items):
         """
         assignment: assignable (',' assignable)* '=' expr_list
-                  | assignable '+=' expr
-                  | assignable '-=' expr
-                  | ...
+                  | assignable COMPOUND_OP expr
         """
-        if len(items) >= 2 and isinstance(items[1], Token) and items[1].value in ['+=', '-=', '*=', '/=', '%=']:
+        if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == 'COMPOUND_OP':
             target = items[0]
             op = items[1].value[:-1]
             value = items[2]

@@ -38,11 +38,7 @@ block: statement*
 ?expr_stmt: atom
 
 assignment: assignable ("," assignable)* "=" expr_list
-          | assignable "+=" expr
-          | assignable "-=" expr
-          | assignable "*=" expr
-          | assignable "/=" expr
-          | assignable "%=" expr
+          | assignable COMPOUND_OP expr
 
 assignable: NAME table_suffix*
 
@@ -60,6 +56,8 @@ expr_list: expr ("," expr)*
 ?comparison: concat (COMP_OP concat)*
 
 COMP_OP: "==" | "~=" | "<=" | ">=" | "<" | ">"
+
+COMPOUND_OP: "+=" | "-=" | "*=" | "/=" | "%="
 
 ?concat: add_expr (".." add_expr)*
 

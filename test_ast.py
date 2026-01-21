@@ -97,3 +97,20 @@ def test_binary_operations():
     assert isinstance(ast.stmts[0], Assign)
     assign = ast.stmts[0]
     assert isinstance(assign.values[0], BinOp)
+
+
+def test_compound_assignment():
+    code = "x += 2"
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+    assert isinstance(ast, Block)
+    assert len(ast.stmts) == 1
+    assert isinstance(ast.stmts[0], CompoundAssign)
+    compound = ast.stmts[0]
+    assert compound.op == '+'
+    assert isinstance(compound.target, NameRef)
+    assert compound.target.name == 'x'
+    assert isinstance(compound.value, Number)
+    assert compound.value.value == '2'
