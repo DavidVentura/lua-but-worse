@@ -40,11 +40,11 @@ end
 
     # Lower to IR
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
 
     # Generate C code
     codegen = CCodeGenerator()
-    c_code = codegen.generate(globals, functions)
+    c_code = codegen.generate(globals, functions, escaping_names)
 
     # Verify generated code
     assert '#include "lua.h"' in c_code
@@ -89,10 +89,10 @@ end
     analyzer.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
 
     codegen = CCodeGenerator()
-    c_code = codegen.generate(globals, functions)
+    c_code = codegen.generate(globals, functions, escaping_names)
 
     # Verify closure handling
     assert 'increment' in c_code
@@ -128,10 +128,10 @@ local sum = t.x + t.y
     analyzer.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
 
     codegen = CCodeGenerator()
-    c_code = codegen.generate(globals, functions)
+    c_code = codegen.generate(globals, functions, escaping_names)
 
     # Verify table operations
     assert 'make_table' in c_code

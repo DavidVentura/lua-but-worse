@@ -24,7 +24,7 @@ def lower_code(code: str) -> list:
     analyzer.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
     return functions
 
 

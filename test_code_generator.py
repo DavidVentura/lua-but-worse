@@ -24,10 +24,10 @@ def generate_code(lua_code: str) -> str:
     analyzer.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
 
     codegen = CCodeGenerator()
-    return codegen.generate(globals, functions)
+    return codegen.generate(globals, functions, escaping_names)
 
 
 def test_simple_local():
@@ -45,7 +45,8 @@ local x = 5
     assert 'TValue_t _lua_main(TVSlice_t args)' in result
 
     # Should have variable declaration
-    assert 'TValue_t x = TNUM(5);' in result
+    assert 'TValue_t gc x;' in result
+    assert '_set(&x, TNUM(5));' in result
 
 
 def test_function_with_params():

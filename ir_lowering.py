@@ -18,11 +18,10 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []  # Track global variable names
 
-    def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef]]:
-        """Lower the entire AST to IR, returning (globals, functions)"""
+    def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str]]:
+        """Lower the entire AST to IR, returning (globals, functions, escaping_var_names)"""
         self.current_scope_id = self.global_scope.scope_id
 
-        # Create main function that contains top-level code
         main_body = self._lower_block(ast)
         main_func = CFunctionDef(
             name="_lua_main",
@@ -31,7 +30,8 @@ class IRLowering:
         )
         self.c_functions.append(main_func)
 
-        return (self.globals, self.c_functions)
+        escaping_names = {v.name for v in self.escaping_vars}
+        return (self.globals, self.c_functions, escaping_names)
 
     def _new_temp(self) -> str:
         """Generate a new temporary variable name"""

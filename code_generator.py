@@ -16,14 +16,19 @@ class CCodeGenerator:
 
     def __init__(self):
         self.indent_level = 0
+        self.escaping_vars = set()
 
-    def generate(self, globals: list[str], functions: list[CFunctionDef]) -> str:
+    def generate(self, globals: list[str], functions: list[CFunctionDef], escaping_vars: set[str] = None) -> str:
         """Generate complete C program from IR"""
+        self.escaping_vars = escaping_vars or set()
         code = []
 
         code.append('#include "lua.h"')
-        code.append('#include "lua_table.h"')
         code.append('#include "lua_math.h"')
+        code.append('#include "lua_table.h"')
+        code.append('#include "pico8.h"')
+        code.append('#include "stdlib.h"')
+
         code.append('')
 
         for var_name in globals:
@@ -80,12 +85,14 @@ class CCodeGenerator:
         match stmt:
             case CDeclare(var, init):
                 if init:
-                    return f"{self._type_to_c(var.type)} {var.name} = {self._generate_expr(init)};"
+                    value_expr = self._generate_expr(init)
+                    return f"{self._type_to_c(var.type)} gc {var.name};\n_set(&{var.name}, {value_expr});"
                 else:
-                    return f"{self._type_to_c(var.type)} {var.name};"
+                    return f"{self._type_to_c(var.type)} gc {var.name};"
 
             case CAssign(target, value):
-                return f"{target.name} = {self._generate_expr(value)};"
+                value_expr = self._generate_expr(value)
+                return f"_set(&{target.name}, {value_expr});"
 
             case CIf(condition, then_stmts, else_stmts):
                 lines = []
@@ -122,7 +129,11 @@ class CCodeGenerator:
                     return "return T_NULL;"
 
             case CExprStmt(expr):
-                return f"{self._generate_expr(expr)};"
+                expr_str = self._generate_expr(expr)
+                if isinstance(expr, CFunctionCall):
+                    return f"{{\n    TValue_t gc _tmp;\n    _set(&_tmp, {expr_str});\n}}"
+                else:
+                    return f"{expr_str};"
 
             case _:
                 return f"/* Unknown statement: {type(stmt).__name__} */"

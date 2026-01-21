@@ -54,8 +54,8 @@ end
     e.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, e.escaping_vars)
-    globals, functions = lowering.lower(ast)
+    globals, functions, escaping_names = lowering.lower(ast)
 
     c = CCodeGenerator()
-    code = c.generate(globals, functions)
+    code = c.generate(globals, functions, escaping_names)
     print(code)
