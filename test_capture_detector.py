@@ -290,3 +290,53 @@ end
 
     func_scope = scopes[1]
     assert len(func_scope.captures) == 0
+
+
+def test_function_call_as_statement():
+    code = """
+local x = 1
+function foo()
+    print(x)
+end
+"""
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+
+    resolver = ScopeResolver(ast)
+    scopes, global_scope = resolver.analyze()
+
+    detector = CaptureDetector(scopes, global_scope)
+    detector.analyze(ast)
+
+    x_var = global_scope.vars['x']
+    assert x_var.kind == VarKind.LOCAL
+
+    func_scope = scopes[1]
+    assert x_var in func_scope.captures
+
+
+def test_method_call_as_statement():
+    code = """
+local x = 1
+function foo()
+    obj:method(x)
+end
+"""
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+
+    resolver = ScopeResolver(ast)
+    scopes, global_scope = resolver.analyze()
+
+    detector = CaptureDetector(scopes, global_scope)
+    detector.analyze(ast)
+
+    x_var = global_scope.vars['x']
+    assert x_var.kind == VarKind.LOCAL
+
+    func_scope = scopes[1]
+    assert x_var in func_scope.captures
