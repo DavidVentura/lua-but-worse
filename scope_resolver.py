@@ -143,6 +143,12 @@ class ScopeResolver:
             case ExprStmt(expr):
                 self._visit_expr(expr)
 
+            case FunctionCall(func, args):
+                self._visit_expr(stmt)
+
+            case MethodCall(obj, method, args):
+                self._visit_expr(stmt)
+
     def _visit_expr(self, expr: Expr):
         match expr:
             case NameRef(name) as ref:
