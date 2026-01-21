@@ -22,29 +22,21 @@ class ASTBuilder(Transformer):
             return items[0]
 
     def or_expr(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             result = BinOp('or', result, items[i + 1])
         return result
 
     def and_expr(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             result = BinOp('and', result, items[i + 1])
         return result
 
     def not_expr(self, items):
-        if len(items) == 1:
-            return items[0]
         return UnOp('not', items[1])
 
     def comparison(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             op = items[i].value
@@ -53,16 +45,12 @@ class ASTBuilder(Transformer):
         return result
 
     def concat(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             result = BinOp('..', result, items[i + 1])
         return result
 
     def add_expr(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             op = items[i].value
@@ -71,8 +59,6 @@ class ASTBuilder(Transformer):
         return result
 
     def mult_expr(self, items):
-        if len(items) == 1:
-            return items[0]
         result = items[0]
         for i in range(1, len(items), 2):
             op = items[i].value
@@ -81,8 +67,6 @@ class ASTBuilder(Transformer):
         return result
 
     def unary(self, items):
-        if len(items) == 1:
-            return items[0]
         op = items[0].value
         return UnOp(op, items[1])
 
