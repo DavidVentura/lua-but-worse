@@ -190,10 +190,10 @@ Stmt = Union[Assign, LocalDecl, FunctionDef, If,
 class VarKind(Enum):
     LOCAL = "local"
     PARAM = "param"
-    CAPTURED = "captured"
+    GLOBAL = "global"
 
 
-@dataclass
+@dataclass(frozen=True)
 class VarInfo:
     """Information about a variable"""
     name: str

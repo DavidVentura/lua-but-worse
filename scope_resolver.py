@@ -56,7 +56,7 @@ class ScopeResolver:
             self.global_scope.vars[name] = VarInfo(
                 name=name,
                 scope_id=self.global_scope.scope_id,
-                kind=VarKind.CAPTURED
+                kind=VarKind.GLOBAL
             )
         return self.global_scope.vars[name]
 

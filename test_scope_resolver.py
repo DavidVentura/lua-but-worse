@@ -30,7 +30,7 @@ def test_global_variable():
     scopes, global_scope = resolver.analyze()
 
     assert 'x' in global_scope.vars
-    assert global_scope.vars['x'].kind == VarKind.CAPTURED
+    assert global_scope.vars['x'].kind == VarKind.GLOBAL
 
 
 def test_function_scope():
@@ -177,7 +177,7 @@ end
     assert len(scopes) == 2
     assert 'f' in global_scope.vars
     assert 'x' in global_scope.vars
-    assert global_scope.vars['x'].kind == VarKind.CAPTURED
+    assert global_scope.vars['x'].kind == VarKind.GLOBAL
 
     func_scope = scopes[1]
     assert 'x' not in func_scope.vars
