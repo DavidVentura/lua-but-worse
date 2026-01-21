@@ -18,6 +18,7 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue"}
+        self.direct_call_builtins = {"flr", "printh"}
 
     def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str]]:
         """Lower the entire AST to IR, returning (globals, functions, escaping_var_names)"""
@@ -210,8 +211,10 @@ class IRLowering:
                 return CVarRef(CVar(name, TVALUE))
 
             case Number(value):
-                # Use TNUM macro for compile-time constant, or fix32_from_double for runtime
-                return CLiteral(f"TNUM({value})", TVALUE)
+                if '.' in value or 'e' in value.lower():
+                    return CLiteral(f"TNUM(fix32_from_float({value}f))", TVALUE)
+                else:
+                    return CLiteral(f"TNUM({value})", TVALUE)
 
             case String(value):
                 escaped = value.replace('\\', '\\\\').replace('"', '\\"')
@@ -252,16 +255,12 @@ class IRLowering:
                 return CFunctionCall("get_tabvalue", [table_expr, key_expr])
 
             case FunctionCall(func, args):
-                func_expr = self._lower_expr(func)
                 arg_exprs = [self._lower_expr(arg) for arg in args]
 
-                # Static call if we know the function
-                if isinstance(func, NameRef):
-                    # For now, assume it's a dynamic call through runtime
-                    pass
+                if isinstance(func, NameRef) and func.name in self.direct_call_builtins:
+                    return CFunctionCall(func.name, arg_exprs)
 
-                # Dynamic call through runtime
-                # TODO: Pack args into TVSlice_t before calling __call
+                func_expr = self._lower_expr(func)
                 return CFunctionCall("__call", [func_expr] + arg_exprs)
 
             case MethodCall(obj, method, args):
