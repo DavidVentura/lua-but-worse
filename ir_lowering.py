@@ -66,23 +66,61 @@ class IRLowering:
                 stmts = []
                 for i, name in enumerate(names):
                     value = values[i] if i < len(values) else Nil()
-                    value_expr = self._lower_expr(value)
-                    stmts.append(CDeclare(CVar(name, TVALUE), value_expr))
+
+                    if isinstance(value, TableConstructor):
+                        size_hint = len(value.fields) if value.fields else 0
+                        table_expr = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
+                        stmts.append(CDeclare(CVar(name, TVALUE), table_expr))
+
+                        if value.fields:
+                            array_index = 1
+                            for field in value.fields:
+                                if field.key is None:
+                                    key_expr = CLiteral(f"TNUM({array_index})", TVALUE)
+                                    array_index += 1
+                                else:
+                                    key_expr = self._lower_expr(field.key)
+                                value_expr = self._lower_expr(field.value)
+                                call = CFunctionCall("set_tabvalue", [CVarRef(CVar(name, TVALUE)), key_expr, value_expr])
+                                stmts.append(CExprStmt(call, needs_cleanup=False))
+                    else:
+                        value_expr = self._lower_expr(value)
+                        stmts.append(CDeclare(CVar(name, TVALUE), value_expr))
                 return stmts
 
             case Assign(targets, values):
                 stmts = []
                 for i, target in enumerate(targets):
                     value = values[i] if i < len(values) else Nil()
-                    value_expr = self._lower_expr(value)
 
                     match target:
                         case NameRef(name, resolved):
                             if resolved and resolved.kind == VarKind.GLOBAL:
                                 if name not in self.globals:
                                     self.globals.append(name)
-                            stmts.append(CAssign(CVar(name, TVALUE), value_expr))
+
+                            if isinstance(value, TableConstructor):
+                                size_hint = len(value.fields) if value.fields else 0
+                                table_expr = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
+                                stmts.append(CAssign(CVar(name, TVALUE), table_expr))
+
+                                if value.fields:
+                                    array_index = 1
+                                    for field in value.fields:
+                                        if field.key is None:
+                                            key_expr = CLiteral(f"TNUM({array_index})", TVALUE)
+                                            array_index += 1
+                                        else:
+                                            key_expr = self._lower_expr(field.key)
+                                        value_expr = self._lower_expr(field.value)
+                                        call = CFunctionCall("set_tabvalue", [CVarRef(CVar(name, TVALUE)), key_expr, value_expr])
+                                        stmts.append(CExprStmt(call, needs_cleanup=False))
+                            else:
+                                value_expr = self._lower_expr(value)
+                                stmts.append(CAssign(CVar(name, TVALUE), value_expr))
+
                         case TableAccess(table, key, is_dot):
+                            value_expr = self._lower_expr(value)
                             table_expr = self._lower_expr(table)
                             key_expr = self._lower_expr(key)
                             call = CFunctionCall("set_tabvalue", [table_expr, key_expr, value_expr])
