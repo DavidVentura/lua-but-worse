@@ -128,9 +128,9 @@ class CCodeGenerator:
                 else:
                     return "return T_NULL;"
 
-            case CExprStmt(expr):
+            case CExprStmt(expr, needs_cleanup):
                 expr_str = self._generate_expr(expr)
-                if isinstance(expr, CFunctionCall):
+                if needs_cleanup:
                     return f"{{\n    TValue_t gc _tmp;\n    _set(&_tmp, {expr_str});\n}}"
                 else:
                     return f"{expr_str};"

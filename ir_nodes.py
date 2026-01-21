@@ -123,6 +123,7 @@ class CReturn(CStmt):
 class CExprStmt(CStmt):
     """Expression as statement"""
     expr: CExpr
+    needs_cleanup: bool = True
 
 
 @dataclass(frozen=True)

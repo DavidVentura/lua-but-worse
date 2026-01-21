@@ -16,7 +16,8 @@ class IRLowering:
         self.c_functions: list[CFunctionDef] = []
         self.current_scope_id: Optional[int] = None
         self.next_temp = 0
-        self.globals: list[str] = []  # Track global variable names
+        self.globals: list[str] = []
+        self.no_return_builtins = {"printh", "set_tabvalue"}
 
     def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str]]:
         """Lower the entire AST to IR, returning (globals, functions, escaping_var_names)"""
@@ -38,6 +39,17 @@ class IRLowering:
         name = f"tmp_{self.next_temp}"
         self.next_temp += 1
         return name
+
+    def _needs_cleanup(self, expr: CExpr) -> bool:
+        """Check if expression result needs GC cleanup"""
+        if isinstance(expr, CFunctionCall):
+            if expr.func_name in self.no_return_builtins:
+                return False
+            if expr.func_name == "__call" and len(expr.args) > 0:
+                first_arg = expr.args[0]
+                if isinstance(first_arg, CVarRef) and first_arg.var.name in self.no_return_builtins:
+                    return False
+        return True
 
     def _lower_block(self, block: Block) -> list[CStmt]:
         """Lower a block of statements"""
@@ -73,7 +85,7 @@ class IRLowering:
                             table_expr = self._lower_expr(table)
                             key_expr = self._lower_expr(key)
                             call = CFunctionCall("set_tabvalue", [table_expr, key_expr, value_expr])
-                            stmts.append(CExprStmt(call))
+                            stmts.append(CExprStmt(call, needs_cleanup=False))
                 return stmts
 
             case CompoundAssign(target, op, value):
@@ -178,13 +190,16 @@ class IRLowering:
                     return [CReturn(self._lower_expr(values[0]))]
 
             case ExprStmt(expr):
-                return [CExprStmt(self._lower_expr(expr))]
+                lowered = self._lower_expr(expr)
+                return [CExprStmt(lowered, needs_cleanup=self._needs_cleanup(lowered))]
 
             case FunctionCall(func, args):
-                return [CExprStmt(self._lower_expr(stmt))]
+                lowered = self._lower_expr(stmt)
+                return [CExprStmt(lowered, needs_cleanup=self._needs_cleanup(lowered))]
 
             case MethodCall(obj, method, args):
-                return [CExprStmt(self._lower_expr(stmt))]
+                lowered = self._lower_expr(stmt)
+                return [CExprStmt(lowered, needs_cleanup=self._needs_cleanup(lowered))]
 
         return []
 
