@@ -125,8 +125,8 @@ foo(1, 2, 3)
 """
     result = generate_code(code)
 
-    # Should have __call with TVSlice_t packing
-    assert '__call(' in result
+    # Should have CALL with TVSlice_t packing
+    assert 'CALL(' in result
     assert 'TVSlice_t' in result
 
 
@@ -266,4 +266,4 @@ foo({x=1})
     assert 'TTAB(make_table(0))' in result
     assert 'set_tabvalue(_tmp0, TSTR("x"), TNUM(1))' in result
     # The temp variable should be passed to the function call
-    assert '__call(foo' in result
+    assert 'CALL(foo' in result

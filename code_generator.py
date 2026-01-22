@@ -26,7 +26,7 @@ class CCodeGenerator:
         code.append('#include "lua.h"')
         code.append('#include "lua_math.h"')
         code.append('#include "lua_table.h"')
-        code.append('#include "pico8.h"')
+        #code.append('#include "pico8.h"')
         code.append('#include "stdlib.h"')
 
         code.append('')
@@ -150,24 +150,25 @@ class CCodeGenerator:
             case CFunctionCall(func_name, args):
                 # Special handling for function calls:
                 # Most runtime functions take TValue_t arguments directly
-                # But __call needs TVSlice_t packing
+                # But CALL needs TVSlice_t packing
 
-                if func_name == "__call":
-                    # Dynamic call: __call(func, arg1, arg2, ...)
+                if func_name == "CALL":
+                    # Dynamic call: CALL(func, tvslice)
                     # Need to pack args into TVSlice_t
                     if len(args) < 1:
-                        return "/* ERROR: __call needs at least func */"
+                        return "/* ERROR: CALL needs at least func */"
 
                     func_expr = self._generate_expr(args[0])
                     arg_exprs = [self._generate_expr(a) for a in args[1:]]
 
                     if arg_exprs:
-                        # Create temp array for args
+                        # Create TVSlice_t with args array and count
+                        # Extra parens needed so macro sees it as single argument
                         arr_elements = ", ".join(arg_exprs)
-                        return f"__call({func_expr}, (TVSlice_t){{(TValue_t[]){{{arr_elements}}}, {len(arg_exprs)}}})"
+                        return f"CALL({func_expr}, ((TVSlice_t){{(TValue_t[]){{{arr_elements}}}, {len(arg_exprs)}}}))"
                     else:
-                        # No args
-                        return f"__call({func_expr}, (TVSlice_t){{NULL, 0}})"
+                        # No args - extra parens for consistency
+                        return f"CALL({func_expr}, ((TVSlice_t){{NULL, 0}}))"
                 elif func_name == "make_table":
                     args_str = ", ".join(self._generate_expr(a) for a in args)
                     return f"TTAB({func_name}({args_str}))"

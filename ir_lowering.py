@@ -46,7 +46,7 @@ class IRLowering:
         if isinstance(expr, CFunctionCall):
             if expr.func_name in self.no_return_builtins:
                 return False
-            if expr.func_name == "__call" and len(expr.args) > 0:
+            if expr.func_name == "CALL" and len(expr.args) > 0:
                 first_arg = expr.args[0]
                 if isinstance(first_arg, CVarRef) and first_arg.var.name in self.no_return_builtins:
                     return False
@@ -256,15 +256,14 @@ class IRLowering:
                     return CFunctionCall(func.name, arg_exprs)
 
                 func_expr = self._lower_expr(func)
-                return CFunctionCall("__call", [func_expr] + arg_exprs)
+                return CFunctionCall("CALL", [func_expr] + arg_exprs)
 
             case MethodCall(obj, method, args):
                 obj_expr = self._lower_expr(obj)
                 method_key = CLiteral(f'TSTR("{method}")', TVALUE)
                 func_expr = CFunctionCall("get_tabvalue", [obj_expr, method_key])
                 arg_exprs = [obj_expr] + [self._lower_expr(arg) for arg in args]
-                # TODO: Pack args into TVSlice_t before calling __call
-                return CFunctionCall("__call", [func_expr] + arg_exprs)
+                return CFunctionCall("CALL", [func_expr] + arg_exprs)
 
             case AnonymousFunction(params, body, scope_id):
                 # Generate unique name for anonymous function
