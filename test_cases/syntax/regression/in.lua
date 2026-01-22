@@ -64,4 +64,5 @@ function main()
 	integer_div()
 	bunny()
 	fractional_binary_literal()
+	return 0
 end

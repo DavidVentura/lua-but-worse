@@ -22,4 +22,5 @@ function main()
 	if 4 and 5 and 6 then
 		printh("yep")
 	end
+	return 0
 end

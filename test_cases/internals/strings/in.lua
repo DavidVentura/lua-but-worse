@@ -24,4 +24,5 @@ function main()
 	-- this is testing that local variables get collected once they fall out of scope
 	_inner_dyn()
 	__internal_debug_assert_eq(__internal_debug_str_used(), 3)
+	return 0
 end

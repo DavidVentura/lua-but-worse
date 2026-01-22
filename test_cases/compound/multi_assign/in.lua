@@ -12,4 +12,5 @@ function main()
 	printh(state.a)
 	printh(next_state.b)
 	printh(change_state)
+	return 0
 end

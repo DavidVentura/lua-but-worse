@@ -8,4 +8,5 @@ function main()
   printh(a.x)
   a:method(5)
   printh(a.x)
+	return 0
 end

@@ -11,4 +11,5 @@ function main()
 	cond(true,  false, false)
 	cond(false, true,  false)
 	cond(false, false, true)
+	return 0
 end

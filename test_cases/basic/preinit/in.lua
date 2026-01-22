@@ -11,4 +11,5 @@ end
 
 function main()
   printh(a)
+	return 0
 end

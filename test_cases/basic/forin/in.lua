@@ -5,4 +5,5 @@ function main()
 		printh(item)
 	end
 
+	return 0
 end

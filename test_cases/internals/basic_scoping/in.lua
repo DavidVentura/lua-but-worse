@@ -4,4 +4,5 @@ function main()
 	if (a+1) and (b+1) then
 		a = 2
 	end
+	return 0
 end

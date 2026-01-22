@@ -15,4 +15,5 @@ function main()
 	_inner()
 	-- locals ("#10") were removed by refcount (scope)
 	__internal_debug_assert_eq(__internal_debug_str_used(), 2)
+	return 0
 end

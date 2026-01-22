@@ -16,4 +16,5 @@ function main()
 	for k, v in ipairs(numtab) do
 		printh(v)
 	end
+	return 0
 end

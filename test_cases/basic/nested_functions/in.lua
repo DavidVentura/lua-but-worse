@@ -3,4 +3,5 @@ function main()
 		printh(5)
 	end
 	b()
+	return 0
 end

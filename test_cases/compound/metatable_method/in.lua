@@ -14,4 +14,5 @@ function main()
   a:method()
   printh(a.x)
   printh(b.x)
+	return 0
 end

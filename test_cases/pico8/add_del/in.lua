@@ -33,4 +33,5 @@ function main()
 	test_del()
 	printh("---")
 	test_del2()
+	return 0
 end

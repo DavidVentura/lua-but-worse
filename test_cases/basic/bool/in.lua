@@ -6,4 +6,5 @@ function main()
     printh(false or 5)      --> 5
     printh(true and not true)  --> false
     printh(true and not false)  --> true
+	return 0
 end

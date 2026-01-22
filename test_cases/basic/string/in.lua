@@ -30,4 +30,5 @@ function main()
 	test_empty_thing()
 	test_sub()
 	test_concat()
+	return 0
 end

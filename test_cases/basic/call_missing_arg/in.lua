@@ -10,4 +10,5 @@ function main()
 	f(1)
 	printh("all missing")
 	f()
+	return 0
 end

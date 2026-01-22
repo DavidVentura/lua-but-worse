@@ -35,4 +35,5 @@ function main()
 	else_arm()
 	printh("---")
 	elseif_else_arm()
+	return 0
 end

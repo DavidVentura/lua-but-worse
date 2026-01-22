@@ -12,4 +12,5 @@ function main()
 		printh(particle.x)
 		printh(particle.y)
 	end)
+	return 0
 end

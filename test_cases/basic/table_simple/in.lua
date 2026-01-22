@@ -23,4 +23,5 @@ function main()
 	printh(adder.c)
 	printh(adder.d)
 
+	return 0
 end

@@ -4,4 +4,5 @@ end
 function main()
 	something(5)
 	printh(something(6))
+	return 0
 end

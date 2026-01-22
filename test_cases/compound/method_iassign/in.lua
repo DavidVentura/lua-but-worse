@@ -22,4 +22,5 @@ function main()
 	printh(zero:len())
 	local one = vector.new(1, 1)
 	printh(one:len())
+	return 0
 end

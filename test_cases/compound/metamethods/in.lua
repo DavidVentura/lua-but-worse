@@ -30,4 +30,5 @@ function main()
 	local added = v1 + v2
 	printh(added.x)
 	printh(added.y)
+	return 0
 end

@@ -12,4 +12,5 @@ end
 
 function main()
 	test_celeste_init_object_captures_obj()
+	return 0
 end

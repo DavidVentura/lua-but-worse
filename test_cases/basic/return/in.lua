@@ -18,4 +18,5 @@ function main()
 	printh(t2.field)
 	local t3 = returned_tables_3()
 	printh(#t3)
+	return 0
 end

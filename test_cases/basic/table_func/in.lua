@@ -11,4 +11,5 @@ function main()
 	local one = vector.new(1, 1)
 	printh(zero.x)
 	printh(one.x)
+	return 0
 end

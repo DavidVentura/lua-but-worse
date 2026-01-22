@@ -3,4 +3,5 @@ function main()
 	empty   = {}
 	member[empty] = 5
 	printh(member[empty])
+	return 0
 end
