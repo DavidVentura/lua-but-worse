@@ -2,6 +2,7 @@
 #define LUA
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "fix32.h"
 
 #define __DEBUG_PRINT(level, fmt, args...) do {\
@@ -187,7 +188,12 @@ static const Str_t STR__INDEX = CONSTSTR("__index");
 static const Str_t STR__ADD   = CONSTSTR("__add");
 static const Str_t STR__SUB   = CONSTSTR("__sub");
 
+static inline void __autofree(void* p) {
+    void** pp = (void**)p;
+    free(*pp);
+}
 
+#define autofree __attribute__((__cleanup__(__autofree)))
 #define gc __attribute__((__cleanup__(__decref)))
 #define printh print_tvalue
 

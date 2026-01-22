@@ -10,5 +10,8 @@ KV_t* ipairs(TValue_t t);
 int16_t _sequential_until(TValue_t tab);
 
 #define foreach(x, y)  _Generic(y, TValue_t: _foreach_tvalue, Func_t: _foreach)(x, y)
+#define _get_key_at(tab, i) tab->kvp.kvs[i].key
+#define _get_val_at(tab, i) tab->kvp.kvs[i].value
+
 void _foreach(TValue_t t, Func_t f);
 void _foreach_tvalue(TValue_t t, TValue_t f);

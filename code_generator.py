@@ -102,18 +102,23 @@ class CCodeGenerator:
         """Generate C code for a statement"""
         match stmt:
             case CDeclare(var, init, direct_init):
+                # Generate qualifier string if present
+                qualifier_str = f" {var.qualifier.value}" if var.qualifier else ""
+
                 if direct_init or var.type != TVALUE:
+                    # Direct initialization (non-TValue or explicit direct_init)
                     if init:
                         value_expr = self._generate_expr(init)
-                        return f"{self._type_to_c(var.type)} {var.name} = {value_expr};"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name} = {value_expr};"
                     else:
-                        return f"{self._type_to_c(var.type)} {var.name};"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};"
                 else:
+                    # TValue with _set() wrapper
                     if init:
                         value_expr = self._generate_expr(init)
-                        return f"{self._type_to_c(var.type)} gc {var.name};\n_set(&{var.name}, {value_expr});"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};\n_set(&{var.name}, {value_expr});"
                     else:
-                        return f"{self._type_to_c(var.type)} gc {var.name};"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};"
 
             case CAssign(target, value):
                 value_expr = self._generate_expr(value)
@@ -137,6 +142,22 @@ class CCodeGenerator:
                         lines.append(self._indent(self._generate_stmt(s)))
                     self.indent_level -= 1
 
+                lines.append(self._indent("}"))
+                return '\n'.join(lines)
+
+            case CFor(init, condition, increment, body):
+                init_code = self._generate_stmt(init).strip() if init else ";"
+                cond_code = self._generate_expr(condition) if condition else ""
+                inc_code = self._generate_stmt(increment).strip() if increment else ""
+                if inc_code.endswith(';'):
+                    inc_code = inc_code[:-1]
+
+                lines = []
+                lines.append(f"for ({init_code} {cond_code}; {inc_code}) {{")
+                self.indent_level += 1
+                for s in body:
+                    lines.append(self._indent(self._generate_stmt(s)))
+                self.indent_level -= 1
                 lines.append(self._indent("}"))
                 return '\n'.join(lines)
 

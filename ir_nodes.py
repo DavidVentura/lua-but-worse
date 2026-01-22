@@ -1,5 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Optional, Union
+from enum import Enum
+
+
+class CVarQualifier(Enum):
+    """C variable qualifiers"""
+    GC = "gc"
+    AUTOFREE = "autofree"
 
 
 @dataclass(frozen=True)
@@ -26,6 +33,7 @@ class CVar:
     """C variable"""
     name: str
     type: CType
+    qualifier: Optional[CVarQualifier] = None
 
 
 @dataclass(frozen=True)

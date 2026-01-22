@@ -85,7 +85,7 @@ class IRLowering:
                 for i, name in enumerate(names):
                     value = values[i] if i < len(values) else Nil()
                     value_expr = self._lower_expr(value)
-                    stmts.append(CDeclare(CVar(name, TVALUE), value_expr))
+                    stmts.append(CDeclare(CVar(name, TVALUE, CVarQualifier.GC), value_expr))
                 return stmts
 
             case Assign(targets, values):
@@ -198,10 +198,10 @@ class IRLowering:
                 step_expr = self._lower_expr(step) if step else CLiteral("TNUM8(1)", TVALUE)
 
                 stmts = []
-                stmts.append(CDeclare(CVar(var, TVALUE), start_expr))
+                stmts.append(CDeclare(CVar(var, TVALUE, CVarQualifier.GC), start_expr))
 
                 stop_var = self._new_temp()
-                stmts.append(CDeclare(CVar(stop_var, TVALUE), stop_expr))
+                stmts.append(CDeclare(CVar(stop_var, TVALUE, CVarQualifier.GC), stop_expr))
 
                 # Condition: var <= stop (or >= if step < 0)
                 cond = CFunctionCall("_leq", [CVarRef(CVar(var, TVALUE)), CVarRef(CVar(stop_var, TVALUE))])
@@ -218,67 +218,108 @@ class IRLowering:
             case ForIn(vars, iterator, body, scope_id):
                 is_kv_iterator = len(vars) > 1
 
-                iter_base = "_pairs_iterator" if is_kv_iterator else "_super_secret_iterator"
-                iter_var = iter_base
-                iter_type = CType("KV_t", is_pointer=True) if is_kv_iterator else TVALUE_ARRAY
+                # Strip all(), pairs(), ipairs() calls to get the underlying table
+                table_expr = iterator
+                if isinstance(iterator, FunctionCall) and isinstance(iterator.func, NameRef):
+                    func_name = iterator.func.name
+                    if func_name in ("all", "pairs", "ipairs") and len(iterator.args) > 0:
+                        table_expr = iterator.args[0]
 
-                iter_expr = self._lower_expr(iterator)
-
+                iter_var = "_iter"
                 idx_var = "__i"
-
                 stmts = []
 
-                stmts.append(CDeclare(CVar(iter_var, iter_type), iter_expr))
-                stmts.append(CDeclare(CVar(idx_var, CType("uint16_t")), CLiteral("0", CType("uint16_t"))))
+                # TValue_t gc _iter = table;
+                iter_expr = self._lower_expr(table_expr)
+                stmts.append(CDeclare(CVar(iter_var, TVALUE, CVarQualifier.GC), iter_expr))
 
                 if is_kv_iterator:
-                    condition = CBinOp(
-                        "!=",
-                        CFieldAccess(
-                            CFieldAccess(
-                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
-                                "key"
-                            ),
-                            "tag"
-                        ),
-                        CLiteral("NUL", CType("int"))
-                    )
+                    # pairs(t): iterate all internal slots
+                    # Table_t* _tab = GETTAB(_iter);
+                    tab_var = "_tab"
+                    stmts.append(CDeclare(
+                        CVar(tab_var, CType("Table_t", is_pointer=True)),
+                        CFunctionCall("GETTAB", [CVarRef(CVar(iter_var, TVALUE))]),
+                        direct_init=True
+                    ))
+
+                    # uint16_t max = _tab->kvp.len;
+                    max_var = self._new_temp()
+                    stmts.append(CDeclare(
+                        CVar(max_var, CType("uint16_t")),
+                        CLiteral(f"{tab_var}->kvp.len", CType("uint16_t")),
+                        direct_init=True
+                    ))
+
+                    # for(uint16_t __i=0; __i<max; __i++)
+                    init_stmt = CDeclare(CVar(idx_var, CType("uint16_t")), CLiteral("0", CType("uint16_t")), direct_init=True)
+                    condition = CBinOp("<", CVarRef(CVar(idx_var, CType("uint16_t"))), CVarRef(CVar(max_var, CType("uint16_t"))))
+                    increment = CExprStmt(CLiteral(f"{idx_var}++", CType("void")), needs_cleanup=False)
+
+                    # Body: TValue_t gc k = _get_key_at(_tab, __i);
+                    #       if(k.tag != NUL) { TValue_t gc v = _get_val_at(_tab, __i); ... }
+                    for_body = []
+
+                    # Declare key
+                    key_var = vars[0]
+                    for_body.append(CDeclare(
+                        CVar(key_var, TVALUE, CVarQualifier.GC),
+                        CLiteral(f"_get_key_at({tab_var}, {idx_var})", TVALUE),
+                        direct_init=True
+                    ))
+
+                    # if(k.tag != NUL) { ... }
+                    if_condition = CBinOp("!=",
+                                         CFieldAccess(CVarRef(CVar(key_var, TVALUE)), "tag"),
+                                         CLiteral("NUL", CType("int")))
+
+                    if_body = []
+                    # Declare value
+                    val_var = vars[1] if len(vars) > 1 else "_"
+                    if_body.append(CDeclare(
+                        CVar(val_var, TVALUE, CVarQualifier.GC),
+                        CLiteral(f"_get_val_at({tab_var}, {idx_var})", TVALUE),
+                        direct_init=True
+                    ))
+
+                    # Original loop body
+                    if_body.extend(self._lower_block(body))
+
+                    for_body.append(CIf(if_condition, if_body, []))
+
+                    stmts.append(CFor(init_stmt, condition, increment, for_body))
+
                 else:
-                    condition = CBinOp(
-                        "!=",
-                        CFieldAccess(
-                            CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
-                            "tag"
-                        ),
-                        CLiteral("NUL", CType("int"))
-                    )
+                    # all(t) or ipairs(t): iterate sequential numeric keys
+                    # int16_t max = _sequential_until(_iter);
+                    max_var = self._new_temp()
+                    stmts.append(CDeclare(
+                        CVar(max_var, CType("int16_t")),
+                        CFunctionCall("_sequential_until", [CVarRef(CVar(iter_var, TVALUE))]),
+                        direct_init=True
+                    ))
 
-                body_stmts = []
+                    # for(int16_t __i=1; __i<=max; __i++)
+                    init_stmt = CDeclare(CVar(idx_var, CType("int16_t")), CLiteral("1", CType("int16_t")), direct_init=True)
+                    condition = CBinOp("<=", CVarRef(CVar(idx_var, CType("int16_t"))), CVarRef(CVar(max_var, CType("int16_t"))))
+                    increment = CExprStmt(CLiteral(f"{idx_var}++", CType("void")), needs_cleanup=False)
 
-                for i, var in enumerate(vars):
-                    if is_kv_iterator:
-                        if i == 0:
-                            value_expr = CFieldAccess(
-                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
-                                "key"
-                            )
-                        else:
-                            value_expr = CFieldAccess(
-                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
-                                "value"
-                            )
-                    else:
-                        value_expr = CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t"))))
+                    # Body: TValue_t gc item = get_tabvalue(_iter, TNUM(__i));
+                    for_body = []
+                    item_var = vars[0]
+                    for_body.append(CDeclare(
+                        CVar(item_var, TVALUE, CVarQualifier.GC),
+                        CFunctionCall("get_tabvalue", [
+                            CVarRef(CVar(iter_var, TVALUE)),
+                            CLiteral(f"TNUM({idx_var})", TVALUE)
+                        ]),
+                        direct_init=True
+                    ))
 
-                    body_stmts.append(CDeclare(CVar(var, TVALUE), value_expr, direct_init=True))
+                    # Original loop body
+                    for_body.extend(self._lower_block(body))
 
-                body_stmts.extend(self._lower_block(body))
-
-                body_stmts.append(CExprStmt(CLiteral(f"{idx_var}++", CType("void")), needs_cleanup=False))
-
-                stmts.append(CWhile(condition, body_stmts))
-
-                stmts.append(CExprStmt(CFunctionCall("free", [CVarRef(CVar(iter_var, iter_type))]), needs_cleanup=False))
+                    stmts.append(CFor(init_stmt, condition, increment, for_body))
 
                 return [CBlock(stmts)]
 
