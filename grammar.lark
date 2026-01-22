@@ -1,18 +1,23 @@
 start: statement*
 
+block: statement*
+
 ?statement: function_def
           | local_decl
           | if_stmt
           | for_stmt
           | while_stmt
           | return_stmt
+          | break_stmt
           | assignment
           | expr_stmt
 
-function_def: FUNCTION function_name "(" [param_list] ")" block END
-            | FUNCTION function_name ":" NAME "(" [param_list] ")" block END
+break_stmt: BREAK
 
-function_name: NAME ("." NAME)*
+function_def: FUNCTION function_name "(" [param_list] ")" block END
+            | FUNCTION function_name ":" any_name "(" [param_list] ")" block END
+
+function_name: any_name ("." any_name)*
 
 param_list: NAME ("," NAME)*
 
@@ -31,14 +36,14 @@ for_stmt: FOR NAME "=" expr "," expr ["," expr] DO block END
 while_stmt: WHILE expr DO block END
           | WHILE "(" expr ")" statement
 
-return_stmt.10: RETURN [expr_list]
-
-block: statement*
+return_stmt: RETURN [expr_list]
 
 ?expr_stmt: atom
 
-assignment: assignable ("," assignable)* "=" expr_list
+assignment: assignable_list "=" expr_list
           | assignable COMPOUND_OP expr
+
+assignable_list: assignable ("," assignable)*
 
 assignable: NAME table_suffix*
 
@@ -59,30 +64,35 @@ COMP_OP: "==" | "~=" | "<=" | ">=" | "<" | ">"
 
 COMPOUND_OP: "+=" | "-=" | "*=" | "/=" | "%="
 
-?concat: add_expr (".." add_expr)*
+PLUS: "+"
+MINUS: "-"
+STAR: "*"
+SLASH: "/"
+PERCENT: "%"
+BACKSLASH: "\\"
+HASH: "#"
+CONCAT: ".."
 
-?add_expr: mult_expr (ADD_OP mult_expr)*
+?concat: add_expr (CONCAT add_expr)*
 
-ADD_OP: "+" | "-"
+?add_expr: mult_expr ((PLUS | MINUS) mult_expr)*
 
-?mult_expr: unary (MULT_OP unary)*
+?mult_expr: unary ((STAR | SLASH | PERCENT | BACKSLASH) unary)*
 
-MULT_OP: "*" | "/" | "%" | "\\"
-
-?unary: "-" unary
-      | "#" unary
-      | atom
+unary: MINUS unary
+     | HASH unary
+     | atom
 
 ?atom: primary suffix*
 
 ?suffix: table_suffix
        | function_call
 
-table_suffix: "." NAME
+table_suffix: "." any_name
             | "[" expr "]"
 
 function_call: "(" [expr_list] ")"
-             | ":" NAME "(" [expr_list] ")"
+             | ":" any_name "(" [expr_list] ")"
 
 primary: NUMBER
        | STRING
@@ -100,7 +110,7 @@ table_constructor: "{" [table_fields] "}"
 table_fields: table_field ("," table_field)* [","]
 
 table_field: "[" expr "]" "=" expr
-           | NAME "=" expr
+           | any_name "=" expr
            | expr
 
 HEX_DECIMAL: /0x[0-9a-fA-F]*\.[0-9a-fA-F]+/
@@ -113,27 +123,29 @@ NUMBER: HEX_DECIMAL | BINARY_DECIMAL | HEX_NUMBER | BINARY_NUMBER | DECIMAL_NUMB
 
 STRING: /"[^"]*"/ | /'[^']*'/
 
-BOOLEAN: "true" | "false"
+// Keywords (defined before NAME to take priority in basic lexer)
+FUNCTION: "function"
+LOCAL: "local"
+IF: "if"
+THEN: "then"
+ELSEIF: "elseif"
+ELSE: "else"
+END: "end"
+DO: "do"
+WHILE: "while"
+FOR: "for"
+IN: "in"
+RETURN: "return"
+AND: "and"
+OR: "or"
+NOT: "not"
+BREAK: "break"
+BOOLEAN.2: "true" | "false"
+NIL.2: "nil"
 
-NIL: "nil"
-
-// Keywords must be defined before NAME to take priority
-// ELSEIF has higher priority than ELSE since "elseif" starts with "else"
-FUNCTION.2: "function"
-LOCAL.2: "local"
-IF.2: "if"
-THEN.2: "then"
-ELSEIF.3: "elseif"
-ELSE.2: "else"
-END.2: "end"
-DO.2: "do"
-WHILE.2: "while"
-FOR.2: "for"
-IN.2: "in"
-RETURN.2: "return"
-AND.2: "and"
-OR.2: "or"
-NOT.2: "not"
+// any_name allows keywords to be used as identifiers in specific contexts
+?any_name: NAME | keyword
+?keyword: FUNCTION | LOCAL | IF | THEN | ELSEIF | ELSE | END | DO | WHILE | FOR | IN | RETURN | AND | OR | NOT | BREAK
 
 NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 

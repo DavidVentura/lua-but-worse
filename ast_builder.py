@@ -67,8 +67,13 @@ class ASTBuilder(Transformer):
         return result
 
     def unary(self, items):
-        op = items[0].value
-        return UnOp(op, items[1])
+        if len(items) == 1:
+            # atom alternative - just return the atom
+            return items[0]
+        else:
+            # "-" unary or "#" unary alternative
+            op = items[0].value
+            return UnOp(op, items[1])
 
     def atom(self, items):
         """atom: primary suffix*"""
@@ -89,26 +94,29 @@ class ASTBuilder(Transformer):
         return result
 
     def table_suffix(self, items):
-        """table_suffix: '.' NAME | '[' expr ']'"""
+        """table_suffix: '.' any_name | '[' expr ']'"""
         if isinstance(items[0], Token):
+            # For '.' any_name, any_name is inlined so items[0] is the token
             return ('table_suffix', (String(items[0].value), True))
         else:
             return ('table_suffix', (items[0], False))
 
     def function_call(self, items):
-        """function_call: '(' [expr_list] ')' | ':' NAME '(' [expr_list] ')'
+        """function_call: '(' [expr_list] ')' | ':' any_name '(' [expr_list] ')'
 
         For method calls, the ':' is consumed by grammar, so items are:
-        [NAME_token (method name), expr_list or None]
+        [any_name_token (method name), expr_list or None]
 
         For regular calls, items are:
         [expr_list or None]
         """
-        if len(items) >= 1 and isinstance(items[0], Token) and items[0].type == 'NAME':
+        if len(items) >= 1 and isinstance(items[0], Token):
+            # This is the ':' any_name alternative
             method_name = items[0].value
             args = items[1] if len(items) > 1 and isinstance(items[1], list) else []
             return ('function_call', (args, (method_name, args)))
         else:
+            # Regular call
             args = items[0] if items and isinstance(items[0], list) else []
             return ('function_call', (args, None))
 
@@ -128,39 +136,36 @@ class ASTBuilder(Transformer):
     def table_field(self, items):
         """
         table_field: '[' expr ']' '=' expr
-                   | NAME '=' expr
+                   | any_name '=' expr
                    | expr
         """
         if len(items) == 1:
             return TableField(None, items[0])
         elif isinstance(items[0], Token):
+            # any_name '=' expr alternative
             return TableField(String(items[0].value), items[1])
         else:
+            # '[' expr ']' '=' expr alternative
             return TableField(items[0], items[1])
 
     def assignment(self, items):
         """
-        assignment: assignable (',' assignable)* '=' expr_list
+        assignment: assignable_list "=" expr_list
                   | assignable COMPOUND_OP expr
         """
-        if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == 'COMPOUND_OP':
+        if len(items) == 3 and isinstance(items[1], Token) and items[1].type == 'COMPOUND_OP':
             target = items[0]
             op = items[1].value[:-1]
             value = items[2]
             return CompoundAssign(target, op, value)
         else:
-            equals_idx = None
-            for i, item in enumerate(items):
-                if isinstance(item, list):
-                    equals_idx = i
-                    break
-
-            if equals_idx is None:
-                return ExprStmt(items[0])
-
-            targets = items[:equals_idx]
-            values = items[equals_idx]
+            targets = items[0]
+            values = items[1]
             return Assign(targets, values)
+
+    def assignable_list(self, items):
+        """assignable_list: assignable (',' assignable)*"""
+        return items
 
     def assignable(self, items):
         """assignable: NAME table_suffix*"""
@@ -189,17 +194,18 @@ class ASTBuilder(Transformer):
     def function_def(self, items):
         """
         function_def: FUNCTION function_name '(' [param_list] ')' block END
-                    | FUNCTION function_name ':' NAME '(' [param_list] ')' block END
+                    | FUNCTION function_name ':' any_name '(' [param_list] ')' block END
 
-        items now include keyword tokens: [FUNCTION_token, function_name_list, param_list_or_None, block, END_token]
-        or for methods: [FUNCTION_token, function_name_list, NAME, param_list_or_None, block, END_token]
+        items: [FUNCTION, function_name, param_list?, block, END]
+        or [FUNCTION, function_name, any_name, param_list?, block, END]
         """
         name_parts = items[1]
         idx = 2
         is_method = False
         params = []
 
-        if idx < len(items) and isinstance(items[idx], Token) and items[idx].type == 'NAME':
+        # Check if the third item is a token (any_name)
+        if idx < len(items) and isinstance(items[idx], Token):
             is_method = True
             name_parts.append(items[idx].value)
             params = ['self']
@@ -216,7 +222,7 @@ class ASTBuilder(Transformer):
         return FunctionDef(name_parts, is_method, params, body)
 
     def function_name(self, items):
-        """function_name: NAME ('.' NAME)*"""
+        """function_name: any_name ('.' any_name)*"""
         return [item.value for item in items if isinstance(item, Token)]
 
     def param_list(self, items):
@@ -322,6 +328,13 @@ class ASTBuilder(Transformer):
         """
         values = items[1] if len(items) > 1 else []
         return Return(values)
+
+    def break_stmt(self, items):
+        """break_stmt: BREAK
+
+        items = [BREAK_token]
+        """
+        return Break()
 
     def anonymous_function(self, items):
         """anonymous_function: FUNCTION '(' [param_list] ')' block END

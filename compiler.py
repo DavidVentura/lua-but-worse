@@ -21,7 +21,7 @@ def load_grammar():
 @lru_cache
 def create_parser():
     grammar = load_grammar()
-    return Lark(grammar, parser='earley', start='start')
+    return Lark(grammar, parser='earley', lexer='basic', start='start')
 
 
 def parse(code):

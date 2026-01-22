@@ -174,6 +174,12 @@ class Return:
 
 
 @dataclass(frozen=True)
+class Break:
+    """Break statement: break"""
+    pass
+
+
+@dataclass(frozen=True)
 class ExprStmt:
     """Expression as statement: f(x)"""
     expr: 'Expr'
@@ -184,7 +190,7 @@ Expr = Union[NameRef, Number, String, Bool, Nil,
               TableAccess, AnonymousFunction, MethodCall]
 
 Stmt = Union[Assign, LocalDecl, FunctionDef, If,
-              ForNum, ForIn, While, Return, ExprStmt, CompoundAssign]
+              ForNum, ForIn, While, Return, Break, ExprStmt, CompoundAssign]
 
 
 class VarKind(Enum):
