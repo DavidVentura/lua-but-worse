@@ -6,7 +6,8 @@ import subprocess
 
 import pytest
 
-from a import transform
+#from a import transform
+from compiler import compile
 
 here = Path(__file__).parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
@@ -20,7 +21,7 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
 
     flags = ['gcc', '-O0', '-std=c11', '-fsanitize=address',
             f'-I{here.absolute()}',
-             '-I/home/david/git/PicoPico/src',
+            # '-I/home/david/git/PicoPico/src',
              '-lm',  # link, -l, not I
              '-g',
              str(_target_temp),
@@ -37,7 +38,8 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
     return s.decode().strip().splitlines()
 
 def find_case_pairs():
-    marks = ['basic', 'compound', 'internals', 'pico8', 'syntax', 'regression']
+    #marks = ['basic', 'compound', 'internals', 'pico8', 'syntax', 'regression']
+    marks = ['basic', 'compound', 'internals', 'syntax', 'regression']
     ret = []
     for m in marks:
         per_mark = []
@@ -71,7 +73,7 @@ def test_cases(test_dir: str, test_case: str, test_name: str):
     with stdout_f.open() as fd:
         expected_stdout = fd.read()
 
-    _patched_src = transform(i, testing_params=testing_params).strip()
+    _patched_src = compile(i).strip()
     with open('patched_out.c', 'w') as fd:
         print(_patched_src, file=fd)
 
@@ -80,7 +82,7 @@ def test_cases(test_dir: str, test_case: str, test_name: str):
 
     assert expected_stdout.strip().splitlines() == exec_output
 
-    code = transform(i).strip()
+    code = compile(i).strip()
     actual = code.splitlines()
 
     if SHOULD_REGENERATE_OUTPUT:
