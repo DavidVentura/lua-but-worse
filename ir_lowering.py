@@ -126,6 +126,26 @@ class IRLowering:
                 )
                 self.c_functions.append(func_def)
 
+                # If function has dotted name (e.g., vector.new or vector:method),
+                # generate assignment: table.key = TFUN(func_name)
+                if len(name_parts) > 1:
+                    # Build table access from all but last part
+                    table = NameRef(name_parts[0])
+                    for part in name_parts[1:-1]:
+                        table = TableAccess(table, String(part), True)
+
+                    # Key is the last part
+                    key = String(name_parts[-1])
+
+                    # Value is TFUN(func_name)
+                    func_value = CLiteral(f"TFUN({func_name})", TVALUE)
+
+                    # Generate set_tabvalue call
+                    table_expr = self._lower_expr(table)
+                    key_expr = self._lower_expr(key)
+                    call = CFunctionCall("set_tabvalue", [table_expr, key_expr, func_value])
+                    return [CExprStmt(call, needs_cleanup=False)]
+
                 return []
 
             case If(condition, then_block, elseif_parts, else_block):

@@ -124,3 +124,69 @@ local x = t[5]
     assert isinstance(decl, CDeclare)
     assert isinstance(decl.init, CFunctionCall)
     assert decl.init.func_name == "get_tabvalue"
+
+
+def test_dotted_function():
+    code = """
+vector = {}
+function vector.new(x, y)
+    return x
+end
+"""
+    functions = lower_code(code)
+
+    assert len(functions) == 2
+    func_names = {f.name for f in functions}
+    assert "_lua_main" in func_names
+    assert "vector_new" in func_names
+
+    vector_new = next(f for f in functions if f.name == "vector_new")
+    assert vector_new.params == ["x", "y"]
+
+    main = next(f for f in functions if f.name == "_lua_main")
+    set_call = None
+    for stmt in main.body:
+        if isinstance(stmt, CExprStmt) and isinstance(stmt.expr, CFunctionCall):
+            if stmt.expr.func_name == "set_tabvalue":
+                set_call = stmt.expr
+                break
+
+    assert set_call is not None
+    assert len(set_call.args) == 3
+    assert isinstance(set_call.args[1], CLiteral)
+    assert "new" in set_call.args[1].value
+    assert isinstance(set_call.args[2], CLiteral)
+    assert "TFUN(vector_new)" in set_call.args[2].value
+
+
+def test_method_declaration():
+    code = """
+vector = {}
+function vector:add(other)
+    return self.x + other.x
+end
+"""
+    functions = lower_code(code)
+
+    assert len(functions) == 2
+    func_names = {f.name for f in functions}
+    assert "_lua_main" in func_names
+    assert "vector_add" in func_names
+
+    vector_add = next(f for f in functions if f.name == "vector_add")
+    assert vector_add.params == ["self", "other"]
+
+    main = next(f for f in functions if f.name == "_lua_main")
+    set_call = None
+    for stmt in main.body:
+        if isinstance(stmt, CExprStmt) and isinstance(stmt.expr, CFunctionCall):
+            if stmt.expr.func_name == "set_tabvalue":
+                set_call = stmt.expr
+                break
+
+    assert set_call is not None
+    assert len(set_call.args) == 3
+    assert isinstance(set_call.args[1], CLiteral)
+    assert "add" in set_call.args[1].value
+    assert isinstance(set_call.args[2], CLiteral)
+    assert "TFUN(vector_add)" in set_call.args[2].value
