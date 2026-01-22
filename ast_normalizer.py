@@ -126,16 +126,19 @@ class ASTNormalizer:
                 return TableAccess(table=normalized_table, key=normalized_key, is_dot=is_dot)
 
             case AnonymousFunction(params, body, scope_id):
-                # Save current scope
+                # Save current scope and hoisted statements
                 prev_scope = self.current_scope_id
+                prev_hoisted = self.hoisted_stmts
                 self.current_scope_id = scope_id
+                self.hoisted_stmts = []
 
                 # Normalize function body
                 normalized_body_stmts = self._normalize_block(body)
                 normalized_body = Block(stmts=normalized_body_stmts)
 
-                # Restore scope
+                # Restore scope and hoisted statements
                 self.current_scope_id = prev_scope
+                self.hoisted_stmts = prev_hoisted
 
                 return AnonymousFunction(params=params, body=normalized_body, scope_id=scope_id)
 
@@ -173,16 +176,19 @@ class ASTNormalizer:
                 return self.hoisted_stmts + [normalized_stmt]
 
             case FunctionDef(name_parts, is_method, params, body, scope_id):
-                # Save current scope
+                # Save current scope and hoisted statements
                 prev_scope = self.current_scope_id
+                prev_hoisted = self.hoisted_stmts
                 self.current_scope_id = scope_id
+                self.hoisted_stmts = []
 
                 # Normalize function body
                 normalized_body_stmts = self._normalize_block(body)
                 normalized_body = Block(stmts=normalized_body_stmts)
 
-                # Restore scope
+                # Restore scope and hoisted statements
                 self.current_scope_id = prev_scope
+                self.hoisted_stmts = prev_hoisted
 
                 normalized_stmt = FunctionDef(
                     name=name_parts,

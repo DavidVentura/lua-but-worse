@@ -133,17 +133,16 @@ class IRLowering:
                 cond_expr = CFunctionCall("__bool", [cond_expr])
 
                 then_stmts = self._lower_block(then_block)
-                else_stmts = []
 
-                # Handle elseifs as nested ifs in else clause
-                for elif_cond, elif_block in elseif_parts:
+                # Start with the final else block (or empty)
+                else_stmts = self._lower_block(else_block) if else_block else []
+
+                # Build nested ifs from elseifs in reverse order
+                for elif_cond, elif_block in reversed(elseif_parts):
                     elif_cond_expr = self._lower_expr(elif_cond)
                     elif_cond_expr = CFunctionCall("__bool", [elif_cond_expr])
                     elif_then = self._lower_block(elif_block)
                     else_stmts = [CIf(elif_cond_expr, elif_then, else_stmts)]
-
-                if else_block:
-                    else_stmts.extend(self._lower_block(else_block))
 
                 return [CIf(cond_expr, then_stmts, else_stmts)]
 
