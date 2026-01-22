@@ -18,9 +18,10 @@ class CCodeGenerator:
         self.indent_level = 0
         self.escaping_vars = set()
 
-    def generate(self, globals: list[str], functions: list[CFunctionDef], escaping_vars: set[str] = None) -> str:
+    def generate(self, globals: list[str], functions: list[CFunctionDef], escaping_vars: set[str] = None, string_constants: dict[str, str] = None) -> str:
         """Generate complete C program from IR"""
         self.escaping_vars = escaping_vars or set()
+        self.string_constants = string_constants or {}
         code = []
 
         code.append('#include "lua.h"')
@@ -30,6 +31,12 @@ class CCodeGenerator:
         code.append('#include "stdlib.h"')
 
         code.append('')
+
+        # Declare string constants
+        for value, var_name in self.string_constants.items():
+            code.append(f"TValue_t {var_name};")
+        if self.string_constants:
+            code.append('')
 
         for var_name in globals:
             code.append(f"TValue_t {var_name};")
@@ -69,6 +76,17 @@ class CCodeGenerator:
 
         if func.params:
             lines.append("")  # Blank line after param extraction
+
+        # Initialize string constants in _lua_main
+        if func.name == "_lua_main" and self.string_constants:
+            # Grow string table to accommodate all constants
+            lines.append(self._indent(f'_grow_strings_to({len(self.string_constants)});'))
+            for idx, (value, var_name) in enumerate(self.string_constants.items()):
+                escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+                lines.append(self._indent(
+                    f'_set(&{var_name}, TSTRi(_store_str_at_or_die(CONSTSTR("{escaped}"), {idx})));'
+                ))
+            lines.append("")  # Blank line after string init
 
         # Generate function body
         for stmt in func.body:

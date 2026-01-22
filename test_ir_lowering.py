@@ -24,7 +24,7 @@ def lower_code(code: str) -> list:
     analyzer.analyze(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions, escaping_names = lowering.lower(ast)
+    globals, functions, escaping_names, string_constants = lowering.lower(ast)
     return functions
 
 
@@ -153,8 +153,9 @@ end
 
     assert set_call is not None
     assert len(set_call.args) == 3
-    assert isinstance(set_call.args[1], CLiteral)
-    assert "new" in set_call.args[1].value
+    # Second arg is now a string constant variable reference
+    assert isinstance(set_call.args[1], CVarRef)
+    assert set_call.args[1].var.name.startswith("__str_ct_new")
     assert isinstance(set_call.args[2], CLiteral)
     assert "TFUN(vector_new)" in set_call.args[2].value
 
@@ -186,7 +187,8 @@ end
 
     assert set_call is not None
     assert len(set_call.args) == 3
-    assert isinstance(set_call.args[1], CLiteral)
-    assert "add" in set_call.args[1].value
+    # Second arg is now a string constant variable reference
+    assert isinstance(set_call.args[1], CVarRef)
+    assert set_call.args[1].var.name.startswith("__str_ct_add")
     assert isinstance(set_call.args[2], CLiteral)
     assert "TFUN(vector_add)" in set_call.args[2].value

@@ -45,10 +45,10 @@ def compile(code):
     ast = normalizer.normalize(ast)
 
     lowering = IRLowering(scopes, global_scope, e.escaping_vars)
-    globals, functions, escaping_names = lowering.lower(ast)
+    globals, functions, escaping_names, string_constants = lowering.lower(ast)
 
     c = CCodeGenerator()
-    code = c.generate(globals, functions, escaping_names)
+    code = c.generate(globals, functions, escaping_names, string_constants)
     return code
 
 if __name__ == "__main__":

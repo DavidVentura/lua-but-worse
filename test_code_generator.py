@@ -28,10 +28,10 @@ def generate_code(lua_code: str) -> str:
     ast = normalizer.normalize(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions, escaping_names = lowering.lower(ast)
+    globals, functions, escaping_names, string_constants = lowering.lower(ast)
 
     codegen = CCodeGenerator()
-    return codegen.generate(globals, functions, escaping_names)
+    return codegen.generate(globals, functions, escaping_names, string_constants)
 
 
 def test_simple_local():
@@ -156,8 +156,9 @@ local s = "hello"
 """
     result = generate_code(code)
 
-    # Should use TSTR macro
-    assert 'TSTR("hello")' in result
+    # Strings are now hoisted and initialized with TSTRi
+    assert 'TSTRi(_store_str_at_or_die(CONSTSTR("hello")' in result
+    assert '__str_ct_hello' in result
 
 
 def test_boolean_literal():
@@ -213,8 +214,9 @@ local u = {a=123}
     # Should create temp table
     assert 'TTAB(make_table(0))' in result
 
-    # Should set field value on temp variable
-    assert 'set_tabvalue(_tmp0, TSTR("a"), TNUM(123))' in result
+    # Should set field value on temp variable (string is now hoisted)
+    assert 'set_tabvalue(_tmp0, __str_ct_a' in result
+    assert 'TNUM(123))' in result
 
     # Should assign temp to u
     assert '_set(&u, _tmp0);' in result
@@ -250,7 +252,9 @@ local m = {10, 20, x=30}
     # Should set both array and named fields on temp variable
     assert 'set_tabvalue(_tmp0, TNUM(1), TNUM(10))' in result
     assert 'set_tabvalue(_tmp0, TNUM(2), TNUM(20))' in result
-    assert 'set_tabvalue(_tmp0, TSTR("x"), TNUM(30))' in result
+    # String "x" is now hoisted
+    assert 'set_tabvalue(_tmp0, __str_ct_x' in result
+    assert 'TNUM(30))' in result
 
     # Should assign temp to m
     assert '_set(&m, _tmp0);' in result
@@ -264,6 +268,8 @@ foo({x=1})
 
     # After normalization: table created empty, field set, then passed to function
     assert 'TTAB(make_table(0))' in result
-    assert 'set_tabvalue(_tmp0, TSTR("x"), TNUM(1))' in result
+    # String "x" is now hoisted
+    assert 'set_tabvalue(_tmp0, __str_ct_x' in result
+    assert 'TNUM(1))' in result
     # The temp variable should be passed to the function call
     assert 'CALL(foo' in result

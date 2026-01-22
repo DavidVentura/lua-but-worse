@@ -19,9 +19,27 @@ class IRLowering:
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
         self.direct_call_builtins = {"flr", "printh", "setmetatable"}
+        self.string_constants: dict[str, str] = {}  # value -> var_name mapping
 
-    def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str]]:
-        """Lower the entire AST to IR, returning (globals, functions, escaping_var_names)"""
+    def _get_string_constant(self, value: str) -> str:
+        """Get or create a global variable name for a string constant"""
+        if value in self.string_constants:
+            return self.string_constants[value]
+
+        # Create a safe variable name from the string
+        # Use first few chars if alphanumeric, otherwise use generic name
+        safe_chars = ''.join(c if c.isalnum() else '_' for c in value[:8])
+        if not safe_chars or not safe_chars[0].isalpha():
+            safe_chars = 'str'
+
+        # Generate unique name
+        idx = len(self.string_constants)
+        var_name = f"__str_ct_{safe_chars}_{idx}"
+        self.string_constants[value] = var_name
+        return var_name
+
+    def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str], dict[str, str]]:
+        """Lower the entire AST to IR, returning (globals, functions, escaping_var_names, string_constants)"""
         self.current_scope_id = self.global_scope.scope_id
 
         main_body = self._lower_block(ast)
@@ -33,7 +51,7 @@ class IRLowering:
         self.c_functions.append(main_func)
 
         escaping_names = {v.name for v in self.escaping_vars}
-        return (self.globals, self.c_functions, escaping_names)
+        return (self.globals, self.c_functions, escaping_names, self.string_constants)
 
     def _new_temp(self) -> str:
         """Generate a new temporary variable name"""
@@ -252,9 +270,9 @@ class IRLowering:
                     return CLiteral(f"TNUM({value})", TVALUE)
 
             case String(value):
-                escaped = value.replace('\\', '\\\\').replace('"', '\\"')
-                # TSTR macro calls make_str at runtime
-                return CLiteral(f'TSTR("{escaped}")', TVALUE)
+                # Use hoisted string constant
+                var_name = self._get_string_constant(value)
+                return CVarRef(CVar(var_name, TVALUE))
 
             case Bool(value):
                 # Use compile-time constants T_TRUE/T_FALSE

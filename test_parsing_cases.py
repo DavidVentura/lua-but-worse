@@ -57,8 +57,8 @@ def test_parse_real_case(name, lua_file):
 
     # Lower to IR
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
-    globals, functions, escaping_names = lowering.lower(ast)
+    globals, functions, escaping_names, string_constants = lowering.lower(ast)
 
     # Generate C code
     codegen = CCodeGenerator()
-    codegen.generate(globals, functions, escaping_names)
+    codegen.generate(globals, functions, escaping_names, string_constants)
