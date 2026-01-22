@@ -165,6 +165,16 @@ typedef struct FArena_s {
 #define CALL(x, y)  		_Generic(x, TValue_t: __call, Func_t: __direct_call)((x), (y))
 #define _bool(x) 			_Generic((x), TValue_t: __bool, bool: __mbool)(x)
 
+#define _or(a, b) ({ \
+    TValue_t _tmp = (a); \
+    __bool(_tmp) ? _tmp : (b); \
+})
+
+#define _and(a, b) ({ \
+    TValue_t _tmp = (a); \
+    __bool(_tmp) ? (b) : _tmp; \
+})
+
 // Declaring this as a `const TValue_t` still raises warnings
 // the warnings are solved by making the enum const (wtf?)
 // but that raises other warnings
@@ -219,8 +229,6 @@ TValue_t _not(TValue_t a);
 TValue_t _mod(TValue_t a, TValue_t b);
 bool __mbool(bool b);
 bool __bool(TValue_t a);
-TValue_t _or(TValue_t a, TValue_t b);
-TValue_t _and(TValue_t a, TValue_t b);
 uint16_t make_table(uint16_t size);
 void free_tvalue(TValue_t tv);
 TValue_t flr(TValue_t f);

@@ -455,14 +455,6 @@ inline bool __bool(TValue_t a) {
 	return true;
 }
 
-TValue_t _or(TValue_t a, TValue_t b) {
-	return __bool(a) ? a : b;
-}
-
-TValue_t _and(TValue_t a, TValue_t b) {
-	return __bool(a) ? b : a ;
-}
-
 uint16_t first_free_table_idx() {
 	uint16_t retval;
 	for(uint16_t i=0; i<_tables.len/32; i++) {
