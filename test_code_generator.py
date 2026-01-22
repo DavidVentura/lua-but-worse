@@ -3,6 +3,7 @@ from ast_builder import ASTBuilder
 from scope_resolver import ScopeResolver
 from capture_detector import CaptureDetector
 from escape_analyzer import EscapeAnalyzer
+from ast_normalizer import ASTNormalizer
 from ir_lowering import IRLowering
 from code_generator import CCodeGenerator
 
@@ -22,6 +23,9 @@ def generate_code(lua_code: str) -> str:
 
     analyzer = EscapeAnalyzer(scopes, global_scope)
     analyzer.analyze(ast)
+
+    normalizer = ASTNormalizer(scopes, global_scope)
+    ast = normalizer.normalize(ast)
 
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)
     globals, functions, escaping_names = lowering.lower(ast)
@@ -205,11 +209,15 @@ local u = {a=123}
 """
     result = generate_code(code)
 
-    # Should create table with TTAB macro
-    assert 'TTAB(make_table(1))' in result
+    # After normalization: table created empty, field set separately
+    # Should create temp table
+    assert 'TTAB(make_table(0))' in result
 
-    # Should set field value
-    assert 'set_tabvalue(u, TSTR("a"), TNUM(123))' in result
+    # Should set field value on temp variable
+    assert 'set_tabvalue(_tmp0, TSTR("a"), TNUM(123))' in result
+
+    # Should assign temp to u
+    assert '_set(&u, _tmp0);' in result
 
 
 def test_table_array_initialization():
@@ -218,13 +226,16 @@ local t = {1, 2, 3}
 """
     result = generate_code(code)
 
-    # Should create table with size hint
-    assert 'TTAB(make_table(3))' in result
+    # After normalization: table created empty, elements set separately
+    assert 'TTAB(make_table(0))' in result
 
-    # Should set array elements with numeric keys
-    assert 'set_tabvalue(t, TNUM(1), TNUM(1))' in result
-    assert 'set_tabvalue(t, TNUM(2), TNUM(2))' in result
-    assert 'set_tabvalue(t, TNUM(3), TNUM(3))' in result
+    # Should set array elements with numeric keys on temp variable
+    assert 'set_tabvalue(_tmp0, TNUM(1), TNUM(1))' in result
+    assert 'set_tabvalue(_tmp0, TNUM(2), TNUM(2))' in result
+    assert 'set_tabvalue(_tmp0, TNUM(3), TNUM(3))' in result
+
+    # Should assign temp to t
+    assert '_set(&t, _tmp0);' in result
 
 
 def test_table_mixed_initialization():
@@ -233,10 +244,26 @@ local m = {10, 20, x=30}
 """
     result = generate_code(code)
 
-    # Should create table with size hint
-    assert 'TTAB(make_table(3))' in result
+    # After normalization: table created empty
+    assert 'TTAB(make_table(0))' in result
 
-    # Should set both array and named fields
-    assert 'set_tabvalue(m, TNUM(1), TNUM(10))' in result
-    assert 'set_tabvalue(m, TNUM(2), TNUM(20))' in result
-    assert 'set_tabvalue(m, TSTR("x"), TNUM(30))' in result
+    # Should set both array and named fields on temp variable
+    assert 'set_tabvalue(_tmp0, TNUM(1), TNUM(10))' in result
+    assert 'set_tabvalue(_tmp0, TNUM(2), TNUM(20))' in result
+    assert 'set_tabvalue(_tmp0, TSTR("x"), TNUM(30))' in result
+
+    # Should assign temp to m
+    assert '_set(&m, _tmp0);' in result
+
+
+def test_table_in_function_call():
+    code = """
+foo({x=1})
+"""
+    result = generate_code(code)
+
+    # After normalization: table created empty, field set, then passed to function
+    assert 'TTAB(make_table(0))' in result
+    assert 'set_tabvalue(_tmp0, TSTR("x"), TNUM(1))' in result
+    # The temp variable should be passed to the function call
+    assert '__call(foo' in result

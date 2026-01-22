@@ -7,6 +7,7 @@ from ast_builder import ASTBuilder
 from scope_resolver import ScopeResolver
 from capture_detector import CaptureDetector
 from escape_analyzer import EscapeAnalyzer
+from ast_normalizer import ASTNormalizer
 from ir_lowering import IRLowering
 from code_generator import CCodeGenerator
 
@@ -49,6 +50,10 @@ def test_parse_real_case(name, lua_file):
     # Escape analysis
     analyzer = EscapeAnalyzer(scopes, global_scope)
     analyzer.analyze(ast)
+
+    # Normalize AST
+    normalizer = ASTNormalizer(scopes, global_scope)
+    ast = normalizer.normalize(ast)
 
     # Lower to IR
     lowering = IRLowering(scopes, global_scope, analyzer.escaping_vars)

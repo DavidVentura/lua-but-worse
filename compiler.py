@@ -10,6 +10,7 @@ from escape_analyzer import EscapeAnalyzer
 from ir_lowering import IRLowering
 from scope_resolver import ScopeResolver
 from capture_detector import CaptureDetector
+from ast_normalizer import ASTNormalizer
 
 
 def load_grammar():
@@ -34,6 +35,8 @@ if __name__ == "__main__":
 a = 5
 function b()
     local x = 5
+    a = {a=1}
+    c({b=2})
     c(x)
     -- return x
 end
@@ -52,6 +55,9 @@ end
 
     e = EscapeAnalyzer(scopes, global_scope)
     e.analyze(ast)
+
+    normalizer = ASTNormalizer(scopes, global_scope)
+    ast = normalizer.normalize(ast)
 
     lowering = IRLowering(scopes, global_scope, e.escaping_vars)
     globals, functions, escaping_names = lowering.lower(ast)

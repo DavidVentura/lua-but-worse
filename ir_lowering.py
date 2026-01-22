@@ -66,26 +66,8 @@ class IRLowering:
                 stmts = []
                 for i, name in enumerate(names):
                     value = values[i] if i < len(values) else Nil()
-
-                    if isinstance(value, TableConstructor):
-                        size_hint = len(value.fields) if value.fields else 0
-                        table_expr = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
-                        stmts.append(CDeclare(CVar(name, TVALUE), table_expr))
-
-                        if value.fields:
-                            array_index = 1
-                            for field in value.fields:
-                                if field.key is None:
-                                    key_expr = CLiteral(f"TNUM({array_index})", TVALUE)
-                                    array_index += 1
-                                else:
-                                    key_expr = self._lower_expr(field.key)
-                                value_expr = self._lower_expr(field.value)
-                                call = CFunctionCall("set_tabvalue", [CVarRef(CVar(name, TVALUE)), key_expr, value_expr])
-                                stmts.append(CExprStmt(call, needs_cleanup=False))
-                    else:
-                        value_expr = self._lower_expr(value)
-                        stmts.append(CDeclare(CVar(name, TVALUE), value_expr))
+                    value_expr = self._lower_expr(value)
+                    stmts.append(CDeclare(CVar(name, TVALUE), value_expr))
                 return stmts
 
             case Assign(targets, values):
@@ -99,25 +81,8 @@ class IRLowering:
                                 if name not in self.globals:
                                     self.globals.append(name)
 
-                            if isinstance(value, TableConstructor):
-                                size_hint = len(value.fields) if value.fields else 0
-                                table_expr = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
-                                stmts.append(CAssign(CVar(name, TVALUE), table_expr))
-
-                                if value.fields:
-                                    array_index = 1
-                                    for field in value.fields:
-                                        if field.key is None:
-                                            key_expr = CLiteral(f"TNUM({array_index})", TVALUE)
-                                            array_index += 1
-                                        else:
-                                            key_expr = self._lower_expr(field.key)
-                                        value_expr = self._lower_expr(field.value)
-                                        call = CFunctionCall("set_tabvalue", [CVarRef(CVar(name, TVALUE)), key_expr, value_expr])
-                                        stmts.append(CExprStmt(call, needs_cleanup=False))
-                            else:
-                                value_expr = self._lower_expr(value)
-                                stmts.append(CAssign(CVar(name, TVALUE), value_expr))
+                            value_expr = self._lower_expr(value)
+                            stmts.append(CAssign(CVar(name, TVALUE), value_expr))
 
                         case TableAccess(table, key, is_dot):
                             value_expr = self._lower_expr(value)
@@ -276,17 +241,9 @@ class IRLowering:
                 return self._lower_unop(op, operand_expr)
 
             case TableConstructor(fields):
-                stmts = []
-                table_var = self._new_temp()
-
-                # Create table with size hint
-                size_hint = len(fields) if fields else 0
-                result = CFunctionCall("make_table", [CLiteral(str(size_hint), INT)])
-
-                # For each field, call set_tabvalue
-                # TODO: This needs to be done in statements, not in an expression
-                # For now, just return the table creation
-                return result
+                # After normalization, all tables are hoisted with fields=[]
+                assert not fields, "Non-empty tables should be normalized away"
+                return CFunctionCall("make_table", [CLiteral("0", INT)])
 
             case TableAccess(table, key, is_dot):
                 table_expr = self._lower_expr(table)
