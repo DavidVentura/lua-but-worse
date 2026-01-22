@@ -213,7 +213,20 @@ class IRLowering:
                 return CVarRef(CVar(name, TVALUE))
 
             case Number(value):
-                if '.' in value or 'e' in value.lower():
+                # Check if it's a hexadecimal floating point literal (e.g., 0x0.8000)
+                if value.lower().startswith('0x') and '.' in value:
+                    parts = value.split('.')
+                    integer_part = parts[0]
+                    frac_part = parts[1].lower().rstrip('f')
+
+                    int_val = int(integer_part, 16)
+                    # Fractional part is left-aligned in 16 bits
+                    # 0x1 becomes 0x1000, 0x8000 stays 0x8000
+                    frac_bits = int(frac_part, 16) << (16 - len(frac_part) * 4)
+
+                    return CLiteral(f"TNUM(fix32_from_parts({int_val}, 0x{frac_bits:04x}))", TVALUE)
+
+                elif '.' in value or 'e' in value.lower():
                     return CLiteral(f"TNUM(fix32_from_float({value}f))", TVALUE)
                 else:
                     return CLiteral(f"TNUM({value})", TVALUE)
@@ -236,6 +249,26 @@ class IRLowering:
                 return self._lower_binop(op, left_expr, right_expr)
 
             case UnOp(op, operand):
+                # Optimize unary minus on numeric literals at compile time
+                if op == '-' and isinstance(operand, Number):
+                    value = operand.value
+                    # Add minus sign to the literal
+                    # Check if it's a hexadecimal floating point literal
+                    if value.lower().startswith('0x') and '.' in value:
+                        parts = value.split('.')
+                        integer_part = parts[0]
+                        frac_part = parts[1].lower().rstrip('f')
+
+                        int_val = int(integer_part, 16)
+                        frac_bits = int(frac_part, 16) << (16 - len(frac_part) * 4)
+
+                        return CLiteral(f"TNUM(fix32_from_parts(-{int_val}, 0x{frac_bits:04x}))", TVALUE)
+
+                    elif '.' in value or 'e' in value.lower():
+                        return CLiteral(f"TNUM(fix32_from_float(-{value}f))", TVALUE)
+                    else:
+                        return CLiteral(f"TNUM(-{value})", TVALUE)
+
                 operand_expr = self._lower_expr(operand)
                 return self._lower_unop(op, operand_expr)
 
