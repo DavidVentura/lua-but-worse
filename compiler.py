@@ -29,25 +29,10 @@ def parse(code):
     return parser.parse(code)
 
 
-if __name__ == "__main__":
-    import sys
-    test_code = """
-a = 5
-function b()
-    local x = 5
-    a = {a=1}
-    c({b=2})
-    c(x)
-    -- return x
-end
-    """
-    if len(sys.argv) > 1:
-        test_code = open(sys.argv[1]).read()
-
-    tree = parse(test_code)
+def compile(code):
+    tree = parse(code)
     builder = ASTBuilder()
     ast = builder.transform(tree)
-    # print(ast)
     s = ScopeResolver(ast)
     scopes, global_scope = s.analyze()
     detector = CaptureDetector(scopes, global_scope)
@@ -64,4 +49,22 @@ end
 
     c = CCodeGenerator()
     code = c.generate(globals, functions, escaping_names)
+    return code
+
+if __name__ == "__main__":
+    import sys
+    test_code = """
+a = 5
+function b()
+    local x = 5
+    a = {a=1}
+    c({b=2})
+    c(x)
+    -- return x
+end
+    """
+    if len(sys.argv) > 1:
+        test_code = open(sys.argv[1]).read()
+
+    code = compile(test_code)
     print(code)
