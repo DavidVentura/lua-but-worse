@@ -101,16 +101,26 @@ class CCodeGenerator:
     def _generate_stmt(self, stmt: CStmt) -> str:
         """Generate C code for a statement"""
         match stmt:
-            case CDeclare(var, init):
-                if init:
-                    value_expr = self._generate_expr(init)
-                    return f"{self._type_to_c(var.type)} gc {var.name};\n_set(&{var.name}, {value_expr});"
+            case CDeclare(var, init, direct_init):
+                if direct_init or var.type != TVALUE:
+                    if init:
+                        value_expr = self._generate_expr(init)
+                        return f"{self._type_to_c(var.type)} {var.name} = {value_expr};"
+                    else:
+                        return f"{self._type_to_c(var.type)} {var.name};"
                 else:
-                    return f"{self._type_to_c(var.type)} gc {var.name};"
+                    if init:
+                        value_expr = self._generate_expr(init)
+                        return f"{self._type_to_c(var.type)} gc {var.name};\n_set(&{var.name}, {value_expr});"
+                    else:
+                        return f"{self._type_to_c(var.type)} gc {var.name};"
 
             case CAssign(target, value):
                 value_expr = self._generate_expr(value)
-                return f"_set(&{target.name}, {value_expr});"
+                if target.type == TVALUE:
+                    return f"_set(&{target.name}, {value_expr});"
+                else:
+                    return f"{target.name} = {value_expr};"
 
             case CIf(condition, then_stmts, else_stmts):
                 lines = []
@@ -152,6 +162,15 @@ class CCodeGenerator:
                     return f"{{\n    TValue_t gc _tmp;\n    _set(&_tmp, {expr_str});\n}}"
                 else:
                     return f"{expr_str};"
+
+            case CBlock(body):
+                lines = ["{"]
+                self.indent_level += 1
+                for s in body:
+                    lines.append(self._indent(self._generate_stmt(s)))
+                self.indent_level -= 1
+                lines.append(self._indent("}"))
+                return '\n'.join(lines)
 
             case _:
                 return f"/* Unknown statement: {type(stmt).__name__} */"
@@ -200,6 +219,12 @@ class CCodeGenerator:
 
             case CUnOp(op, operand):
                 return f"({op}{self._generate_expr(operand)})"
+
+            case CArrayAccess(array, index):
+                return f"{self._generate_expr(array)}[{self._generate_expr(index)}]"
+
+            case CFieldAccess(obj, field):
+                return f"{self._generate_expr(obj)}.{field}"
 
             case _:
                 return f"/* Unknown expr: {type(expr).__name__} */"

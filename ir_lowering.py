@@ -18,7 +18,7 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
-        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable"}
+        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs"}
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
 
     def _get_string_constant(self, value: str) -> str:
@@ -216,9 +216,71 @@ class IRLowering:
                 return stmts
 
             case ForIn(vars, iterator, body, scope_id):
-                # TODO: Implement iterator protocol
-                # For now, just add a comment
-                return [CExprStmt(CLiteral("/* for-in not implemented yet */", VOID))]
+                is_kv_iterator = len(vars) > 1
+
+                iter_base = "_pairs_iterator" if is_kv_iterator else "_super_secret_iterator"
+                iter_var = iter_base
+                iter_type = CType("KV_t", is_pointer=True) if is_kv_iterator else TVALUE_ARRAY
+
+                iter_expr = self._lower_expr(iterator)
+
+                idx_var = "__i"
+
+                stmts = []
+
+                stmts.append(CDeclare(CVar(iter_var, iter_type), iter_expr))
+                stmts.append(CDeclare(CVar(idx_var, CType("uint16_t")), CLiteral("0", CType("uint16_t"))))
+
+                if is_kv_iterator:
+                    condition = CBinOp(
+                        "!=",
+                        CFieldAccess(
+                            CFieldAccess(
+                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
+                                "key"
+                            ),
+                            "tag"
+                        ),
+                        CLiteral("NUL", CType("int"))
+                    )
+                else:
+                    condition = CBinOp(
+                        "!=",
+                        CFieldAccess(
+                            CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
+                            "tag"
+                        ),
+                        CLiteral("NUL", CType("int"))
+                    )
+
+                body_stmts = []
+
+                for i, var in enumerate(vars):
+                    if is_kv_iterator:
+                        if i == 0:
+                            value_expr = CFieldAccess(
+                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
+                                "key"
+                            )
+                        else:
+                            value_expr = CFieldAccess(
+                                CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t")))),
+                                "value"
+                            )
+                    else:
+                        value_expr = CArrayAccess(CVarRef(CVar(iter_var, iter_type)), CVarRef(CVar(idx_var, CType("uint16_t"))))
+
+                    body_stmts.append(CDeclare(CVar(var, TVALUE), value_expr, direct_init=True))
+
+                body_stmts.extend(self._lower_block(body))
+
+                body_stmts.append(CExprStmt(CLiteral(f"{idx_var}++", CType("void")), needs_cleanup=False))
+
+                stmts.append(CWhile(condition, body_stmts))
+
+                stmts.append(CExprStmt(CFunctionCall("free", [CVarRef(CVar(iter_var, iter_type))]), needs_cleanup=False))
+
+                return [CBlock(stmts)]
 
             case Return(values):
                 if not values:

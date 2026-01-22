@@ -70,6 +70,20 @@ class CUnOp(CExpr):
 
 
 @dataclass(frozen=True)
+class CArrayAccess(CExpr):
+    """C array access: array[index]"""
+    array: CExpr
+    index: CExpr
+
+
+@dataclass(frozen=True)
+class CFieldAccess(CExpr):
+    """C field access: obj.field"""
+    obj: CExpr
+    field: str
+
+
+@dataclass(frozen=True)
 class CStmt:
     """Base for C statements"""
     pass
@@ -80,6 +94,7 @@ class CDeclare(CStmt):
     """C variable declaration: TValue* x;"""
     var: CVar
     init: Optional[CExpr] = None
+    direct_init: bool = False
 
 
 @dataclass(frozen=True)
@@ -127,6 +142,12 @@ class CExprStmt(CStmt):
 
 
 @dataclass(frozen=True)
+class CBlock(CStmt):
+    """C block scope: { statements }"""
+    body: list[CStmt]
+
+
+@dataclass(frozen=True)
 class CFunctionDef:
     """C function definition
 
@@ -145,5 +166,5 @@ class CFunctionDef:
         return len(self.captures) > 0
 
 
-CExpr = Union[CVarRef, CLiteral, CFunctionCall, CBinOp, CUnOp]
-CStmt = Union[CDeclare, CAssign, CIf, CFor, CWhile, CReturn, CExprStmt]
+CExpr = Union[CVarRef, CLiteral, CFunctionCall, CBinOp, CUnOp, CArrayAccess, CFieldAccess]
+CStmt = Union[CDeclare, CAssign, CIf, CFor, CWhile, CReturn, CExprStmt, CBlock]
