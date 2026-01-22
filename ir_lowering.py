@@ -18,7 +18,7 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
-        self.direct_call_builtins = {"flr", "printh", "setmetatable"}
+        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable"}
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
 
     def _get_string_constant(self, value: str) -> str:
@@ -378,7 +378,7 @@ class IRLowering:
             '\\': '_floor_div',
             '^': '_pow',
             '..': '_concat',
-            '==': 'equal',
+            '==': '_equal',
             '~=': '_notequal',
             '<': '_lt',
             '<=': '_leq',
