@@ -46,8 +46,8 @@ class ASTBuilder(Transformer):
 
     def concat(self, items):
         result = items[0]
-        for i in range(1, len(items)):
-            result = BinOp('..', result, items[i])
+        for i in range(1, len(items), 2):
+            result = BinOp('..', result, items[i + 1])
         return result
 
     def add_expr(self, items):

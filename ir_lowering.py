@@ -17,8 +17,8 @@ class IRLowering:
         self.current_scope_id: Optional[int] = None
         self.next_temp = 0
         self.globals: list[str] = []
-        self.no_return_builtins = {"printh", "set_tabvalue"}
-        self.direct_call_builtins = {"flr", "printh"}
+        self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
+        self.direct_call_builtins = {"flr", "printh", "setmetatable"}
 
     def lower(self, ast: Block) -> tuple[list[str], list[CFunctionDef], set[str]]:
         """Lower the entire AST to IR, returning (globals, functions, escaping_var_names)"""
@@ -327,7 +327,7 @@ class IRLowering:
                 # Return reference to function
                 return CLiteral(f"/* closure {anon_name} */", TVALUE)
 
-        return CLiteral("LUA_NIL", TVALUE)
+        assert False, f"{expr} unhandled"
 
     def _lower_binop(self, op: str, left: CExpr, right: CExpr) -> CExpr:
         """Lower binary operation to runtime call"""

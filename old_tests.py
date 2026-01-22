@@ -74,6 +74,8 @@ def test_cases(test_dir: str, test_case: str, test_name: str):
         expected_stdout = fd.read()
 
     _patched_src = compile(i).strip()
+    _main = "TValue_t main(TVSlice_t args) {"
+    _patched_src = _patched_src.replace(_main, f"{_main}\n    _lua_main((TVSlice_t){{}});")
     with open('patched_out.c', 'w') as fd:
         print(_patched_src, file=fd)
 
