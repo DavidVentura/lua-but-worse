@@ -619,10 +619,18 @@ uint16_t _store_str(Str_t s) {
 }
 
 #ifdef DEBUG
-uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures, const char* name) {
+uint16_t make_fun(Func_t f, uint8_t num_captures, const char* name) {
+	uint16_t* captured_indices = NULL;
+	if (num_captures > 0) {
+		captured_indices = malloc(sizeof(uint16_t) * num_captures);
+	}
 	TFunc_t t = (TFunc_t){.fun=f, .name=name, .captured_indices=captured_indices, .num_captures=num_captures, .refcount=1};
 #else
-uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures) {
+uint16_t make_fun(Func_t f, uint8_t num_captures) {
+	uint16_t* captured_indices = NULL;
+	if (num_captures > 0) {
+		captured_indices = malloc(sizeof(uint16_t) * num_captures);
+	}
 	TFunc_t t = (TFunc_t){.fun=f, .captured_indices=captured_indices, .num_captures=num_captures, .refcount=1};
 #endif
 	uint16_t new_len = _funcs.len == 0 ? 32 : _funcs.len*2;
@@ -648,11 +656,6 @@ uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures) {
 	}
 
 	_funcs.funcs[first_null] = t;
-
-	// Increment refcount for all captured variables
-	for (uint8_t i = 0; i < num_captures; i++) {
-		_incref_captured(captured_indices[i]);
-	}
 
 	return first_null;
 }
@@ -716,6 +719,18 @@ void _decref_captured(uint16_t idx) {
 		_decref(_captured.captured[idx].value);
 		_captured.captured[idx].value = T_NULL;
 	}
+}
+
+void set_closure_arg(TValue_t closure, uint8_t idx, uint16_t cap_idx) {
+	assert(closure.tag == FUN);
+	TFunc_t* func = GETTFUN(closure);
+	assert(idx < func->num_captures);
+	assert(func->captured_indices != NULL);
+
+	func->captured_indices[idx] = cap_idx;
+	_incref_captured(cap_idx);
+
+	DEBUG2_PRINT("Set closure arg %d to captured[%d]\n", idx, cap_idx);
 }
 
 uint16_t make_str(char* c) {

@@ -166,11 +166,11 @@ typedef struct CArena_s {
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 
 #ifdef DEBUG
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, NULL, 0, #x))})
-#define TCLOSURE(x,y,z)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y, z, #x))})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, 0, #x))})
+#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y, #x))})
 #else
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, NULL, 0))})
-#define TCLOSURE(x,y,z)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y, z))})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, 0))})
+#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y))})
 #endif
 
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
@@ -262,13 +262,14 @@ uint16_t _store_str_at_or_die(Str_t s, uint16_t idx);
 void _grow_strings_to(uint16_t new_len);
 uint16_t make_str(char* c);
 #ifdef DEBUG
-uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures, const char* name);
+uint16_t make_fun(Func_t f, uint8_t num_captures, const char* name);
 #else
-uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures);
+uint16_t make_fun(Func_t f, uint8_t num_captures);
 #endif
 uint16_t _alloc_captured(TValue_t initial);
 void _incref_captured(uint16_t idx);
 void _decref_captured(uint16_t idx);
+void set_closure_arg(TValue_t closure, uint8_t idx, uint16_t cap_idx);
 void run_gc();
 void _str_decref(Str_t* s);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
