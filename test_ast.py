@@ -148,3 +148,33 @@ def test_local_with_trailing_semicolon():
     assert len(local_decl.values) == 1
     assert isinstance(local_decl.values[0], Number)
     assert local_decl.values[0].value == '5'
+
+
+def test_function_call_attribute_assignment():
+    code = "func(args).attr=-1"
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+    assert isinstance(ast, Block)
+    assert len(ast.stmts) == 1
+    assert isinstance(ast.stmts[0], Assign)
+    assign = ast.stmts[0]
+    assert len(assign.targets) == 1
+    target = assign.targets[0]
+    assert isinstance(target, TableAccess)
+    assert isinstance(target.key, String)
+    assert target.key.value == 'attr'
+    assert target.is_dot == True
+    assert isinstance(target.table, FunctionCall)
+    func_call = target.table
+    assert isinstance(func_call.func, NameRef)
+    assert func_call.func.name == 'func'
+    assert len(func_call.args) == 1
+    assert isinstance(func_call.args[0], NameRef)
+    assert func_call.args[0].name == 'args'
+    assert len(assign.values) == 1
+    assert isinstance(assign.values[0], UnOp)
+    assert assign.values[0].op == '-'
+    assert isinstance(assign.values[0].operand, Number)
+    assert assign.values[0].operand.value == '1'
