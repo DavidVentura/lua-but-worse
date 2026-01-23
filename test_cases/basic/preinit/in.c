@@ -1,20 +1,23 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t a = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
 
-TValue_t __main() { printh(a); }
+TValue_t a;
 
-TValue_t __preinit() {
-  _grow_strings_to(0);
-  _set(&a, TNUM16(5));
-  _pluseq(&a, TNUM16(1));
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
 
-  if (_bool(_lt(a, TNUM16(3)))) {
-    _set(&a, TNUM16(7));
-  }
+TValue_t main(TVSlice_t args) {
+    printh(a);
+    return TNUM(0);
+}
+
+TValue_t _lua_main(TVSlice_t args) {
+    _set(&a, TNUM(5));
+    _set(&a, _add(a, TNUM(1)));
+    if (__bool(_lt(a, TNUM(3)))) {
+            _set(&a, TNUM(7));
+        }
+    return T_NULL;
 }

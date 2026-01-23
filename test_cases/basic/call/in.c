@@ -1,22 +1,27 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __preinit();
-TValue_t __main();
-TValue_t something(TVSlice_t function_arguments);
 
-TValue_t something(TVSlice_t function_arguments) {
-  TValue_t gc arg = T_NULL;
-  _set(&arg, __get_array_index_capped(function_arguments, 0));
-  _mark_for_gc(arg);
-  return arg;
+TValue_t something(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t something(TVSlice_t args) {
+    TValue_t arg = (args.num > 0) ? args.elems[0] : T_NULL;
+
+    return arg;
 }
 
-TValue_t __main() {
-  CALL((something), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(5)}, .num = 1}));
-  printh(CALL((something), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(6)}, .num = 1})));
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(something, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    }
+    printh(CALL(something, ((TVSlice_t){(TValue_t[]){TNUM(6)}, 1})));
+    return TNUM(0);
 }
 
-TValue_t __preinit() { _grow_strings_to(0); }
+TValue_t _lua_main(TVSlice_t args) {
+    return T_NULL;
+}

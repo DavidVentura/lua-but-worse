@@ -1,51 +1,54 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_field = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
-TValue_t returned_tables_3(TVSlice_t function_arguments);
-TValue_t returned_tables_2(TVSlice_t function_arguments);
-TValue_t returned_tables_1(TVSlice_t function_arguments);
 
-TValue_t returned_tables_1(TVSlice_t function_arguments) {
-  TValue_t gc var = T_NULL;
-  _set(&var, TTAB(make_table(2)));
-  set_tabvalue(var, __str_field, TNUM16(1));
-  _mark_for_gc(var);
-  return var;
+TValue_t __str_ct_field_0;
+
+TValue_t returned_tables_1(TVSlice_t args);
+TValue_t returned_tables_2(TVSlice_t args);
+TValue_t returned_tables_3(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t returned_tables_1(TVSlice_t args) {
+    TValue_t gc _tmp0;
+    _set(&_tmp0, TTAB(make_table(0)));
+    set_tabvalue(_tmp0, __str_ct_field_0, TNUM(1));
+    TValue_t gc var;
+    _set(&var, _tmp0);
+    return var;
 }
 
-TValue_t returned_tables_2(TVSlice_t function_arguments) {
-  TValue_t gc _anon_return_table = T_NULL;
-  _set(&_anon_return_table, TTAB(make_table(2)));
-  set_tabvalue(_anon_return_table, __str_field, TNUM16(1));
-  _mark_for_gc(_anon_return_table);
-  return _anon_return_table;
+TValue_t returned_tables_2(TVSlice_t args) {
+    TValue_t gc _tmp1;
+    _set(&_tmp1, TTAB(make_table(0)));
+    set_tabvalue(_tmp1, __str_ct_field_0, TNUM(1));
+    return _tmp1;
 }
 
-TValue_t returned_tables_3(TVSlice_t function_arguments) {
-  TValue_t gc _anon_return_table = T_NULL;
-  _set(&_anon_return_table, TTAB(make_table(0)));
-  _mark_for_gc(_anon_return_table);
-  return _anon_return_table;
+TValue_t returned_tables_3(TVSlice_t args) {
+    TValue_t gc _tmp2;
+    _set(&_tmp2, TTAB(make_table(0)));
+    return _tmp2;
 }
 
-TValue_t __main() {
-  TValue_t gc t3 = T_NULL;
-  TValue_t gc t2 = T_NULL;
-  TValue_t gc t = T_NULL;
-  _set(&t, CALL((returned_tables_1), ((TVSlice_t){.elems = NULL, .num = 0})));
-  printh(get_tabvalue(t, __str_field));
-  _set(&t2, CALL((returned_tables_2), ((TVSlice_t){.elems = NULL, .num = 0})));
-  printh(get_tabvalue(t2, __str_field));
-  _set(&t3, CALL((returned_tables_3), ((TVSlice_t){.elems = NULL, .num = 0})));
-  printh(_length(t3));
+TValue_t main(TVSlice_t args) {
+    TValue_t gc t;
+    _set(&t, CALL(returned_tables_1, ((TVSlice_t){NULL, 0})));
+    printh(get_tabvalue(t, __str_ct_field_0));
+    TValue_t gc t2;
+    _set(&t2, CALL(returned_tables_2, ((TVSlice_t){NULL, 0})));
+    printh(get_tabvalue(t2, __str_ct_field_0));
+    TValue_t gc t3;
+    _set(&t3, CALL(returned_tables_3, ((TVSlice_t){NULL, 0})));
+    printh(_length(t3));
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(1);
-  _set(&__str_field, TSTRi(_store_str_at_or_die(CONSTSTR("field"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(1);
+    _set(&__str_ct_field_0, TSTRi(_store_str_at_or_die(CONSTSTR("field"), 0)));
+
+    return T_NULL;
 }

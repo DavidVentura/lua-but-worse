@@ -1,41 +1,54 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_c = T_NULL;
-TValue_t __str_b = T_NULL;
-TValue_t __str_a = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
-TValue_t cond(TVSlice_t function_arguments);
 
-TValue_t cond(TVSlice_t function_arguments) {
-  TValue_t gc c = T_NULL;
-  TValue_t gc b = T_NULL;
-  TValue_t gc a = T_NULL;
-  _set(&a, __get_array_index_capped(function_arguments, 0));
-  _set(&b, __get_array_index_capped(function_arguments, 1));
-  _set(&c, __get_array_index_capped(function_arguments, 2));
+TValue_t __str_ct_a_0;
+TValue_t __str_ct_c_1;
+TValue_t __str_ct_b_2;
 
-  if (_bool(a)) {
-    printh(__str_a);
-  } else if (_bool(b)) {
-    printh(__str_b);
-  } else {
-    printh(__str_c);
-  }
+TValue_t cond(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t cond(TVSlice_t args) {
+    TValue_t a = (args.num > 0) ? args.elems[0] : T_NULL;
+    TValue_t b = (args.num > 1) ? args.elems[1] : T_NULL;
+    TValue_t c = (args.num > 2) ? args.elems[2] : T_NULL;
+
+    if (__bool(a)) {
+            printh(__str_ct_a_0);
+        } else {
+            if (__bool(b)) {
+                        printh(__str_ct_b_2);
+                    } else {
+                        printh(__str_ct_c_1);
+                    }
+        }
+    return T_NULL;
 }
 
-TValue_t __main() {
-  CALL((cond), ((TVSlice_t){.elems = (TValue_t[3]){T_TRUE, T_FALSE, T_FALSE}, .num = 3}));
-  CALL((cond), ((TVSlice_t){.elems = (TValue_t[3]){T_FALSE, T_TRUE, T_FALSE}, .num = 3}));
-  CALL((cond), ((TVSlice_t){.elems = (TValue_t[3]){T_FALSE, T_FALSE, T_TRUE}, .num = 3}));
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_TRUE, T_FALSE, T_FALSE}, 3})));
+    }
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_TRUE, T_FALSE}, 3})));
+    }
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_FALSE, T_TRUE}, 3})));
+    }
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(3);
-  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 2)));
-  _set(&__str_b, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 1)));
-  _set(&__str_c, TSTRi(_store_str_at_or_die(CONSTSTR("c"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(3);
+    _set(&__str_ct_a_0, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 0)));
+    _set(&__str_ct_c_1, TSTRi(_store_str_at_or_die(CONSTSTR("c"), 1)));
+    _set(&__str_ct_b_2, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 2)));
+
+    return T_NULL;
 }

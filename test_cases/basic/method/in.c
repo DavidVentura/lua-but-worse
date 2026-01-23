@@ -1,34 +1,43 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_x = T_NULL;
-TValue_t __str_method = T_NULL;
-TValue_t a = T_NULL;
-TValue_t __preinit();
-TValue_t __a_method(TVSlice_t function_arguments);
-TValue_t __main();
 
-TValue_t __main() {
-  _set(&a, TTAB(make_table(1)));
-  set_tabvalue(a, __str_method, TFUN(__a_method));
-  printh(get_tabvalue(a, __str_x));
-  CALL((get_tabvalue(a, __str_method)), ((TVSlice_t){.elems = (TValue_t[2]){a, TNUM16(5)}, .num = 2}));
-  printh(get_tabvalue(a, __str_x));
+TValue_t __str_ct_x_0;
+TValue_t __str_ct_method_1;
+
+TValue_t a;
+
+TValue_t a_method(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t a_method(TVSlice_t args) {
+    TValue_t self = (args.num > 0) ? args.elems[0] : T_NULL;
+    TValue_t value = (args.num > 1) ? args.elems[1] : T_NULL;
+
+    set_tabvalue(self, __str_ct_x_0, value);
+    return T_NULL;
 }
 
-TValue_t __a_method(TVSlice_t function_arguments) {
-  TValue_t gc value = T_NULL;
-  TValue_t gc self = T_NULL;
-  _set(&self, __get_array_index_capped(function_arguments, 0));
-  _set(&value, __get_array_index_capped(function_arguments, 1));
-  set_tabvalue(self, __str_x, value);
-  return T_NULL;
+TValue_t main(TVSlice_t args) {
+    TValue_t gc _tmp0;
+    _set(&_tmp0, TTAB(make_table(0)));
+    _set(&a, _tmp0);
+    set_tabvalue(a, __str_ct_method_1, TFUN(a_method));
+    printh(get_tabvalue(a, __str_ct_x_0));
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a, TNUM(5)}, 2})));
+    }
+    printh(get_tabvalue(a, __str_ct_x_0));
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(2);
-  _set(&__str_method, TSTRi(_store_str_at_or_die(CONSTSTR("method"), 1)));
-  _set(&__str_x, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(2);
+    _set(&__str_ct_x_0, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 0)));
+    _set(&__str_ct_method_1, TSTRi(_store_str_at_or_die(CONSTSTR("method"), 1)));
+
+    return T_NULL;
 }

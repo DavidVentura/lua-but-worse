@@ -1,3 +1,4 @@
+import string
 from ast_nodes import *
 from ir_nodes import *
 
@@ -31,8 +32,12 @@ class IRLowering:
 
         # Create a safe variable name from the string
         # Use first few chars if alphanumeric, otherwise use generic name
-        safe_chars = ''.join(c if c.isalnum() else '_' for c in value[:8])
-        if not safe_chars or not safe_chars[0].isalpha():
+        _safe_chars = ''.join(string.ascii_letters + string.digits + '_')
+        safe_chars = ''.join(c if c in _safe_chars else '_' for c in value[:8])
+        if not safe_chars:
+            safe_chars = 'str'
+        else:
+         if not safe_chars[0].isalpha() and safe_chars[0] != '_':
             safe_chars = 'str'
 
         # Generate unique name
@@ -352,6 +357,7 @@ class IRLowering:
 
             case CompoundAssign(target, op, value):
                 # a += b  ->  a = a + b
+                # t.x += b  ->  t.x = t.x + b
                 match target:
                     case NameRef(name, resolved):
                         var_type = self._get_var_type(name)
@@ -359,7 +365,16 @@ class IRLowering:
                         right = self._lower_expr(value)
                         result = self._lower_binop(op, left, right)
                         return [CAssign(CVar(name, var_type), result)]
-                return []
+                    case TableAccess(table, key, is_dot):
+                        table_expr = self._lower_expr(table)
+                        key_expr = self._lower_expr(key)
+                        left = CFunctionCall("get_tabvalue", [table_expr, key_expr])
+                        right = self._lower_expr(value)
+                        result = self._lower_binop(op, left, right)
+                        set_call = CFunctionCall("set_tabvalue", [table_expr, key_expr, result])
+                        return [CExprStmt(set_call, needs_cleanup=False)]
+                    case other:
+                        raise ValueError(f"not handled: {other}")
 
             case FunctionDef(name_parts, is_method, params, body, scope_id):
                 base_func_name = "_".join(name_parts)

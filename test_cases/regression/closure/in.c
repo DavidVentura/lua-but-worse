@@ -1,42 +1,62 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_x = T_NULL;
-TValue_t __str_y = T_NULL;
-TValue_t __str_move_y = T_NULL;
-TValue_t __str_obj = T_NULL;
-TValue_t __preinit();
-TValue_t __anonymous_function_move_y(TVSlice_t function_arguments);
-TValue_t __main();
-TValue_t test_celeste_init_object_captures_obj(TVSlice_t function_arguments);
 
-TValue_t test_celeste_init_object_captures_obj(TVSlice_t function_arguments) {
-  TValue_t gc lambda_args = T_NULL;
-  _set(&lambda_args, TTAB(make_table(1)));
-  set_tabvalue(lambda_args, __str_obj, TTAB(make_table(0)));
-  set_tabvalue(get_tabvalue(lambda_args, __str_obj), __str_move_y, TFUN(__anonymous_function_move_y));
+TValue_t __str_ct_y_0;
+TValue_t __str_ct_x_1;
+TValue_t __str_ct_move_y_2;
+
+TValue_t _anon_0(TVSlice_t args);
+TValue_t test_celeste_init_object_captures_obj(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t _anon_0(TVSlice_t args) {
+    TValue_t amount = (args.num > 0) ? args.elems[0] : T_NULL;
+
+    // Extract closure context
+    TValue_t _closure_func = (args.num > 1) ? args.elems[args.num - 1] : T_NULL;
+    TFunc_t* _func = GETTFUN(_closure_func);
+
+    TValue_t* obj = &_captured.captured[_func->captured_indices[0]].value;
+
+    set_tabvalue(*obj, __str_ct_y_0, TNUM(0));
+    TValue_t gc i;
+    _set(&i, TNUM(0));
+    TValue_t gc tmp_1;
+    _set(&tmp_1, TNUM(2));
+    while (__bool(_leq(i, tmp_1))) {
+            set_tabvalue(*obj, __str_ct_x_1, TNUM(0));
+            _set(&i, _add(i, TNUM8(1)));
+        }
+    return T_NULL;
 }
 
-TValue_t __main() { CALL((test_celeste_init_object_captures_obj), ((TVSlice_t){.elems = NULL, .num = 0})); }
-
-TValue_t __anonymous_function_move_y(TVSlice_t function_arguments) {
-  TValue_t gc lambda_args = T_NULL;
-  TValue_t gc amount = T_NULL;
-  _set(&amount, __get_array_index_capped(function_arguments, 0));
-  _set(&lambda_args, __get_array_index_capped(function_arguments, 1));
-  set_tabvalue(get_tabvalue(lambda_args, __str_obj), __str_y, TNUM16(0));
-
-  for (TValue_t i = TNUM16(0); __bool(_leq(i, TNUM16(2))); i = _add(i, TNUM16(1))) {
-    set_tabvalue(get_tabvalue(lambda_args, __str_obj), __str_x, TNUM16(0));
-  }
+TValue_t test_celeste_init_object_captures_obj(TVSlice_t args) {
+    TValue_t gc _tmp0;
+    _set(&_tmp0, TTAB(make_table(0)));
+    uint16_t _cap_idx_obj = _alloc_captured(_tmp0);
+    TValue_t* obj = &_captured.captured[_cap_idx_obj].value;
+    TValue_t _tmp1 = TCLOSURE(_anon_0, 1);
+    set_closure_arg(_tmp1, 0, _cap_idx_obj);
+    set_tabvalue(*obj, __str_ct_move_y_2, _tmp1);
+    return T_NULL;
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(4);
-  _set(&__str_obj, TSTRi(_store_str_at_or_die(CONSTSTR("obj"), 3)));
-  _set(&__str_move_y, TSTRi(_store_str_at_or_die(CONSTSTR("move_y"), 2)));
-  _set(&__str_y, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 1)));
-  _set(&__str_x, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 0)));
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(test_celeste_init_object_captures_obj, ((TVSlice_t){NULL, 0})));
+    }
+    return TNUM(0);
+}
+
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(3);
+    _set(&__str_ct_y_0, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 0)));
+    _set(&__str_ct_x_1, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 1)));
+    _set(&__str_ct_move_y_2, TSTRi(_store_str_at_or_die(CONSTSTR("move_y"), 2)));
+
+    return T_NULL;
 }

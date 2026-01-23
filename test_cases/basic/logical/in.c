@@ -1,111 +1,57 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_yep = T_NULL;
-TValue_t __str_OR_dash_NOT_VISIBLE = T_NULL;
-TValue_t __str_AND_dash_NOT_VISIBLE = T_NULL;
-TValue_t __str_also_NOT_visible = T_NULL;
-TValue_t __str_NOT_visible = T_NULL;
-TValue_t __str_also_visible = T_NULL;
-TValue_t __str_visible2 = T_NULL;
-TValue_t __str_visible = T_NULL;
-TValue_t __str__dash__dash__dash__dash_ = T_NULL;
-TValue_t a = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
 
-TValue_t __main() {
-  TValue_t gc __tmp_and_var_6 = T_NULL;
-  TValue_t gc __tmp_or_var_0 = T_NULL;
-  TValue_t gc __tmp_and_var_5 = T_NULL;
-  TValue_t gc __tmp_and_var_4 = T_NULL;
-  TValue_t gc __tmp_and_var_3 = T_NULL;
-  TValue_t gc __tmp_and_var_2 = T_NULL;
-  TValue_t gc __tmp_and_var_1 = T_NULL;
-  TValue_t gc __tmp_and_var_0 = T_NULL;
-  _set(&__tmp_and_var_0, _and(TNUM16(4), TNUM16(5)));
+TValue_t __str_ct______0;
+TValue_t __str_ct_visible_1;
+TValue_t __str_ct_visible2_2;
+TValue_t __str_ct_also_vis_3;
+TValue_t __str_ct_NOT_visi_4;
+TValue_t __str_ct_also_NOT_5;
+TValue_t __str_ct_AND_NOT__6;
+TValue_t __str_ct_OR_NOT_V_7;
+TValue_t __str_ct_yep_8;
 
-  if (_bool(__tmp_and_var_0)) {
-    _set(&__tmp_and_var_0, TNUM16(6));
-  }
-  _set(&a, __tmp_and_var_0);
-  printh(a);
-  _set(&__tmp_and_var_1, T_NULL);
+TValue_t a;
 
-  if (_bool(__tmp_and_var_1)) {
-    _set(&__tmp_and_var_1, TNUM16(13));
-  }
-  _set(&a, __tmp_and_var_1);
-  printh(a);
-  _set(&a, _and(T_FALSE, TNUM16(13)));
-  printh(a);
-  _set(&a, _or(TNUM16(4), TNUM16(5)));
-  printh(a);
-  _set(&a, _or(T_FALSE, TNUM16(5)));
-  printh(a);
-  printh(__str__dash__dash__dash__dash_);
-  _set(&__tmp_and_var_2, TNUM16(5));
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
 
-  if (_bool(__tmp_and_var_2)) {
-    _set(&__tmp_and_var_2, printh(__str_visible));
-  }
-  _set(&a, __tmp_and_var_2);
-  _set(&__tmp_and_var_3, TNUM16(5));
-
-  if (_bool(__tmp_and_var_3)) {
-    _set(&__tmp_and_var_3, printh(__str_visible2));
-  }
-  _set(&__tmp_and_var_0, __tmp_and_var_3);
-
-  if (_bool(__tmp_and_var_0)) {
-    _set(&__tmp_and_var_0, printh(__str_also_visible));
-  }
-  _set(&a, __tmp_and_var_0);
-  _set(&__tmp_and_var_4, T_FALSE);
-
-  if (_bool(__tmp_and_var_4)) {
-    _set(&__tmp_and_var_4, printh(__str_NOT_visible));
-  }
-  _set(&__tmp_and_var_1, __tmp_and_var_4);
-
-  if (_bool(__tmp_and_var_1)) {
-    _set(&__tmp_and_var_1, printh(__str_also_NOT_visible));
-  }
-  _set(&a, __tmp_and_var_1);
-  _set(&__tmp_and_var_5, T_FALSE);
-
-  if (_bool(__tmp_and_var_5)) {
-    _set(&__tmp_and_var_5, printh(__str_AND_dash_NOT_VISIBLE));
-  }
-  _set(&a, __tmp_and_var_5);
-  _set(&__tmp_or_var_0, T_TRUE);
-
-  if (_bool(_not(__tmp_or_var_0))) {
-    _set(&__tmp_or_var_0, printh(__str_OR_dash_NOT_VISIBLE));
-  }
-  _set(&a, __tmp_or_var_0);
-  _set(&__tmp_and_var_6, _and(TNUM16(4), TNUM16(5)));
-
-  if (_bool(__tmp_and_var_6)) {
-    _set(&__tmp_and_var_6, TNUM16(6));
-  }
-
-  if (_bool(__tmp_and_var_6)) {
-    printh(__str_yep);
-  }
+TValue_t main(TVSlice_t args) {
+    _set(&a, _and(_and(TNUM(4), TNUM(5)), TNUM(6)));
+    printh(a);
+    _set(&a, _and(T_NULL, TNUM(13)));
+    printh(a);
+    _set(&a, _and(T_FALSE, TNUM(13)));
+    printh(a);
+    _set(&a, _or(TNUM(4), TNUM(5)));
+    printh(a);
+    _set(&a, _or(T_FALSE, TNUM(5)));
+    printh(a);
+    printh(__str_ct______0);
+    _set(&a, _and(TNUM(5), printh(__str_ct_visible_1)));
+    _set(&a, _and(_and(TNUM(5), printh(__str_ct_visible2_2)), printh(__str_ct_also_vis_3)));
+    _set(&a, _and(_and(T_FALSE, printh(__str_ct_NOT_visi_4)), printh(__str_ct_also_NOT_5)));
+    _set(&a, _and(T_FALSE, printh(__str_ct_AND_NOT__6)));
+    _set(&a, _or(T_TRUE, printh(__str_ct_OR_NOT_V_7)));
+    if (__bool(_and(_and(TNUM(4), TNUM(5)), TNUM(6)))) {
+            printh(__str_ct_yep_8);
+        }
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(9);
-  _set(&__str__dash__dash__dash__dash_, TSTRi(_store_str_at_or_die(CONSTSTR("----"), 8)));
-  _set(&__str_visible, TSTRi(_store_str_at_or_die(CONSTSTR("visible"), 7)));
-  _set(&__str_visible2, TSTRi(_store_str_at_or_die(CONSTSTR("visible2"), 6)));
-  _set(&__str_also_visible, TSTRi(_store_str_at_or_die(CONSTSTR("also visible"), 5)));
-  _set(&__str_NOT_visible, TSTRi(_store_str_at_or_die(CONSTSTR("NOT visible"), 4)));
-  _set(&__str_also_NOT_visible, TSTRi(_store_str_at_or_die(CONSTSTR("also NOT visible"), 3)));
-  _set(&__str_AND_dash_NOT_VISIBLE, TSTRi(_store_str_at_or_die(CONSTSTR("AND-NOT VISIBLE"), 2)));
-  _set(&__str_OR_dash_NOT_VISIBLE, TSTRi(_store_str_at_or_die(CONSTSTR("OR-NOT VISIBLE"), 1)));
-  _set(&__str_yep, TSTRi(_store_str_at_or_die(CONSTSTR("yep"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(9);
+    _set(&__str_ct______0, TSTRi(_store_str_at_or_die(CONSTSTR("----"), 0)));
+    _set(&__str_ct_visible_1, TSTRi(_store_str_at_or_die(CONSTSTR("visible"), 1)));
+    _set(&__str_ct_visible2_2, TSTRi(_store_str_at_or_die(CONSTSTR("visible2"), 2)));
+    _set(&__str_ct_also_vis_3, TSTRi(_store_str_at_or_die(CONSTSTR("also visible"), 3)));
+    _set(&__str_ct_NOT_visi_4, TSTRi(_store_str_at_or_die(CONSTSTR("NOT visible"), 4)));
+    _set(&__str_ct_also_NOT_5, TSTRi(_store_str_at_or_die(CONSTSTR("also NOT visible"), 5)));
+    _set(&__str_ct_AND_NOT__6, TSTRi(_store_str_at_or_die(CONSTSTR("AND-NOT VISIBLE"), 6)));
+    _set(&__str_ct_OR_NOT_V_7, TSTRi(_store_str_at_or_die(CONSTSTR("OR-NOT VISIBLE"), 7)));
+    _set(&__str_ct_yep_8, TSTRi(_store_str_at_or_die(CONSTSTR("yep"), 8)));
+
+    return T_NULL;
 }

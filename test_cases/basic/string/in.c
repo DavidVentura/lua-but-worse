@@ -1,72 +1,88 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_22222222222222222222 = T_NULL;
-TValue_t __str_11111111111111111111 = T_NULL;
-TValue_t __str_b = T_NULL;
-TValue_t __str_a = T_NULL;
-TValue_t __str_test_sub = T_NULL;
-TValue_t __str_something = T_NULL;
-TValue_t __str_ = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
-TValue_t test_concat(TVSlice_t function_arguments);
-TValue_t test_sub(TVSlice_t function_arguments);
-TValue_t test_empty_thing(TVSlice_t function_arguments);
 
-TValue_t test_empty_thing(TVSlice_t function_arguments) {
-  TValue_t gc b = T_NULL;
-  TValue_t gc a = T_NULL;
-  TValue_t gc n2 = T_NULL;
-  TValue_t gc n1 = T_NULL;
-  TValue_t gc another_empty_one = T_NULL;
-  TValue_t gc an_empty_one = T_NULL;
-  _set(&an_empty_one, __str_);
-  _set(&another_empty_one, __str_);
-  _set(&n1, TNUM16(5));
-  _set(&n2, TNUM16(6));
-  _set(&a, _concat(an_empty_one, n1));
-  _set(&b, _concat(an_empty_one, n2));
+TValue_t __str_ct_str_0;
+TValue_t __str_ct_somethin_1;
+TValue_t __str_ct_test_sub_2;
+TValue_t __str_ct_a_3;
+TValue_t __str_ct_b_4;
+TValue_t __str_ct_str_5;
+TValue_t __str_ct_str_6;
+
+TValue_t test_empty_thing(TVSlice_t args);
+TValue_t test_sub(TVSlice_t args);
+TValue_t test_concat(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t test_empty_thing(TVSlice_t args) {
+    TValue_t gc an_empty_one;
+    _set(&an_empty_one, __str_ct_str_0);
+    TValue_t gc another_empty_one;
+    _set(&another_empty_one, __str_ct_str_0);
+    TValue_t gc n1;
+    _set(&n1, TNUM(5));
+    TValue_t gc n2;
+    _set(&n2, TNUM(6));
+    TValue_t gc a;
+    _set(&a, _concat(an_empty_one, n1));
+    TValue_t gc b;
+    _set(&b, _concat(an_empty_one, n2));
+    return T_NULL;
 }
 
-TValue_t test_sub(TVSlice_t function_arguments) {
-  TValue_t gc s = T_NULL;
-  _set(&s, __str_something);
-  printh(__str_test_sub);
-  printh(CALL((sub), ((TVSlice_t){.elems = (TValue_t[2]){s, TNUM16(5)}, .num = 2})));
-  printh(CALL((sub), ((TVSlice_t){.elems = (TValue_t[2]){s, _invert_sign(TNUM16(5))}, .num = 2})));
-  printh(CALL((sub), ((TVSlice_t){.elems = (TValue_t[3]){s, _invert_sign(TNUM16(4)), _invert_sign(TNUM16(3))}, .num = 3})));
-  printh(CALL((sub), ((TVSlice_t){.elems = (TValue_t[3]){s, _invert_sign(TNUM16(2)), T_NULL}, .num = 3})));
-  printh(CALL((sub), ((TVSlice_t){.elems = (TValue_t[3]){s, TNUM16(8), T_NULL}, .num = 3})));
+TValue_t test_sub(TVSlice_t args) {
+    TValue_t gc s;
+    _set(&s, __str_ct_somethin_1);
+    printh(__str_ct_test_sub_2);
+    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(5)}, 2})));
+    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-5)}, 2})));
+    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-4), TNUM(-3)}, 3})));
+    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-2), T_NULL}, 3})));
+    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(8), T_NULL}, 3})));
+    return T_NULL;
 }
 
-TValue_t test_concat(TVSlice_t function_arguments) {
-  TValue_t gc twos = T_NULL;
-  TValue_t gc ones = T_NULL;
-  printh(__str_a);
-  printh(_concat(__str_a, __str_b));
-  _set(&ones, __str_11111111111111111111);
-  _set(&twos, __str_22222222222222222222);
-  printh(_concat(ones, twos));
-  printh(_concat(__str_a, TNUM16(5)));
-  printh(_concat(__str_, TNUM16(5)));
+TValue_t test_concat(TVSlice_t args) {
+    printh(__str_ct_a_3);
+    printh(_concat(__str_ct_a_3, __str_ct_b_4));
+    TValue_t gc ones;
+    _set(&ones, __str_ct_str_5);
+    TValue_t gc twos;
+    _set(&twos, __str_ct_str_6);
+    printh(_concat(ones, twos));
+    printh(_concat(__str_ct_a_3, TNUM(5)));
+    printh(_concat(__str_ct_str_0, TNUM(5)));
+    return T_NULL;
 }
 
-TValue_t __main() {
-  CALL((test_empty_thing), ((TVSlice_t){.elems = NULL, .num = 0}));
-  CALL((test_sub), ((TVSlice_t){.elems = NULL, .num = 0}));
-  CALL((test_concat), ((TVSlice_t){.elems = NULL, .num = 0}));
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(test_empty_thing, ((TVSlice_t){NULL, 0})));
+    }
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(test_sub, ((TVSlice_t){NULL, 0})));
+    }
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(test_concat, ((TVSlice_t){NULL, 0})));
+    }
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(7);
-  _set(&__str_, TSTRi(_store_str_at_or_die(CONSTSTR(""), 6)));
-  _set(&__str_something, TSTRi(_store_str_at_or_die(CONSTSTR("something"), 5)));
-  _set(&__str_test_sub, TSTRi(_store_str_at_or_die(CONSTSTR("test_sub"), 4)));
-  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 3)));
-  _set(&__str_b, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 2)));
-  _set(&__str_11111111111111111111, TSTRi(_store_str_at_or_die(CONSTSTR("11111111111111111111"), 1)));
-  _set(&__str_22222222222222222222, TSTRi(_store_str_at_or_die(CONSTSTR("22222222222222222222"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(7);
+    _set(&__str_ct_str_0, TSTRi(_store_str_at_or_die(CONSTSTR(""), 0)));
+    _set(&__str_ct_somethin_1, TSTRi(_store_str_at_or_die(CONSTSTR("something"), 1)));
+    _set(&__str_ct_test_sub_2, TSTRi(_store_str_at_or_die(CONSTSTR("test_sub"), 2)));
+    _set(&__str_ct_a_3, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 3)));
+    _set(&__str_ct_b_4, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 4)));
+    _set(&__str_ct_str_5, TSTRi(_store_str_at_or_die(CONSTSTR("11111111111111111111"), 5)));
+    _set(&__str_ct_str_6, TSTRi(_store_str_at_or_die(CONSTSTR("22222222222222222222"), 6)));
+
+    return T_NULL;
 }

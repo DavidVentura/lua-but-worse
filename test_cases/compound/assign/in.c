@@ -1,49 +1,57 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_a = T_NULL;
-TValue_t t = T_NULL;
-TValue_t u = T_NULL;
-TValue_t o = T_NULL;
-TValue_t e = T_NULL;
-TValue_t d = T_NULL;
-TValue_t c = T_NULL;
-TValue_t b = T_NULL;
-TValue_t a = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
 
-TValue_t __main() {
-  TValue_t gc _anonymous_table_0 = T_NULL;
-  TValue_t gc x = T_NULL;
-  _set(&x, TNUM16(1));
-  _pluseq(&x, TNUM16(2));
-  _set(&a, TNUM16(1));
-  _set(&b, TNUM16(2));
-  _set(&c, flr(TNUM(fix32_from_float(1.5f))));
-  _set(&d, flr(TNUM(fix32_from_float(2.5f))));
-  _set(&e, TNUM16(1));
-  _set(&e, TNUM16(2));
-  _set(&o, TTAB(make_table(1)));
-  _set(&u, TTAB(make_table(2)));
-  set_tabvalue(u, __str_a, TNUM16(1));
-  set_tabvalue(o, __str_a, get_tabvalue(u, __str_a));
-  _set(&t, TNUM16(7));
-  _set(&_anonymous_table_0, TTAB(make_table(2)));
-  set_tabvalue(_anonymous_table_0, TNUM16(7), TNUM16(8));
-  set_tabvalue(_anonymous_table_0, TNUM16(8), TNUM16(7));
-  _set(&t, get_tabvalue(_anonymous_table_0, t));
-  printh(_mult(a, c));
-  printh(_mult(b, d));
-  printh(e);
-  printh(get_tabvalue(o, __str_a));
-  printh(t);
-  return TNUM16(0);
+TValue_t __str_ct_a_0;
+
+TValue_t a;
+TValue_t b;
+TValue_t c;
+TValue_t d;
+TValue_t e;
+TValue_t o;
+TValue_t u;
+TValue_t t;
+
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t main(TVSlice_t args) {
+    TValue_t gc x;
+    _set(&x, TNUM(1));
+    _set(&x, _add(x, TNUM(2)));
+    _set(&a, TNUM(1));
+    _set(&b, TNUM(2));
+    _set(&c, flr(TNUM(fix32_from_float(1.5f))));
+    _set(&d, flr(TNUM(fix32_from_float(2.5f))));
+    _set(&e, TNUM(1));
+    _set(&e, TNUM(2));
+    TValue_t gc _tmp0;
+    _set(&_tmp0, TTAB(make_table(0)));
+    _set(&o, _tmp0);
+    TValue_t gc _tmp1;
+    _set(&_tmp1, TTAB(make_table(0)));
+    set_tabvalue(_tmp1, __str_ct_a_0, TNUM(1));
+    _set(&u, _tmp1);
+    set_tabvalue(o, __str_ct_a_0, get_tabvalue(u, __str_ct_a_0));
+    _set(&t, TNUM(7));
+    TValue_t gc _tmp2;
+    _set(&_tmp2, TTAB(make_table(0)));
+    set_tabvalue(_tmp2, TNUM(7), TNUM(8));
+    set_tabvalue(_tmp2, TNUM(8), TNUM(7));
+    _set(&t, get_tabvalue(_tmp2, t));
+    printh(_mult(a, c));
+    printh(_mult(b, d));
+    printh(e);
+    printh(get_tabvalue(o, __str_ct_a_0));
+    printh(t);
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(1);
-  _set(&__str_a, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(1);
+    _set(&__str_ct_a_0, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 0)));
+
+    return T_NULL;
 }

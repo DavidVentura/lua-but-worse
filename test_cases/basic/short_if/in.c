@@ -1,50 +1,54 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t e = T_NULL;
-TValue_t d = T_NULL;
-TValue_t c = T_NULL;
-TValue_t b = T_NULL;
-TValue_t a = T_NULL;
-TValue_t test = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
 
-TValue_t __main() {
-  _set(&test, T_FALSE);
+TValue_t __str_ct_this_sho_0;
 
-  if (_bool(test)) {
-    return TNUM16(5);
-  }
+TValue_t test;
+TValue_t a;
+TValue_t b;
+TValue_t c;
+TValue_t d;
+TValue_t e;
 
-  if (_bool(test)) {
-    return TNUM16(5);
-  } else {
-    _set(&a, TNUM16(1));
-  }
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
 
-  if (_bool(test)) {
-    return TNUM16(5);
-  } else {
-    _set(&b, TNUM16(2));
-    _set(&c, TNUM16(3));
-  }
-
-  if (_bool(_not(test))) {
-    _set(&d, _invert_sign(TNUM16(4)));
-  } else {
-    _set(&e, TNUM16(0));
-  }
-  printh(a);
-  printh(b);
-  printh(c);
-  printh(d);
-
-  if (_bool(test)) {
-  }
-  return TNUM16(0);
+TValue_t main(TVSlice_t args) {
+    _set(&test, T_FALSE);
+    if (__bool(test)) {
+            return TNUM(5);
+        }
+    if (__bool(test)) {
+            return TNUM(5);
+        } else {
+            _set(&a, TNUM(1));
+        }
+    if (__bool(test)) {
+            return TNUM(5);
+        } else {
+            _set(&b, TNUM(2));
+        }
+    _set(&c, TNUM(3));
+    if (__bool(_not(test))) {
+            _set(&d, TNUM(-4));
+        } else {
+            _set(&e, TNUM(0));
+        }
+    printh(a);
+    printh(b);
+    printh(c);
+    printh(d);
+    if (__bool(test)) {
+            printh(__str_ct_this_sho_0);
+        }
+    return TNUM(0);
 }
 
-TValue_t __preinit() { _grow_strings_to(0); }
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(1);
+    _set(&__str_ct_this_sho_0, TSTRi(_store_str_at_or_die(CONSTSTR("this should not be visible"), 0)));
+
+    return T_NULL;
+}

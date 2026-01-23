@@ -1,66 +1,84 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str__dash__dash__dash_ = T_NULL;
-TValue_t __str_nope2 = T_NULL;
-TValue_t __str_nope = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
-TValue_t local_var(TVSlice_t function_arguments);
-TValue_t else_arm(TVSlice_t function_arguments);
-TValue_t elseif_else_arm(TVSlice_t function_arguments);
 
-TValue_t elseif_else_arm(TVSlice_t function_arguments) {
-  TValue_t gc a = T_NULL;
+TValue_t __str_ct_nope_0;
+TValue_t __str_ct_nope2_1;
+TValue_t __str_ct_str_2;
 
-  if (_bool(T_FALSE)) {
-    printh(__str_nope);
-  } else if (_bool(T_FALSE)) {
-    printh(__str_nope2);
-  } else {
-    TValue_t gc a = T_NULL;
-    _set(&a, TNUM16(200));
+TValue_t elseif_else_arm(TVSlice_t args);
+TValue_t else_arm(TVSlice_t args);
+TValue_t local_var(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t elseif_else_arm(TVSlice_t args) {
+    TValue_t gc a;
+    _set(&a, T_NULL);
+    if (__bool(T_FALSE)) {
+            printh(__str_ct_nope_0);
+        } else {
+            if (__bool(T_FALSE)) {
+                        printh(__str_ct_nope2_1);
+                    } else {
+                        TValue_t gc a;
+                        _set(&a, TNUM(200));
+                        printh(a);
+                    }
+        }
     printh(a);
-  }
-  printh(a);
+    return T_NULL;
 }
 
-TValue_t else_arm(TVSlice_t function_arguments) {
-  TValue_t gc a = T_NULL;
-
-  if (_bool(T_FALSE)) {
-    printh(__str_nope);
-  } else {
-    TValue_t gc a = T_NULL;
-    _set(&a, TNUM16(100));
+TValue_t else_arm(TVSlice_t args) {
+    TValue_t gc a;
+    _set(&a, T_NULL);
+    if (__bool(T_FALSE)) {
+            printh(__str_ct_nope_0);
+        } else {
+            TValue_t gc a;
+            _set(&a, TNUM(100));
+            printh(a);
+        }
     printh(a);
-  }
-  printh(a);
+    return T_NULL;
 }
 
-TValue_t local_var(TVSlice_t function_arguments) {
-  TValue_t gc a = T_NULL;
-
-  if (_bool(TNUM16(5))) {
-    TValue_t gc a = T_NULL;
-    _set(&a, TNUM16(100));
-  }
-  printh(a);
+TValue_t local_var(TVSlice_t args) {
+    TValue_t gc a;
+    _set(&a, T_NULL);
+    if (__bool(TNUM(5))) {
+            TValue_t gc a;
+            _set(&a, TNUM(100));
+        }
+    printh(a);
+    return T_NULL;
 }
 
-TValue_t __main() {
-  CALL((local_var), ((TVSlice_t){.elems = NULL, .num = 0}));
-  printh(__str__dash__dash__dash_);
-  CALL((else_arm), ((TVSlice_t){.elems = NULL, .num = 0}));
-  printh(__str__dash__dash__dash_);
-  CALL((elseif_else_arm), ((TVSlice_t){.elems = NULL, .num = 0}));
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(local_var, ((TVSlice_t){NULL, 0})));
+    }
+    printh(__str_ct_str_2);
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(else_arm, ((TVSlice_t){NULL, 0})));
+    }
+    printh(__str_ct_str_2);
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(elseif_else_arm, ((TVSlice_t){NULL, 0})));
+    }
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(3);
-  _set(&__str_nope, TSTRi(_store_str_at_or_die(CONSTSTR("nope"), 2)));
-  _set(&__str_nope2, TSTRi(_store_str_at_or_die(CONSTSTR("nope2"), 1)));
-  _set(&__str__dash__dash__dash_, TSTRi(_store_str_at_or_die(CONSTSTR("---"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(3);
+    _set(&__str_ct_nope_0, TSTRi(_store_str_at_or_die(CONSTSTR("nope"), 0)));
+    _set(&__str_ct_nope2_1, TSTRi(_store_str_at_or_die(CONSTSTR("nope2"), 1)));
+    _set(&__str_ct_str_2, TSTRi(_store_str_at_or_die(CONSTSTR("---"), 2)));
+
+    return T_NULL;
 }

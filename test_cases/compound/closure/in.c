@@ -1,45 +1,57 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_captured = T_NULL;
-TValue_t b = T_NULL;
-TValue_t a = T_NULL;
-TValue_t __preinit();
-TValue_t __nested_func_b(TVSlice_t function_arguments);
-TValue_t __anonymous_function_a(TVSlice_t function_arguments);
-TValue_t __main();
 
-TValue_t __main() {
-  TValue_t gc lambda_args = T_NULL;
-  _set(&lambda_args, TTAB(make_table(1)));
-  set_tabvalue(lambda_args, __str_captured, TNUM16(7));
-  _set(&a, TCLOSURE(__anonymous_function_a, lambda_args));
-  printh(CALL((a), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(5)}, .num = 1})));
-  set_tabvalue(lambda_args, __str_captured, TNUM16(1));
-  printh(CALL((a), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(5)}, .num = 1})));
-  _set(&b, TCLOSURE(__nested_func_b, lambda_args));
-  CALL((b), ((TVSlice_t){.elems = NULL, .num = 0}));
-  printh(CALL((a), ((TVSlice_t){.elems = (TValue_t[1]){TNUM16(5)}, .num = 1})));
-  return TNUM16(0);
+TValue_t a;
+
+TValue_t _anon_0(TVSlice_t args);
+TValue_t b_fn(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t _anon_0(TVSlice_t args) {
+    TValue_t x = (args.num > 0) ? args.elems[0] : T_NULL;
+
+    // Extract closure context
+    TValue_t _closure_func = (args.num > 1) ? args.elems[args.num - 1] : T_NULL;
+    TFunc_t* _func = GETTFUN(_closure_func);
+
+    TValue_t* captured = &_captured.captured[_func->captured_indices[0]].value;
+
+    return _mult(x, *captured);
 }
 
-TValue_t __anonymous_function_a(TVSlice_t function_arguments) {
-  TValue_t gc lambda_args = T_NULL;
-  TValue_t gc x = T_NULL;
-  _set(&x, __get_array_index_capped(function_arguments, 0));
-  _set(&lambda_args, __get_array_index_capped(function_arguments, 1));
-  return _mult(x, get_tabvalue(lambda_args, __str_captured));
+TValue_t b_fn(TVSlice_t args) {
+    // Extract closure context
+    TValue_t _closure_func = (args.num > 0) ? args.elems[args.num - 1] : T_NULL;
+    TFunc_t* _func = GETTFUN(_closure_func);
+
+    TValue_t* captured = &_captured.captured[_func->captured_indices[0]].value;
+
+    _set(captured, TNUM(2));
+    return T_NULL;
 }
 
-TValue_t __nested_func_b(TVSlice_t function_arguments) {
-  TValue_t gc lambda_args = T_NULL;
-  _set(&lambda_args, __get_array_index_capped(function_arguments, 0));
-  set_tabvalue(lambda_args, __str_captured, TNUM16(2));
+TValue_t main(TVSlice_t args) {
+    uint16_t _cap_idx_captured = _alloc_captured(TNUM(7));
+    TValue_t* captured = &_captured.captured[_cap_idx_captured].value;
+    TValue_t _tmp0 = TCLOSURE(_anon_0, 1);
+    set_closure_arg(_tmp0, 0, _cap_idx_captured);
+    _set(&a, _tmp0);
+    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    _set(captured, TNUM(1));
+    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    TValue_t b = TCLOSURE(b_fn, 1);
+    set_closure_arg(b, 0, _cap_idx_captured);
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
+    }
+    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(1);
-  _set(&__str_captured, TSTRi(_store_str_at_or_die(CONSTSTR("captured"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    return T_NULL;
 }

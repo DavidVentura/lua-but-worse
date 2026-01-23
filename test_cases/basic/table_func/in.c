@@ -1,44 +1,51 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t vector = T_NULL;
-TValue_t __str_y = T_NULL;
-TValue_t __str_x = T_NULL;
-TValue_t __str_new = T_NULL;
-TValue_t __preinit();
-TValue_t __table_func_vector_new(TVSlice_t function_arguments);
-TValue_t __main();
 
-TValue_t __main() {
-  TValue_t gc one = T_NULL;
-  TValue_t gc zero = T_NULL;
-  _set(&zero, CALL((get_tabvalue(vector, __str_new)), ((TVSlice_t){.elems = (TValue_t[2]){TNUM16(0), TNUM16(0)}, .num = 2})));
-  _set(&one, CALL((get_tabvalue(vector, __str_new)), ((TVSlice_t){.elems = (TValue_t[2]){TNUM16(1), TNUM16(1)}, .num = 2})));
-  printh(get_tabvalue(zero, __str_x));
-  printh(get_tabvalue(one, __str_x));
+TValue_t __str_ct_x_0;
+TValue_t __str_ct_y_1;
+TValue_t __str_ct_new_2;
+
+TValue_t vector;
+
+TValue_t vector_new(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t vector_new(TVSlice_t args) {
+    TValue_t x = (args.num > 0) ? args.elems[0] : T_NULL;
+    TValue_t y = (args.num > 1) ? args.elems[1] : T_NULL;
+
+    TValue_t gc _tmp1;
+    _set(&_tmp1, TTAB(make_table(0)));
+    set_tabvalue(_tmp1, __str_ct_x_0, x);
+    set_tabvalue(_tmp1, __str_ct_y_1, y);
+    TValue_t gc o;
+    _set(&o, _tmp1);
+    setmetatable(o, vector);
+    return o;
 }
 
-TValue_t __table_func_vector_new(TVSlice_t function_arguments) {
-  TValue_t gc o = T_NULL;
-  TValue_t gc y = T_NULL;
-  TValue_t gc x = T_NULL;
-  _set(&x, __get_array_index_capped(function_arguments, 0));
-  _set(&y, __get_array_index_capped(function_arguments, 1));
-  _set(&o, TTAB(make_table(4)));
-  set_tabvalue(o, __str_x, x);
-  set_tabvalue(o, __str_y, y);
-  setmetatable(o, vector);
-  _mark_for_gc(o);
-  return o;
+TValue_t main(TVSlice_t args) {
+    TValue_t gc zero;
+    _set(&zero, CALL(get_tabvalue(vector, __str_ct_new_2), ((TVSlice_t){(TValue_t[]){TNUM(0), TNUM(0)}, 2})));
+    TValue_t gc one;
+    _set(&one, CALL(get_tabvalue(vector, __str_ct_new_2), ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(1)}, 2})));
+    printh(get_tabvalue(zero, __str_ct_x_0));
+    printh(get_tabvalue(one, __str_ct_x_0));
+    return TNUM(0);
 }
 
-TValue_t __preinit() {
-  _grow_strings_to(3);
-  _set(&__str_new, TSTRi(_store_str_at_or_die(CONSTSTR("new"), 2)));
-  _set(&__str_x, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 1)));
-  _set(&__str_y, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 0)));
-  _set(&vector, TTAB(make_table(1)));
-  set_tabvalue(vector, __str_new, TFUN(__table_func_vector_new));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(3);
+    _set(&__str_ct_x_0, TSTRi(_store_str_at_or_die(CONSTSTR("x"), 0)));
+    _set(&__str_ct_y_1, TSTRi(_store_str_at_or_die(CONSTSTR("y"), 1)));
+    _set(&__str_ct_new_2, TSTRi(_store_str_at_or_die(CONSTSTR("new"), 2)));
+
+    TValue_t gc _tmp0;
+    _set(&_tmp0, TTAB(make_table(0)));
+    _set(&vector, _tmp0);
+    set_tabvalue(vector, __str_ct_new_2, TFUN(vector_new));
+    return T_NULL;
 }
