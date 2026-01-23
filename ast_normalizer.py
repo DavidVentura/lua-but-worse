@@ -63,12 +63,13 @@ class ASTNormalizer:
 
         # Empty table constructor (optimization: no hoisting needed, but we do it for consistency)
         if not table.fields:
-            empty_table = TableConstructor(fields=[])
+            empty_table = TableConstructor(fields=[], size_hint=0)
             self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table]))
             return NameRef(name=temp_name, resolved=var_info)
 
-        # Create local declaration: local _tmpN = {}
-        empty_table = TableConstructor(fields=[])
+        # Create local declaration: local _tmpN = {} with size hint
+        num_fields = len(table.fields)
+        empty_table = TableConstructor(fields=[], size_hint=num_fields)
         self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table]))
 
         # For each field, emit assignment statement

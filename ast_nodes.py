@@ -53,6 +53,7 @@ class UnOp:
 class TableConstructor:
     """Table literal: {1, 2, x=3}"""
     fields: list['TableField']
+    size_hint: int | None = None  # Expected table size for pre-allocation
 
 
 @dataclass(frozen=True)

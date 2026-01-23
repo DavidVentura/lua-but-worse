@@ -824,10 +824,11 @@ class IRLowering:
                 operand_expr = self._lower_expr(operand)
                 return self._lower_unop(op, operand_expr)
 
-            case TableConstructor(fields):
+            case TableConstructor(fields, size_hint):
                 # After normalization, all tables are hoisted with fields=[]
                 assert not fields, "Non-empty tables should be normalized away"
-                return CFunctionCall("make_table", [CLiteral("0", INT)])
+                size = str(size_hint) if size_hint is not None else "0"
+                return CFunctionCall("make_table", [CLiteral(size, INT)])
 
             case TableAccess(table, key, is_dot):
                 table_expr = self._lower_expr(table)
