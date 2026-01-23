@@ -18,7 +18,7 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
-        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs"}
+        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs", "add", "del"}
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
         self.capture_indices: dict[tuple[int, str], str] = {}  # (scope_id, var_name) -> capture_idx_var
         self.captured_ptr_vars: dict[int, set[str]] = {}  # scope_id -> set of captured pointer var names
