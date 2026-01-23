@@ -18,7 +18,8 @@ class IRLowering:
         self.next_temp = 0
         self.globals: list[str] = []
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable", "foreach"}
-        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs", "add", "del", "foreach"}
+        self.underscore_builtins = {"sqrt", "ceil", "sin", "cos", "atan2", "abs", "time", "min", "max"}
+        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs", "add", "del", "foreach"} | self.underscore_builtins
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
         self.capture_indices: dict[tuple[int, str], str] = {}  # (scope_id, var_name) -> capture_idx_var
         self.captured_ptr_vars: dict[int, set[str]] = {}  # scope_id -> set of captured pointer var names
@@ -822,7 +823,8 @@ class IRLowering:
                 arg_exprs = [self._lower_expr(arg) for arg in args]
 
                 if isinstance(func, NameRef) and func.name in self.direct_call_builtins:
-                    return CFunctionCall(func.name, arg_exprs)
+                    func_name = f"_{func.name}" if func.name in self.underscore_builtins else func.name
+                    return CFunctionCall(func_name, arg_exprs)
 
                 func_expr = self._lower_expr(func)
                 return CFunctionCall("CALL", [func_expr] + arg_exprs)
