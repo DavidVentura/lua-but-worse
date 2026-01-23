@@ -748,6 +748,13 @@ class IRLowering:
 
                     return CLiteral(f"TNUM(fix32_from_parts({int_val}, 0x{frac_bits:04x}))", TVALUE)
 
+                elif value.lower().startswith('0b') and '.' in value:
+                    parts = value.split('.')
+                    integer_part = parts[0]
+                    frac_part = parts[1]
+
+                    return CLiteral(f"TNUM(fix32_from_parts({integer_part}, 0b{frac_part:<016}))", TVALUE)
+
                 elif '.' in value or 'e' in value.lower():
                     return CLiteral(f"TNUM(fix32_from_float({value}f))", TVALUE)
                 else:
@@ -785,6 +792,13 @@ class IRLowering:
                         frac_bits = int(frac_part, 16) << (16 - len(frac_part) * 4)
 
                         return CLiteral(f"TNUM(fix32_from_parts(-{int_val}, 0x{frac_bits:04x}))", TVALUE)
+
+                    elif value.lower().startswith('0b') and '.' in value:
+                        parts = value.split('.')
+                        integer_part = parts[0]
+                        frac_part = parts[1]
+
+                        return CLiteral(f"TNUM(fix32_from_parts(-{integer_part}, 0b{frac_part:<016}))", TVALUE)
 
                     elif '.' in value or 'e' in value.lower():
                         return CLiteral(f"TNUM(fix32_from_float(-{value}f))", TVALUE)
