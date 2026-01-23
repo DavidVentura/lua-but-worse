@@ -13,7 +13,7 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t returned_tables_1(TVSlice_t args) {
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
+    _move(&_tmp0, TTAB(make_table(1)));
     set_tabvalue(_tmp0, __str_ct_field_0, TNUM(1));
     TValue_t gc var = T_NULL;
     _set(&var, _tmp0);
@@ -22,7 +22,7 @@ TValue_t returned_tables_1(TVSlice_t args) {
 
 TValue_t returned_tables_2(TVSlice_t args) {
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(1)));
     set_tabvalue(_tmp1, __str_ct_field_0, TNUM(1));
     _return(_tmp1);
 }

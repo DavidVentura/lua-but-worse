@@ -32,7 +32,7 @@ TValue_t main(TVSlice_t args) {
     _move(&_tmp0, TTAB(make_table(0)));
     _set(&o, _tmp0);
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(1)));
     set_tabvalue(_tmp1, __str_ct_a_0, TNUM(123));
     _set(&u, _tmp1);
     set_tabvalue(o, __str_ct_a_0, TNUM(333));

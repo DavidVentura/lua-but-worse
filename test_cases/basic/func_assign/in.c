@@ -14,7 +14,7 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t make_obj(TVSlice_t args) {
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
+    _move(&_tmp0, TTAB(make_table(2)));
     set_tabvalue(_tmp0, __str_ct_x_0, TNUM(10));
     set_tabvalue(_tmp0, __str_ct_y_1, TNUM(20));
     _set(&g_obj, _tmp0);

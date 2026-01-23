@@ -18,7 +18,7 @@ TValue_t add_particle(TVSlice_t args) {
     TValue_t y = (args.num > 1) ? args.elems[1] : T_NULL;
 
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(2)));
     set_tabvalue(_tmp1, __str_ct_x_0, x);
     set_tabvalue(_tmp1, __str_ct_y_1, y);
     {

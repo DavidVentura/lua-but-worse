@@ -372,4 +372,48 @@ class ASTNormalizer:
         normalized = []
         for stmt in block.stmts:
             normalized.extend(self._normalize_stmt(stmt))
+
+        # Post-process to count additional field assignments and update size hints
+        normalized = self._update_table_size_hints(normalized)
         return normalized
+
+    def _update_table_size_hints(self, stmts: list[Stmt]) -> list[Stmt]:
+        """Count static field assignments after table creation and update size hints"""
+        # Track which variables are table temps and their initial size
+        table_temps = {}  # temp_name -> (stmt_index, initial_size)
+        temp_to_final = {}  # temp_name -> final_var_name
+
+        # First pass: identify table temps and their mappings
+        for i, stmt in enumerate(stmts):
+            match stmt:
+                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=size)]):
+                    # This is a hoisted table temp
+                    table_temps[name] = [i, size if size else 0, 0]  # [index, initial_size, additional_count]
+                case LocalDecl(names=[final_name], values=[NameRef(name=temp_name)]) if temp_name in table_temps:
+                    # This maps temp to final variable
+                    temp_to_final[temp_name] = final_name
+
+        # Second pass: count field assignments to final variables
+        for stmt in stmts:
+            match stmt:
+                case Assign(targets=[TableAccess(table=NameRef(name=var_name), key=_, is_dot=is_dot)], values=_):
+                    # Check if this is a static field assignment (dot access or constant key)
+                    if is_dot:
+                        # Find which temp this variable came from
+                        for temp_name, final_name in temp_to_final.items():
+                            if var_name == final_name and temp_name in table_temps:
+                                table_temps[temp_name][2] += 1  # Increment additional count
+
+        # Third pass: rebuild statements with updated size hints
+        result = []
+        for i, stmt in enumerate(stmts):
+            match stmt:
+                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=old_size)]) if name in table_temps:
+                    _, initial_size, additional = table_temps[name]
+                    new_size = initial_size + additional
+                    new_constructor = TableConstructor(fields=[], size_hint=new_size)
+                    result.append(LocalDecl(names=[name], values=[new_constructor]))
+                case _:
+                    result.append(stmt)
+
+        return result

@@ -33,10 +33,10 @@ TValue_t main(TVSlice_t args) {
     printh(c);
     printh(__str_ct_tables_2);
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(1)));
     set_tabvalue(_tmp1, __str_ct_a_3, TNUM(1));
     TValue_t gc _tmp2 = T_NULL;
-    _move(&_tmp2, TTAB(make_table(0)));
+    _move(&_tmp2, TTAB(make_table(1)));
     set_tabvalue(_tmp2, __str_ct_b_4, TNUM(2));
     _set(&state, _tmp1);
     _set(&next_state, _tmp2);

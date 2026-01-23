@@ -15,16 +15,16 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
+    _move(&_tmp0, TTAB(make_table(1)));
     TValue_t gc o = T_NULL;
     _set(&o, _tmp0);
     set_tabvalue(o, __str_ct_key_1, __str_ct_value_0);
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(1)));
     set_tabvalue(_tmp1, __str_ct_a_2, TNUM(1));
     _set(&u, _tmp1);
     TValue_t gc _tmp2 = T_NULL;
-    _move(&_tmp2, TTAB(make_table(0)));
+    _move(&_tmp2, TTAB(make_table(2)));
     set_tabvalue(_tmp2, TNUM(7), TNUM(8));
     set_tabvalue(_tmp2, TNUM(8), TNUM(7));
     _move(&t, get_tabvalue(_tmp2, TNUM(7)));

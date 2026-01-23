@@ -20,7 +20,7 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
+    _move(&_tmp0, TTAB(make_table(6)));
     set_tabvalue(_tmp0, __str_ct_a_0, TNUM(1));
     set_tabvalue(_tmp0, __str_ct_b_1, TNUM(1));
     set_tabvalue(_tmp0, __str_ct_c_2, TNUM(2));
@@ -59,7 +59,7 @@ TValue_t main(TVSlice_t args) {
         }
     printh(__str_ct_ipairs_o_7);
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(6)));
     set_tabvalue(_tmp1, TNUM(1), TNUM(123));
     set_tabvalue(_tmp1, TNUM(2), TNUM(456));
     set_tabvalue(_tmp1, __str_ct_n_8, TNUM(42));

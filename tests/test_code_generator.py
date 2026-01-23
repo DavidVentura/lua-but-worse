@@ -210,9 +210,9 @@ local u = {a=123}
 """
     result = generate_code(code)
 
-    # After normalization: table created empty, field set separately
-    # Should create temp table
-    assert 'TTAB(make_table(0))' in result
+    # After normalization: table created with size hint, field set separately
+    # Should create temp table with size hint of 1 (one field in constructor)
+    assert 'TTAB(make_table(1))' in result
 
     # Should set field value on temp variable (string is now hoisted)
     assert 'set_tabvalue(_tmp0, __str_ct_a' in result
@@ -228,8 +228,8 @@ local t = {1, 2, 3}
 """
     result = generate_code(code)
 
-    # After normalization: table created empty, elements set separately
-    assert 'TTAB(make_table(0))' in result
+    # After normalization: table created with size hint, elements set separately
+    assert 'TTAB(make_table(3))' in result
 
     # Should set array elements with numeric keys on temp variable
     assert 'set_tabvalue(_tmp0, TNUM(1), TNUM(1))' in result
@@ -246,8 +246,8 @@ local m = {10, 20, x=30}
 """
     result = generate_code(code)
 
-    # After normalization: table created empty
-    assert 'TTAB(make_table(0))' in result
+    # After normalization: table created with size hint
+    assert 'TTAB(make_table(3))' in result
 
     # Should set both array and named fields on temp variable
     assert 'set_tabvalue(_tmp0, TNUM(1), TNUM(10))' in result
@@ -266,8 +266,8 @@ foo({x=1})
 """
     result = generate_code(code)
 
-    # After normalization: table created empty, field set, then passed to function
-    assert 'TTAB(make_table(0))' in result
+    # After normalization: table created with size hint, field set, then passed to function
+    assert 'TTAB(make_table(1))' in result
     # String "x" is now hoisted
     assert 'set_tabvalue(_tmp0, __str_ct_x' in result
     assert 'TNUM(1))' in result

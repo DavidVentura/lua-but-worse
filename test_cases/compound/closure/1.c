@@ -15,8 +15,8 @@ TValue_t whatever_func_fn(TVSlice_t args) {
     TValue_t _closure_func = (args.num > 0) ? args.elems[args.num - 1] : T_NULL;
     TFunc_t* _func = GETTFUN(_closure_func);
 
-    TValue_t* x = &_captured.captured[_func->captured_indices[0]].value;
-    TValue_t* y = &_captured.captured[_func->captured_indices[1]].value;
+    TValue_t* y = &_captured.captured[_func->captured_indices[0]].value;
+    TValue_t* x = &_captured.captured[_func->captured_indices[1]].value;
 
     printh(_mult(*x, *y));
     return T_NULL;
@@ -35,8 +35,8 @@ TValue_t test_double_enclosing_fornum_iterator(TVSlice_t args) {
             _set(&tmp_1, TNUM(2));
             while (__bool(_leq(*y, tmp_1))) {
                         TValue_t whatever_func = TCLOSURE(whatever_func_fn, 2);
-                        set_closure_arg(whatever_func, 0, _cap_idx_x);
-                        set_closure_arg(whatever_func, 1, _cap_idx_y);
+                        set_closure_arg(whatever_func, 0, _cap_idx_y);
+                        set_closure_arg(whatever_func, 1, _cap_idx_x);
                         {
                             TValue_t gc _tmp;
                             _set(&_tmp, CALL(whatever_func, ((TVSlice_t){NULL, 0})));

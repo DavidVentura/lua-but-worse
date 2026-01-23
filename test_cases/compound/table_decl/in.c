@@ -28,7 +28,7 @@ TValue_t _anon_0(TVSlice_t args) {
     TValue_t this = (args.num > 0) ? args.elems[0] : T_NULL;
 
     TValue_t gc _tmp3 = T_NULL;
-    _move(&_tmp3, TTAB(make_table(0)));
+    _move(&_tmp3, TTAB(make_table(1)));
     set_tabvalue(_tmp3, __str_ct_key_1, __str_ct_value_at_3);
     set_tabvalue(this, __str_ct_attr_2, _tmp3);
     printh(__str_ct_func_in__4);
@@ -37,24 +37,24 @@ TValue_t _anon_0(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     TValue_t gc _tmp4 = T_NULL;
-    _move(&_tmp4, TTAB(make_table(0)));
+    _move(&_tmp4, TTAB(make_table(4)));
     TValue_t gc _tmp5 = T_NULL;
-    _move(&_tmp5, TTAB(make_table(0)));
+    _move(&_tmp5, TTAB(make_table(2)));
     set_tabvalue(_tmp5, __str_ct_x_6, TNUM(0));
     set_tabvalue(_tmp5, __str_ct_y_7, TNUM(-68));
     set_tabvalue(_tmp4, __str_ct_top_8, _tmp5);
     TValue_t gc _tmp6 = T_NULL;
-    _move(&_tmp6, TTAB(make_table(0)));
+    _move(&_tmp6, TTAB(make_table(2)));
     set_tabvalue(_tmp6, __str_ct_x_6, TNUM(0));
     set_tabvalue(_tmp6, __str_ct_y_7, TNUM(68));
     set_tabvalue(_tmp4, __str_ct_bottom_9, _tmp6);
     TValue_t gc _tmp7 = T_NULL;
-    _move(&_tmp7, TTAB(make_table(0)));
+    _move(&_tmp7, TTAB(make_table(2)));
     set_tabvalue(_tmp7, __str_ct_x_6, TNUM(-68));
     set_tabvalue(_tmp7, __str_ct_y_7, TNUM(0));
     set_tabvalue(_tmp4, __str_ct_left_10, _tmp7);
     TValue_t gc _tmp8 = T_NULL;
-    _move(&_tmp8, TTAB(make_table(0)));
+    _move(&_tmp8, TTAB(make_table(2)));
     set_tabvalue(_tmp8, __str_ct_x_6, TNUM(68));
     set_tabvalue(_tmp8, __str_ct_y_7, TNUM(0));
     set_tabvalue(_tmp4, __str_ct_right_11, _tmp8);
@@ -87,11 +87,11 @@ TValue_t _lua_main(TVSlice_t args) {
     _move(&_tmp0, TTAB(make_table(0)));
     _set(&this, _tmp0);
     TValue_t gc _tmp1 = T_NULL;
-    _move(&_tmp1, TTAB(make_table(0)));
+    _move(&_tmp1, TTAB(make_table(1)));
     set_tabvalue(_tmp1, __str_ct_key_1, __str_ct_value_to_0);
     set_tabvalue(this, __str_ct_attr_2, _tmp1);
     TValue_t gc _tmp2 = T_NULL;
-    _move(&_tmp2, TTAB(make_table(0)));
+    _move(&_tmp2, TTAB(make_table(1)));
     set_tabvalue(_tmp2, __str_ct_func_5, TFUN(_anon_0));
     _set(&func_in_tab, _tmp2);
     return T_NULL;

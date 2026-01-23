@@ -10,7 +10,7 @@ TValue_t main(TVSlice_t args) {
     TValue_t gc a = T_NULL;
     _set(&a, TNUM(5));
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
+    _move(&_tmp0, TTAB(make_table(4)));
     set_tabvalue(_tmp0, TNUM(1), TNUM(1));
     set_tabvalue(_tmp0, TNUM(2), TNUM(2));
     set_tabvalue(_tmp0, TNUM(3), TNUM(3));
