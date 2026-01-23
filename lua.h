@@ -44,17 +44,6 @@ typedef struct TValue_s {
 
 _Static_assert(sizeof(TValue_t) == 6, "too big"); // 4 for fix32, 1 for enum, 1 for padding?
 
-typedef struct TVRef_s {
-	uint16_t idx: 13;
-	enum typetag_t tag: 3;
-} TVRef_t;
-_Static_assert(sizeof(TVRef_t) == 2, "too big");
-typedef struct  TVRefSlice_s {
-	TVRef_t* ref;
-	uint16_t len;
-} TVRefSlice_t;
-
-
 typedef struct TVSlice_s {
 	TValue_t* elems;
 	uint16_t num;
@@ -209,6 +198,12 @@ static inline void __autofree(void* p) {
 #define gc __attribute__((__cleanup__(__decref)))
 #define printh print_tvalue
 
+#define _return(var) do { \
+    TValue_t _retval = (var); \
+    _incref(_retval); \
+    return _retval; \
+} while(0)
+
 // grep -P '^\w+.*{$' lua.c | sed 's/\s\+{/;/'
 TValue_t __direct_call(Func_t f, TVSlice_t args);
 TValue_t __call(TValue_t t, TVSlice_t args);
@@ -270,15 +265,13 @@ uint16_t _alloc_captured(TValue_t initial);
 void _incref_captured(uint16_t idx);
 void _decref_captured(uint16_t idx);
 void set_closure_arg(TValue_t closure, uint8_t idx, uint16_t cap_idx);
-void run_gc();
 void _str_decref(Str_t* s);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
 void _decref(TValue_t v);
 void __decref(TValue_t* v);
 void _incref(TValue_t v);
 void _set(TValue_t* dst, TValue_t src);
-void _mark_for_gc(TValue_t val);
-void add_to_gc(uint16_t idx, enum typetag_t tag);
+void _move(TValue_t* dst, TValue_t src);
 TValue_t _concat(TValue_t a, TValue_t b);
 TValue_t __internal_debug_str_len();
 TValue_t __internal_debug_str_used();

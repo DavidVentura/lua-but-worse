@@ -1,40 +1,54 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __str_field = T_NULL;
-TValue_t __preinit();
-TValue_t __main();
-TValue_t nested_returned_tables(TVSlice_t function_arguments);
-TValue_t _nested_returned_tables(TVSlice_t function_arguments);
-TValue_t returned_tables_1(TVSlice_t function_arguments);
 
-TValue_t returned_tables_1(TVSlice_t function_arguments) {
-  TValue_t gc var = T_NULL;
-  _set(&var, TTAB(make_table(2)));
-  set_tabvalue(var, __str_field, TNUM16(1));
-  _mark_for_gc(var);
-  return var;
+TValue_t __str_ct_field_0;
+
+TValue_t returned_tables_1(TVSlice_t args);
+TValue_t _nested_returned_tables(TVSlice_t args);
+TValue_t nested_returned_tables(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
+
+TValue_t returned_tables_1(TVSlice_t args) {
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
+    set_tabvalue(_tmp0, __str_ct_field_0, TNUM(1));
+    TValue_t gc var = T_NULL;
+    _set(&var, _tmp0);
+    _return(var);
 }
 
-TValue_t _nested_returned_tables(TVSlice_t function_arguments) {
-  TValue_t gc t = T_NULL;
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
-  _set(&t, CALL((returned_tables_1), ((TVSlice_t){.elems = NULL, .num = 0})));
-  run_gc();
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(1));
+TValue_t _nested_returned_tables(TVSlice_t args) {
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    TValue_t gc t = T_NULL;
+    _move(&t, CALL(returned_tables_1, ((TVSlice_t){NULL, 0})));
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(1));
+    return T_NULL;
 }
 
-TValue_t nested_returned_tables(TVSlice_t function_arguments) {
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
-  CALL((_nested_returned_tables), ((TVSlice_t){.elems = NULL, .num = 0}));
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
+TValue_t nested_returned_tables(TVSlice_t args) {
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(_nested_returned_tables, ((TVSlice_t){NULL, 0})));
+    }
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    return T_NULL;
 }
 
-TValue_t __main() { CALL((nested_returned_tables), ((TVSlice_t){.elems = NULL, .num = 0})); }
+TValue_t main(TVSlice_t args) {
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(nested_returned_tables, ((TVSlice_t){NULL, 0})));
+    }
+    return T_NULL;
+}
 
-TValue_t __preinit() {
-  _grow_strings_to(1);
-  _set(&__str_field, TSTRi(_store_str_at_or_die(CONSTSTR("field"), 0)));
+TValue_t _lua_main(TVSlice_t args) {
+    _grow_strings_to(1);
+    _set(&__str_ct_field_0, TSTRi(_store_str_at_or_die(CONSTSTR("field"), 0)));
+
+    return T_NULL;
 }

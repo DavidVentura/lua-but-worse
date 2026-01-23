@@ -19,26 +19,26 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    _set(&a, _and(_and(TNUM(4), TNUM(5)), TNUM(6)));
+    _move(&a, _and(_and(TNUM(4), TNUM(5)), TNUM(6)));
     printh(a);
-    _set(&a, _and(T_NULL, TNUM(13)));
+    _move(&a, _and(T_NULL, TNUM(13)));
     printh(a);
-    _set(&a, _and(T_FALSE, TNUM(13)));
+    _move(&a, _and(T_FALSE, TNUM(13)));
     printh(a);
-    _set(&a, _or(TNUM(4), TNUM(5)));
+    _move(&a, _or(TNUM(4), TNUM(5)));
     printh(a);
-    _set(&a, _or(T_FALSE, TNUM(5)));
+    _move(&a, _or(T_FALSE, TNUM(5)));
     printh(a);
     printh(__str_ct______0);
-    _set(&a, _and(TNUM(5), printh(__str_ct_visible_1)));
-    _set(&a, _and(_and(TNUM(5), printh(__str_ct_visible2_2)), printh(__str_ct_also_vis_3)));
-    _set(&a, _and(_and(T_FALSE, printh(__str_ct_NOT_visi_4)), printh(__str_ct_also_NOT_5)));
-    _set(&a, _and(T_FALSE, printh(__str_ct_AND_NOT__6)));
-    _set(&a, _or(T_TRUE, printh(__str_ct_OR_NOT_V_7)));
+    _move(&a, _and(TNUM(5), printh(__str_ct_visible_1)));
+    _move(&a, _and(_and(TNUM(5), printh(__str_ct_visible2_2)), printh(__str_ct_also_vis_3)));
+    _move(&a, _and(_and(T_FALSE, printh(__str_ct_NOT_visi_4)), printh(__str_ct_also_NOT_5)));
+    _move(&a, _and(T_FALSE, printh(__str_ct_AND_NOT__6)));
+    _move(&a, _or(T_TRUE, printh(__str_ct_OR_NOT_V_7)));
     if (__bool(_and(_and(TNUM(4), TNUM(5)), TNUM(6)))) {
             printh(__str_ct_yep_8);
         }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

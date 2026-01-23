@@ -42,16 +42,16 @@ TValue_t bool_weird(TVSlice_t args) {
 }
 
 TValue_t mult_or(TVSlice_t args) {
-    TValue_t gc w;
+    TValue_t gc w = T_NULL;
     _set(&w, TNUM(2));
-    TValue_t gc sw;
-    _set(&sw, _mult(_or(w, TNUM(1)), TNUM(8)));
+    TValue_t gc sw = T_NULL;
+    _move(&sw, _mult(_or(w, TNUM(1)), TNUM(8)));
     return T_NULL;
 }
 
 TValue_t or_call(TVSlice_t args) {
-    TValue_t gc obj;
-    _set(&obj, CALL(CALL(T_FALSE, ((TVSlice_t){(TValue_t[]){_or(obj, T_NULL)}, 1})), ((TVSlice_t){(TValue_t[]){obj}, 1})));
+    TValue_t gc obj = T_NULL;
+    _move(&obj, CALL(CALL(T_FALSE, ((TVSlice_t){(TValue_t[]){_or(obj, T_NULL)}, 1})), ((TVSlice_t){(TValue_t[]){obj}, 1})));
     return T_NULL;
 }
 
@@ -62,13 +62,13 @@ TValue_t fractional_binary_literal(TVSlice_t args) {
 }
 
 TValue_t mod_equal(TVSlice_t args) {
-    _set(&a, _mod(a, TNUM(5)));
+    _move(&a, _mod(a, TNUM(5)));
     return T_NULL;
 }
 
 TValue_t inplace_arith_for_bracket_table_assign(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     _set(&obj, _tmp0);
     _set(&axis, TNUM(5));
     set_tabvalue(get_tabvalue(obj, __str_ct_rem_1), axis, _add(get_tabvalue(get_tabvalue(obj, __str_ct_rem_1), axis), axis));
@@ -95,7 +95,7 @@ TValue_t integer_div(TVSlice_t args) {
 
 TValue_t bunny2(TVSlice_t args) {
     if (__bool(T_FALSE)) {
-            return T_NULL;
+            _return(T_NULL);
         }
     _set(&a, TNUM(1));
     return T_NULL;
@@ -107,7 +107,7 @@ TValue_t bunny(TVSlice_t args) {
 
 TValue_t celeste(TVSlice_t args) {
     if (__bool(T_FALSE)) {
-            return T_NULL;
+            _return(T_NULL);
         }
     return T_NULL;
 }
@@ -129,7 +129,7 @@ TValue_t main(TVSlice_t args) {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(fractional_binary_literal, ((TVSlice_t){NULL, 0})));
     }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

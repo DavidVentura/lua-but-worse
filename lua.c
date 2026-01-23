@@ -15,8 +15,6 @@ SArena_t _strings = {.strings=NULL, .len=0};
 FArena_t _funcs = {.funcs=NULL, .len=0};
 CArena_t _captured = {.captured=NULL, .len=0};
 
-TVRefSlice_t _gc_to_visit = {.len=0, .ref=NULL};
-
 Str_t _concat_buf = {.len=0, .data=NULL};
 
 #define dbg_assert(x)  do { if(!(x)) { print_trace(); assert(x); } } while (0)
@@ -290,17 +288,10 @@ TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 	for(uint16_t i=0; i<t->kvp.len; i++) {
 		if (equal(t->kvp.kvs[i].key, key)) {
 			TValue_t ret = t->kvp.kvs[i].value;
-			// Add `ret` to gc instead of immediately calling `_decref` on it
-			// as we must return the deleted value to the caller of `del`.
-			if (ret.tag == TAB) {
-				add_to_gc(ret.table_idx, TAB);
-			} else if (ret.tag == STR) {
-				add_to_gc(ret.str_idx, STR);
-			}
 			t->kvp.kvs[i].key = T_NULL;
 			t->kvp.kvs[i].value = T_NULL;
 			t->count--;
-			return ret;
+			_return(ret);
 		}
 	}
 	return T_NULL;
@@ -504,7 +495,6 @@ uint16_t make_table(uint16_t size) {
 	tp->mm = NULL;
 	tp->count = 0;
 	tp->refcount = 1;
-	add_to_gc(retval, TAB);
 
 	_tables.used++;
 	DEBUG_PRINT("Created <tab %d>\n", retval);
@@ -741,67 +731,8 @@ uint16_t make_str(char* c) {
 		uint8_t* buf = malloc(len);
 		memcpy(buf, c, len);
 		strindex = _store_str((Str_t){.len=len, .data=buf, .refcount=1});
-		add_to_gc(strindex, STR);
 	}
 	return strindex;
-}
-
-void add_to_gc(uint16_t idx, enum typetag_t tag) {
-	TVRef_t ref;
-	ref = (TVRef_t){.idx = idx, .tag = tag };
-
-	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
-		if (_gc_to_visit.ref[i].tag == NUL) {
-			_gc_to_visit.ref[i] = ref;
-			DEBUG2_PRINT("Added to GC at %d!\n", i);
-			return;
-		}
-	}
-	// if we didn't find a slot so far, the array is full
-	uint16_t new_len = _gc_to_visit.len == 0 ? 128 : _gc_to_visit.len * 2;
-	assert(new_len != 0); // OVERFLOW
-	TVRef_t* new_buf = calloc(new_len, sizeof(TVRef_t));
-	DEBUG_PRINT("Expanding GC to %d\n", new_len);
-	memcpy(new_buf, _gc_to_visit.ref, _gc_to_visit.len*sizeof(TVRef_t));
-	free(_gc_to_visit.ref);
-	_gc_to_visit.ref = new_buf;
-	_gc_to_visit.ref[_gc_to_visit.len] = ref;
-	_gc_to_visit.len = new_len;
-}
-
-void run_gc() {
-	for(uint16_t i=0; i<_gc_to_visit.len; i++) {
-		TVRef_t* ref = &_gc_to_visit.ref[i];
-		TValue_t v = T_NULL;
-		if (ref->tag == NUL) {
-			// all entries must be densely packed; on any call to `run_gc`,
-			// all non-NULL entries get set to null
-			break;
-		}
-		if (ref->tag == TAB) {
-			DEBUG2_PRINT("Decref table %d by GC!\n", ref->idx);
-			_tab_decref(&_tables.tables[ref->idx], ref->idx);
-		} else if (ref->tag == STR) {
-			DEBUG2_PRINT("Decref string %d by GC!\n", ref->idx);
-			_str_decref(&_strings.strings[ref->idx]);
-		}
-		ref->tag = NUL;
-	}
-}
-
-void _mark_for_gc(TValue_t val) {
-	// This is called when returning values, we have to bump their
-	// refcount so they survive going out of scope (automatic _decref)
-	// and add them to the list of "objects to clean";
-	// basically a way to do a deferred decref
-	if(val.tag == TAB) {
-		_incref(val);
-		add_to_gc(val.table_idx, val.tag);
-	}
-	if(val.tag == STR) {
-		_incref(val);
-		add_to_gc(val.str_idx, val.tag);
-	}
 }
 
 void _tab_decref(Table_t* t, uint16_t cur_idx) {
@@ -942,6 +873,11 @@ void _set(TValue_t* dst, TValue_t src) {
 	memcpy(dst, &src, sizeof(TValue_t));
 }
 
+void _move(TValue_t* dst, TValue_t src) {
+	__decref(dst);
+	*dst = src;
+}
+
 TValue_t _concat(TValue_t a, TValue_t b) {
 	if (a.tag==NUL || b.tag==NUL) {
 		DEBUG_PRINT("attempt to concatenate a nil value\n");
@@ -988,7 +924,6 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 		memcpy(buf, _concat_buf.data, _concat_buf.len);
 		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
 		ret = (TValue_t){.tag=STR, .str_idx=strindex};
-		add_to_gc(strindex, STR);
 	} else {
 		ret = (TValue_t){.tag=STR, .str_idx=strindex};
 	}
@@ -1030,7 +965,6 @@ TValue_t tostring(TValue_t v) {
 	char buf[MAX_STR_LEN_FIX32] = {0};
 	print_fix32(v.num, buf);
 	ret = TSTR(buf); // TSTR makes its own copy
-					 // TSTR also does add_to_gc
 	return ret;
 }
 
@@ -1150,7 +1084,6 @@ TValue_t sub(TVSlice_t args) {
 	memcpy(new_data, str->data+start-1, end-start+1);
 	Str_t substr = {.data=new_data, .len=end-start+1, .refcount=1};
 	uint16_t strindex = _store_str(substr);
-	add_to_gc(strindex, STR);
 	return TSTRi(strindex);
 }
 

@@ -18,15 +18,15 @@ TValue_t _lua_main(TVSlice_t args);
 TValue_t main(TVSlice_t args) {
     _set(&test, T_FALSE);
     if (__bool(test)) {
-            return TNUM(5);
+            _return(TNUM(5));
         }
     if (__bool(test)) {
-            return TNUM(5);
+            _return(TNUM(5));
         } else {
             _set(&a, TNUM(1));
         }
     if (__bool(test)) {
-            return TNUM(5);
+            _return(TNUM(5));
         } else {
             _set(&b, TNUM(2));
         }
@@ -43,7 +43,7 @@ TValue_t main(TVSlice_t args) {
     if (__bool(test)) {
             printh(__str_ct_this_sho_0);
         }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

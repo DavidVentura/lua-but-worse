@@ -17,7 +17,7 @@ TValue_t main(TVSlice_t args) {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
     }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

@@ -19,7 +19,7 @@ TValue_t _anon_0(TVSlice_t args) {
 
     TValue_t* captured = &_captured.captured[_func->captured_indices[0]].value;
 
-    return _mult(x, *captured);
+    _return(_mult(x, *captured));
 }
 
 TValue_t b_fn(TVSlice_t args) {
@@ -49,7 +49,7 @@ TValue_t main(TVSlice_t args) {
         _set(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
     }
     printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

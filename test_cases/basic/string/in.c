@@ -18,23 +18,23 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t test_empty_thing(TVSlice_t args) {
-    TValue_t gc an_empty_one;
+    TValue_t gc an_empty_one = T_NULL;
     _set(&an_empty_one, __str_ct_str_0);
-    TValue_t gc another_empty_one;
+    TValue_t gc another_empty_one = T_NULL;
     _set(&another_empty_one, __str_ct_str_0);
-    TValue_t gc n1;
+    TValue_t gc n1 = T_NULL;
     _set(&n1, TNUM(5));
-    TValue_t gc n2;
+    TValue_t gc n2 = T_NULL;
     _set(&n2, TNUM(6));
-    TValue_t gc a;
-    _set(&a, _concat(an_empty_one, n1));
-    TValue_t gc b;
-    _set(&b, _concat(an_empty_one, n2));
+    TValue_t gc a = T_NULL;
+    _move(&a, _concat(an_empty_one, n1));
+    TValue_t gc b = T_NULL;
+    _move(&b, _concat(an_empty_one, n2));
     return T_NULL;
 }
 
 TValue_t test_sub(TVSlice_t args) {
-    TValue_t gc s;
+    TValue_t gc s = T_NULL;
     _set(&s, __str_ct_somethin_1);
     printh(__str_ct_test_sub_2);
     printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(5)}, 2})));
@@ -48,9 +48,9 @@ TValue_t test_sub(TVSlice_t args) {
 TValue_t test_concat(TVSlice_t args) {
     printh(__str_ct_a_3);
     printh(_concat(__str_ct_a_3, __str_ct_b_4));
-    TValue_t gc ones;
+    TValue_t gc ones = T_NULL;
     _set(&ones, __str_ct_str_5);
-    TValue_t gc twos;
+    TValue_t gc twos = T_NULL;
     _set(&twos, __str_ct_str_6);
     printh(_concat(ones, twos));
     printh(_concat(__str_ct_a_3, TNUM(5)));
@@ -71,7 +71,7 @@ TValue_t main(TVSlice_t args) {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(test_concat, ((TVSlice_t){NULL, 0})));
     }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

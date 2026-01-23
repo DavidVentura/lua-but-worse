@@ -139,24 +139,34 @@ class CCodeGenerator:
                     else:
                         return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};"
                 else:
-                    # TValue with _set() wrapper
+                    # TValue with _move() or _set() wrapper
                     if init:
                         value_expr = self._generate_expr(init)
-                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};\n_set(&{var.name}, {value_expr});"
+                        # Use _move() for function calls (they return with ownership)
+                        # Use _set() for variable references (need to incref)
+                        is_move = isinstance(init, CFunctionCall)
+                        func = "_move" if is_move else "_set"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name} = T_NULL;\n{func}(&{var.name}, {value_expr});"
                     else:
-                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name};"
+                        return f"{self._type_to_c(var.type)}{qualifier_str} {var.name} = T_NULL;"
 
             case CAssign(target, value):
                 value_expr = self._generate_expr(value)
                 if target.type == TVALUE:
+                    # Use _move() for function calls, _set() for variable references
+                    is_move = isinstance(value, CFunctionCall)
+                    func = "_move" if is_move else "_set"
+
                     # For captured variables (pointers), don't add &
                     if target.name in self.current_captures or target.type.name == "TValue_t*":
-                        return f"_set({target.name}, {value_expr});"
+                        return f"{func}({target.name}, {value_expr});"
                     else:
-                        return f"_set(&{target.name}, {value_expr});"
+                        return f"{func}(&{target.name}, {value_expr});"
                 elif target.type.name == "TValue_t*":
-                    # Pointer assignment via _set
-                    return f"_set({target.name}, {value_expr});"
+                    # Pointer assignment via _move or _set
+                    is_move = isinstance(value, CFunctionCall)
+                    func = "_move" if is_move else "_set"
+                    return f"{func}({target.name}, {value_expr});"
                 else:
                     return f"{target.name} = {value_expr};"
 
@@ -206,7 +216,8 @@ class CCodeGenerator:
 
             case CReturn(value):
                 if value:
-                    return f"return {self._generate_expr(value)};"
+                    # Use _return() macro for proper refcount handling
+                    return f"_return({self._generate_expr(value)});"
                 else:
                     return "return T_NULL;"
 

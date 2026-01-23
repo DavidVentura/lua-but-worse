@@ -14,13 +14,13 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     set_tabvalue(_tmp0, __str_ct_x_0, TNUM(5));
     _set(&a, _tmp0);
     set_tabvalue(a, __str_ct___index_1, a);
-    TValue_t gc _tmp1;
-    _set(&_tmp1, TTAB(make_table(0)));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, TTAB(make_table(0)));
     _set(&b, _tmp1);
     setmetatable(b, a);
     printh(get_tabvalue(b, __str_ct_x_0));
@@ -29,7 +29,7 @@ TValue_t main(TVSlice_t args) {
     printh(get_tabvalue(b, __str_ct_y_2));
     set_tabvalue(a, __str_ct_y_2, TNUM(7));
     printh(get_tabvalue(b, __str_ct_y_2));
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

@@ -33,22 +33,22 @@ TValue_t _anon_0(TVSlice_t args) {
 TValue_t _anon_1(TVSlice_t args) {
     TValue_t x = (args.num > 0) ? args.elems[0] : T_NULL;
 
-    return _mult(x, captured);
+    _return(_mult(x, captured));
 }
 
 TValue_t _anon_2(TVSlice_t args) {
     TValue_t x = (args.num > 0) ? args.elems[0] : T_NULL;
     TValue_t y = (args.num > 1) ? args.elems[1] : T_NULL;
 
-    return _mult(x, y);
+    _return(_mult(x, y));
 }
 
 TValue_t _anon_3(TVSlice_t args) {
-    return __str_ct_works_in_0;
+    _return(__str_ct_works_in_0);
 }
 
 TValue_t _anon_4(TVSlice_t args) {
-    return __str_ct_works_in_3;
+    _return(__str_ct_works_in_3);
 }
 
 TValue_t main(TVSlice_t args) {
@@ -57,8 +57,8 @@ TValue_t main(TVSlice_t args) {
     printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
     _set(&b, TFUN(_anon_2));
     printh(CALL(b, ((TVSlice_t){(TValue_t[]){TNUM(5), TNUM(6)}, 2})));
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     _set(&c, _tmp0);
     set_tabvalue(c, __str_ct_f_1, TFUN(_anon_3));
     printh(CALL(get_tabvalue(c, __str_ct_f_1), ((TVSlice_t){NULL, 0})));
@@ -69,7 +69,7 @@ TValue_t main(TVSlice_t args) {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(g, ((TVSlice_t){(TValue_t[]){TNUM(55)}, 1})));
     }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

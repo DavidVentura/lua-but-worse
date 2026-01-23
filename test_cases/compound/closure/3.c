@@ -20,8 +20,8 @@ TValue_t wrapped_fn(TVSlice_t args) {
     TValue_t _closure_func = (args.num > 0) ? args.elems[args.num - 1] : T_NULL;
     TFunc_t* _func = GETTFUN(_closure_func);
 
-    TValue_t* y = &_captured.captured[_func->captured_indices[0]].value;
-    TValue_t* obj = &_captured.captured[_func->captured_indices[1]].value;
+    TValue_t* obj = &_captured.captured[_func->captured_indices[0]].value;
+    TValue_t* y = &_captured.captured[_func->captured_indices[1]].value;
 
     printh(get_tabvalue(*obj, __str_ct_x_2));
     printh(get_tabvalue(*obj, *y));
@@ -33,15 +33,15 @@ TValue_t wrapper(TVSlice_t args) {
 
     uint16_t _cap_idx_y = _alloc_captured((args.num > 1) ? args.elems[1] : T_NULL);
     TValue_t* y = &_captured.captured[_cap_idx_y].value;
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     uint16_t _cap_idx_obj = _alloc_captured(_tmp0);
     TValue_t* obj = &_captured.captured[_cap_idx_obj].value;
     set_tabvalue(*obj, __str_ct_x_2, __str_ct_not_wrap_1);
     set_tabvalue(*obj, __str_ct_a_4, __str_ct_wrapped_3);
     TValue_t wrapped = TCLOSURE(wrapped_fn, 2);
-    set_closure_arg(wrapped, 0, _cap_idx_y);
-    set_closure_arg(wrapped, 1, _cap_idx_obj);
+    set_closure_arg(wrapped, 0, _cap_idx_obj);
+    set_closure_arg(wrapped, 1, _cap_idx_y);
     {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(wrapped, ((TVSlice_t){NULL, 0})));

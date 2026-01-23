@@ -20,8 +20,8 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     _set(&a, _tmp0);
     set_tabvalue(a, __str_ct_x_0, TNUM(5));
     set_tabvalue(a, __str_ct_y_1, TNUM(6));
@@ -32,11 +32,11 @@ TValue_t main(TVSlice_t args) {
     printh(b);
     printh(c);
     printh(__str_ct_tables_2);
-    TValue_t gc _tmp1;
-    _set(&_tmp1, TTAB(make_table(0)));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, TTAB(make_table(0)));
     set_tabvalue(_tmp1, __str_ct_a_3, TNUM(1));
-    TValue_t gc _tmp2;
-    _set(&_tmp2, TTAB(make_table(0)));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, TTAB(make_table(0)));
     set_tabvalue(_tmp2, __str_ct_b_4, TNUM(2));
     _set(&state, _tmp1);
     _set(&next_state, _tmp2);
@@ -44,7 +44,7 @@ TValue_t main(TVSlice_t args) {
     printh(get_tabvalue(state, __str_ct_a_3));
     printh(get_tabvalue(next_state, __str_ct_b_4));
     printh(change_state);
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

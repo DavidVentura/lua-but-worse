@@ -9,13 +9,13 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc a;
+    TValue_t gc a = T_NULL;
     _set(&a, TNUM(5));
-    TValue_t gc b;
+    TValue_t gc b = T_NULL;
     _set(&b, TNUM(7));
-    _set(&c, _mult(a, b));
+    _move(&c, _mult(a, b));
     printh(c);
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

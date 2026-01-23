@@ -7,14 +7,14 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc b;
+    TValue_t gc b = T_NULL;
     _set(&b, TNUM(1));
-    TValue_t gc a;
+    TValue_t gc a = T_NULL;
     _set(&a, TNUM(1));
     if (__bool(_and(_add(a, TNUM(1)), _add(b, TNUM(1))))) {
             _set(&a, TNUM(2));
         }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

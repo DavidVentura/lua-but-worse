@@ -18,9 +18,9 @@ class IRLowering:
         self.current_scope_id: Optional[int] = None
         self.next_temp = 0
         self.globals: list[str] = []
-        self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable", "foreach"}
+        self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable", "foreach", "__internal_debug_assert_eq"}
         self.underscore_builtins = {"sqrt", "ceil", "sin", "cos", "atan2", "abs", "time", "min", "max"}
-        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs", "add", "del", "foreach"} | self.underscore_builtins
+        self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs", "add", "del", "foreach", "__internal_debug_assert_eq", "__internal_debug_tables_used"} | self.underscore_builtins
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
         self.capture_indices: dict[tuple[int, str], str] = {}  # (scope_id, var_name) -> capture_idx_var
         self.captured_ptr_vars: dict[int, set[str]] = {}  # scope_id -> set of captured pointer var names

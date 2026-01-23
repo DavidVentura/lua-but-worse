@@ -30,13 +30,13 @@ TValue_t f(TVSlice_t args) {
     TValue_t* arg = &_captured.captured[_cap_idx_arg].value;
     TValue_t f2 = TCLOSURE(f2_fn, 1);
     set_closure_arg(f2, 0, _cap_idx_arg);
-    return f2;
+    _return(f2);
 }
 
 TValue_t test_function_args_captured(TVSlice_t args) {
     printh(__str_ct_captured_0);
-    _set(&captures_5, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
-    _set(&captures_6, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(6)}, 1})));
+    _move(&captures_5, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    _move(&captures_6, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(6)}, 1})));
     {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(captures_5, ((TVSlice_t){NULL, 0})));

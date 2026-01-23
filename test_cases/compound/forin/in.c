@@ -19,18 +19,18 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     set_tabvalue(_tmp0, __str_ct_a_0, TNUM(1));
     set_tabvalue(_tmp0, __str_ct_b_1, TNUM(1));
     set_tabvalue(_tmp0, __str_ct_c_2, TNUM(2));
     set_tabvalue(_tmp0, __str_ct_d_3, TNUM(3));
     set_tabvalue(_tmp0, __str_ct_e_4, TNUM(5));
     set_tabvalue(_tmp0, __str_ct_f_5, TNUM(8));
-    TValue_t gc tab;
+    TValue_t gc tab = T_NULL;
     _set(&tab, _tmp0);
     {
-            TValue_t gc _iter;
+            TValue_t gc _iter = T_NULL;
             _set(&_iter, tab);
             Table_t* _tab = GETTAB(_iter);
             uint16_t tmp_0 = _tab->kvp.len;
@@ -45,42 +45,42 @@ TValue_t main(TVSlice_t args) {
         }
     printh(__str_ct_ipairs_o_6);
     {
-            TValue_t gc _iter;
+            TValue_t gc _iter = T_NULL;
             _set(&_iter, tab);
             int16_t tmp_1 = _sequential_until(_iter);
             for (int16_t __i = 1; (__i <= tmp_1); __i++) {
-                        TValue_t gc k;
+                        TValue_t gc k = T_NULL;
                         _set(&k, TNUM(__i));
-                        TValue_t gc v;
-                        _set(&v, get_tabvalue(_iter, k));
+                        TValue_t gc v = T_NULL;
+                        _move(&v, get_tabvalue(_iter, k));
                         printh(k);
                         printh(v);
                     }
         }
     printh(__str_ct_ipairs_o_7);
-    TValue_t gc _tmp1;
-    _set(&_tmp1, TTAB(make_table(0)));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, TTAB(make_table(0)));
     set_tabvalue(_tmp1, TNUM(1), TNUM(123));
     set_tabvalue(_tmp1, TNUM(2), TNUM(456));
     set_tabvalue(_tmp1, __str_ct_n_8, TNUM(42));
     set_tabvalue(_tmp1, __str_ct_x_9, TNUM(100));
     set_tabvalue(_tmp1, __str_ct_y_10, TNUM(200));
     set_tabvalue(_tmp1, TNUM(3), TNUM(789));
-    TValue_t gc numtab;
+    TValue_t gc numtab = T_NULL;
     _set(&numtab, _tmp1);
     {
-            TValue_t gc _iter;
+            TValue_t gc _iter = T_NULL;
             _set(&_iter, numtab);
             int16_t tmp_2 = _sequential_until(_iter);
             for (int16_t __i = 1; (__i <= tmp_2); __i++) {
-                        TValue_t gc k;
+                        TValue_t gc k = T_NULL;
                         _set(&k, TNUM(__i));
-                        TValue_t gc v;
-                        _set(&v, get_tabvalue(_iter, k));
+                        TValue_t gc v = T_NULL;
+                        _move(&v, get_tabvalue(_iter, k));
                         printh(v);
                     }
         }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

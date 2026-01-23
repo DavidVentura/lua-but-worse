@@ -13,24 +13,24 @@ TValue_t main(TVSlice_t args);
 TValue_t _lua_main(TVSlice_t args);
 
 TValue_t make_obj(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     set_tabvalue(_tmp0, __str_ct_x_0, TNUM(10));
     set_tabvalue(_tmp0, __str_ct_y_1, TNUM(20));
     _set(&g_obj, _tmp0);
-    return g_obj;
+    _return(g_obj);
 }
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc _tmp1;
-    _set(&_tmp1, CALL(make_obj, ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, CALL(make_obj, ((TVSlice_t){NULL, 0})));
     set_tabvalue(_tmp1, __str_ct_x_0, TNUM(-1));
     printh(get_tabvalue(g_obj, __str_ct_x_0));
-    TValue_t gc _tmp2;
-    _set(&_tmp2, CALL(make_obj, ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, CALL(make_obj, ((TVSlice_t){NULL, 0})));
     set_tabvalue(_tmp2, __str_ct_y_1, TNUM(99));
     printh(get_tabvalue(g_obj, __str_ct_y_1));
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

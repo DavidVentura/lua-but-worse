@@ -14,7 +14,7 @@ TValue_t main(TVSlice_t args) {
     _set(&b, TNUM(fix32_from_parts(0, 0x1000)));
     printh(a);
     printh(b);
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

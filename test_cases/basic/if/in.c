@@ -41,7 +41,7 @@ TValue_t main(TVSlice_t args) {
         TValue_t gc _tmp;
         _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_FALSE, T_TRUE}, 3})));
     }
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

@@ -39,7 +39,7 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
 
 def find_case_pairs():
     #marks = ['basic', 'compound', 'internals', 'pico8', 'syntax', 'regression']
-    marks = ['basic', 'compound', 'syntax', 'regression']
+    marks = ['basic', 'compound', 'internals', 'syntax', 'regression']
     ret = []
     for m in marks:
         per_mark = []

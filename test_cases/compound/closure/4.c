@@ -16,10 +16,10 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t test_returning_lambda(TVSlice_t args) {
     printh(__str_ct_newCount_0);
-    _set(&c1, CALL(newCounter, ((TVSlice_t){NULL, 0})));
+    _move(&c1, CALL(newCounter, ((TVSlice_t){NULL, 0})));
     printh(CALL(c1, ((TVSlice_t){NULL, 0})));
     printh(CALL(c1, ((TVSlice_t){NULL, 0})));
-    _set(&c2, CALL(newCounter, ((TVSlice_t){NULL, 0})));
+    _move(&c2, CALL(newCounter, ((TVSlice_t){NULL, 0})));
     printh(CALL(c2, ((TVSlice_t){NULL, 0})));
     printh(CALL(c1, ((TVSlice_t){NULL, 0})));
     printh(CALL(c2, ((TVSlice_t){NULL, 0})));
@@ -33,8 +33,8 @@ TValue_t _anon_0(TVSlice_t args) {
 
     TValue_t* i = &_captured.captured[_func->captured_indices[0]].value;
 
-    _set(i, _add(*i, TNUM(1)));
-    return *i;
+    _move(i, _add(*i, TNUM(1)));
+    _return(*i);
 }
 
 TValue_t newCounter(TVSlice_t args) {
@@ -42,7 +42,7 @@ TValue_t newCounter(TVSlice_t args) {
     TValue_t* i = &_captured.captured[_cap_idx_i].value;
     TValue_t _tmp0 = TCLOSURE(_anon_0, 1);
     set_closure_arg(_tmp0, 0, _cap_idx_i);
-    return _tmp0;
+    _return(_tmp0);
 }
 
 TValue_t main(TVSlice_t args) {

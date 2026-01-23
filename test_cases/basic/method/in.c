@@ -17,12 +17,12 @@ TValue_t a_method(TVSlice_t args) {
     TValue_t value = (args.num > 1) ? args.elems[1] : T_NULL;
 
     set_tabvalue(self, __str_ct_x_0, value);
-    return T_NULL;
+    _return(T_NULL);
 }
 
 TValue_t main(TVSlice_t args) {
-    TValue_t gc _tmp0;
-    _set(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
     _set(&a, _tmp0);
     set_tabvalue(a, __str_ct_method_1, TFUN(a_method));
     printh(get_tabvalue(a, __str_ct_x_0));
@@ -31,7 +31,7 @@ TValue_t main(TVSlice_t args) {
         _set(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a, TNUM(5)}, 2})));
     }
     printh(get_tabvalue(a, __str_ct_x_0));
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

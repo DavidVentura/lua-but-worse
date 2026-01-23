@@ -14,7 +14,7 @@ TValue_t main(TVSlice_t args) {
     printh(_or(T_FALSE, TNUM(5)));
     printh(_and(T_TRUE, _not(T_TRUE)));
     printh(_and(T_TRUE, _not(T_FALSE)));
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {

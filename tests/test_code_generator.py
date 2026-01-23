@@ -49,7 +49,7 @@ local x = 5
     assert 'TValue_t _lua_main(TVSlice_t args)' in result
 
     # Should have variable declaration
-    assert 'TValue_t gc x;' in result
+    assert 'TValue_t gc x = T_NULL;' in result
     assert '_set(&x, TNUM(5));' in result
 
 

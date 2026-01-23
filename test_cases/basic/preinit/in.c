@@ -10,12 +10,12 @@ TValue_t _lua_main(TVSlice_t args);
 
 TValue_t main(TVSlice_t args) {
     printh(a);
-    return TNUM(0);
+    _return(TNUM(0));
 }
 
 TValue_t _lua_main(TVSlice_t args) {
     _set(&a, TNUM(5));
-    _set(&a, _add(a, TNUM(1)));
+    _move(&a, _add(a, TNUM(1)));
     if (__bool(_lt(a, TNUM(3)))) {
             _set(&a, TNUM(7));
         }
