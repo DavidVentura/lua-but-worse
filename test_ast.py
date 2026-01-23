@@ -132,3 +132,19 @@ def test_if_not_equal_comparison():
     assert if_stmt.condition.left.name == 'a'
     assert isinstance(if_stmt.condition.right, NameRef)
     assert if_stmt.condition.right.name == 'b'
+
+
+def test_local_with_trailing_semicolon():
+    code = "local a = 5;"
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+    assert isinstance(ast, Block)
+    assert len(ast.stmts) == 1
+    assert isinstance(ast.stmts[0], LocalDecl)
+    local_decl = ast.stmts[0]
+    assert local_decl.names == ['a']
+    assert len(local_decl.values) == 1
+    assert isinstance(local_decl.values[0], Number)
+    assert local_decl.values[0].value == '5'

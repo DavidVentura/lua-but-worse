@@ -2,15 +2,15 @@ start: statement*
 
 block: statement*
 
-?statement: function_def
-          | local_decl
-          | if_stmt
-          | for_stmt
-          | while_stmt
-          | return_stmt
-          | break_stmt
-          | assignment
-          | expr_stmt
+?statement: function_def [";"]
+          | local_decl [";"]
+          | if_stmt [";"]
+          | for_stmt [";"]
+          | while_stmt [";"]
+          | return_stmt [";"]
+          | break_stmt [";"]
+          | assignment [";"]
+          | expr_stmt [";"]
 
 break_stmt: BREAK
 
