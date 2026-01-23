@@ -431,3 +431,164 @@ end
 
     assert arg_var.kind == VarKind.PARAM, "'arg' should be a parameter"
     assert arg_var in f2_scope.captures, "Nested function 'f2' should capture parameter 'arg'"
+
+
+def test_multiple_parameters_captured():
+    """Test capturing multiple parameters"""
+    code = """
+function outer(a, b, c)
+    function inner()
+        return a + b + c
+    end
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    outer_scope = scopes[1]
+    inner_scope = scopes[2]
+
+    a_var = outer_scope.vars['a']
+    b_var = outer_scope.vars['b']
+    c_var = outer_scope.vars['c']
+
+    assert a_var.kind == VarKind.PARAM
+    assert b_var.kind == VarKind.PARAM
+    assert c_var.kind == VarKind.PARAM
+
+    assert a_var in inner_scope.captures, "Inner should capture parameter 'a'"
+    assert b_var in inner_scope.captures, "Inner should capture parameter 'b'"
+    assert c_var in inner_scope.captures, "Inner should capture parameter 'c'"
+
+
+def test_parameter_and_local_captured():
+    """Test capturing both parameters and local variables"""
+    code = """
+function outer(param1, param2)
+    local local1 = 1
+    local local2 = 2
+    function inner()
+        return param1 + local1
+    end
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    outer_scope = scopes[1]
+    inner_scope = scopes[2]
+
+    param1_var = outer_scope.vars['param1']
+    param2_var = outer_scope.vars['param2']
+    local1_var = outer_scope.vars['local1']
+    local2_var = outer_scope.vars['local2']
+
+    assert param1_var.kind == VarKind.PARAM
+    assert local1_var.kind == VarKind.LOCAL
+
+    assert param1_var in inner_scope.captures, "Should capture parameter 'param1'"
+    assert local1_var in inner_scope.captures, "Should capture local 'local1'"
+    assert param2_var not in inner_scope.captures, "Should NOT capture unused parameter 'param2'"
+    assert local2_var not in inner_scope.captures, "Should NOT capture unused local 'local2'"
+
+
+def test_parameter_modified_and_captured():
+    """Test capturing parameters that are modified"""
+    code = """
+function counter(start)
+    start = start or 0
+    function increment()
+        start = start + 1
+        return start
+    end
+    return increment
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    counter_scope = scopes[1]
+    increment_scope = scopes[2]
+
+    start_var = counter_scope.vars['start']
+
+    assert start_var.kind == VarKind.PARAM
+    assert start_var in increment_scope.captures, "Should capture and modify parameter 'start'"
+
+
+def test_anonymous_function_captures_parameter():
+    """Test anonymous function capturing parameter"""
+    code = """
+function make_adder(x)
+    return function(y)
+        return x + y
+    end
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    make_adder_scope = scopes[1]
+    anon_scope = scopes[2]
+
+    x_var = make_adder_scope.vars['x']
+    y_var = anon_scope.vars['y']
+
+    assert x_var.kind == VarKind.PARAM, "'x' should be a parameter of make_adder"
+    assert y_var.kind == VarKind.PARAM, "'y' should be a parameter of anonymous function"
+    assert x_var in anon_scope.captures, "Anonymous function should capture outer parameter 'x'"
+    assert y_var not in anon_scope.captures, "Anonymous function should NOT capture its own parameter 'y'"
+
+
+def test_deeply_nested_parameter_capture():
+    """Test parameter captured by deeply nested function"""
+    code = """
+function level1(a)
+    function level2(b)
+        function level3(c)
+            function level4()
+                return a + b + c
+            end
+        end
+    end
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    level1_scope = scopes[1]
+    level2_scope = scopes[2]
+    level3_scope = scopes[3]
+    level4_scope = scopes[4]
+
+    a_var = level1_scope.vars['a']
+    b_var = level2_scope.vars['b']
+    c_var = level3_scope.vars['c']
+
+    # level4 should capture all three parameters from outer functions
+    assert a_var in level4_scope.captures, "Innermost should capture 'a' from level1"
+    assert b_var in level4_scope.captures, "Innermost should capture 'b' from level2"
+    assert c_var in level4_scope.captures, "Innermost should capture 'c' from level3"
+
+    # Intermediate levels shouldn't capture what they don't use
+    assert len(level3_scope.captures) == 0, "level3 doesn't reference outer parameters"
+    assert len(level2_scope.captures) == 0, "level2 doesn't reference outer parameters"
+
+
+def test_parameter_shadowing():
+    """Test that parameter shadowing works correctly"""
+    code = """
+function outer(x)
+    function inner(x)
+        return x
+    end
+    return outer_x
+end
+"""
+    scopes, global_scope = parse_and_analyze(code)
+
+    outer_scope = scopes[1]
+    inner_scope = scopes[2]
+
+    outer_x = outer_scope.vars['x']
+    inner_x = inner_scope.vars['x']
+
+    assert outer_x.kind == VarKind.PARAM
+    assert inner_x.kind == VarKind.PARAM
+    assert outer_x != inner_x, "Parameters should be different variables"
+    assert outer_x not in inner_scope.captures, "Shadowed parameter should not be captured"
