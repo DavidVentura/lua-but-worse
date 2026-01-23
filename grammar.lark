@@ -60,7 +60,7 @@ expr_list: expr ("," expr)*
 
 ?comparison: concat (COMP_OP concat)*
 
-COMP_OP: "==" | "~=" | "<=" | ">=" | "<" | ">"
+COMP_OP: "==" | "~=" | "!=" | "<=" | ">=" | "<" | ">"
 
 COMPOUND_OP: "+=" | "-=" | "*=" | "/=" | "%="
 

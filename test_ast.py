@@ -114,3 +114,21 @@ def test_compound_assignment():
     assert compound.target.name == 'x'
     assert isinstance(compound.value, Number)
     assert compound.value.value == '2'
+
+
+def test_if_not_equal_comparison():
+    code = "if a!=b then end"
+    parser = create_parser()
+    tree = parser.parse(code)
+    builder = ASTBuilder()
+    ast = builder.transform(tree)
+    assert isinstance(ast, Block)
+    assert len(ast.stmts) == 1
+    assert isinstance(ast.stmts[0], If)
+    if_stmt = ast.stmts[0]
+    assert isinstance(if_stmt.condition, BinOp)
+    assert if_stmt.condition.op == '!='
+    assert isinstance(if_stmt.condition.left, NameRef)
+    assert if_stmt.condition.left.name == 'a'
+    assert isinstance(if_stmt.condition.right, NameRef)
+    assert if_stmt.condition.right.name == 'b'
