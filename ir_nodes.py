@@ -162,11 +162,13 @@ class CFunctionDef:
     All Lua functions have signature: TValue* name(TValue** args, int argc)
     The 'params' field lists logical parameter names for extraction in the function body.
     The 'captures' field lists variables captured from outer scopes (for closures).
+    The 'captured_params' field lists parameters that are captured by nested functions (handled in function body).
     """
     name: str
     params: list[str]  # Logical param names (extracted from args array)
     body: list[CStmt]
     captures: list[str] = field(default_factory=list)  # Captured variable names
+    captured_params: list[str] = field(default_factory=list)  # Parameters captured by nested functions
     return_type: CType = TVALUE
 
     def is_closure(self) -> bool:

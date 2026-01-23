@@ -140,7 +140,25 @@ class ASTNormalizer:
                 self.current_scope_id = prev_scope
                 self.hoisted_stmts = prev_hoisted
 
-                return AnonymousFunction(params=params, body=normalized_body, scope_id=scope_id)
+                # Check if this function has captures
+                has_captures = False
+                if scope_id is not None and scope_id in self.scopes:
+                    scope = self.scopes[scope_id]
+                    has_captures = len(scope.captures) > 0
+
+                # If it has captures, hoist it to a temp variable
+                # (Closures need statement-level setup with set_closure_arg calls)
+                if has_captures:
+                    temp_name = self._new_temp()
+                    var_info = self._declare_temp(temp_name)
+
+                    normalized_func = AnonymousFunction(params=params, body=normalized_body, scope_id=scope_id)
+                    self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_func]))
+
+                    return NameRef(name=temp_name, resolved=var_info)
+                else:
+                    # No captures: can stay inline (TFUN is simple)
+                    return AnonymousFunction(params=params, body=normalized_body, scope_id=scope_id)
 
             case NameRef(_) | Number(_) | String(_) | Bool(_) | Nil():
                 # Literals and variable references pass through unchanged

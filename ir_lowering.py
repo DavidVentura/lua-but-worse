@@ -20,6 +20,8 @@ class IRLowering:
         self.no_return_builtins = {"printh", "set_tabvalue", "setmetatable"}
         self.direct_call_builtins = {"flr", "printh", "setmetatable", "getmetatable", "all", "pairs", "ipairs"}
         self.string_constants: dict[str, str] = {}  # value -> var_name mapping
+        self.capture_indices: dict[tuple[int, str], str] = {}  # (scope_id, var_name) -> capture_idx_var
+        self.captured_ptr_vars: dict[int, set[str]] = {}  # scope_id -> set of captured pointer var names
 
     def _get_string_constant(self, value: str) -> str:
         """Get or create a global variable name for a string constant"""
@@ -59,6 +61,28 @@ class IRLowering:
         self.next_temp += 1
         return name
 
+    def _get_captured_vars_in_scope(self, scope_id: int) -> set[str]:
+        """Get all variables from this scope that are captured by any descendant functions"""
+        if scope_id is None:
+            return set()
+
+        captured_vars = set()
+
+        # Look at ALL scopes (not just direct children) and see what they capture from this scope
+        for other_scope_id, other_scope in self.scopes.items():
+            if other_scope.is_function:  # Only check function scopes
+                for captured_var in other_scope.captures:
+                    if captured_var.scope_id == scope_id:
+                        captured_vars.add(captured_var.name)
+
+        return captured_vars
+
+    def _get_var_type(self, name: str) -> CType:
+        """Get the type of a variable (TVALUE or TValue_t* for captured pointers)"""
+        if self.current_scope_id in self.captured_ptr_vars and name in self.captured_ptr_vars[self.current_scope_id]:
+            return CType("TValue_t*")
+        return TVALUE
+
     def _make_for_loop(self, idx_var: str, idx_type: CType, start: str, end_var: str, op: str, body: list[CStmt]) -> CFor:
         """Helper to create a numeric for loop: for(type idx=start; idx op end_var; idx++)"""
         init_stmt = CDeclare(CVar(idx_var, idx_type), CLiteral(start, idx_type), direct_init=True)
@@ -77,6 +101,55 @@ class IRLowering:
                     return False
         return True
 
+    def _get_captured_params(self, scope_id: int, params: list[str]) -> list[str]:
+        """Get list of parameters that are captured by nested functions"""
+        if scope_id is None:
+            return []
+
+        captured_params = []
+        # Look at ALL function scopes to see what they capture from this scope
+        for other_scope_id, other_scope in self.scopes.items():
+            if other_scope.is_function:
+                for captured_var in other_scope.captures:
+                    if captured_var.scope_id == scope_id and captured_var.name in params:
+                        if captured_var.name not in captured_params:
+                            captured_params.append(captured_var.name)
+        return captured_params
+
+    def _generate_captured_param_setup(self, params: list[str], captured_params: list[str]) -> list[CStmt]:
+        """Generate statements to move captured parameters into the captured arena"""
+        stmts = []
+        for i, param in enumerate(params):
+            if param in captured_params:
+                # This parameter is captured - extract from args and store in arena
+                cap_idx_var = f"_cap_idx_{param}"
+                self.capture_indices[(self.current_scope_id, param)] = cap_idx_var
+
+                # Track that this variable is a pointer
+                if self.current_scope_id not in self.captured_ptr_vars:
+                    self.captured_ptr_vars[self.current_scope_id] = set()
+                self.captured_ptr_vars[self.current_scope_id].add(param)
+
+                # Extract parameter from args
+                param_extract = CLiteral(f"(args.num > {i}) ? args.elems[{i}] : T_NULL", TVALUE)
+
+                # uint16_t _cap_idx_param = _alloc_captured(extracted_param);
+                stmts.append(CDeclare(
+                    CVar(cap_idx_var, CType("uint16_t")),
+                    CFunctionCall("_alloc_captured", [param_extract]),
+                    direct_init=True
+                ))
+
+                # TValue_t* param = &_captured.captured[_cap_idx_param].value;
+                ptr_expr = CLiteral(f"&_captured.captured[{cap_idx_var}].value", CType("TValue_t*"))
+                stmts.append(CDeclare(
+                    CVar(param, CType("TValue_t*")),
+                    ptr_expr,
+                    direct_init=True
+                ))
+
+        return stmts
+
     def _lower_block(self, block: Block) -> list[CStmt]:
         """Lower a block of statements"""
         stmts = []
@@ -89,16 +162,174 @@ class IRLowering:
         match stmt:
             case LocalDecl(names, values):
                 stmts = []
+                captured_vars = self._get_captured_vars_in_scope(self.current_scope_id)
+
                 for i, name in enumerate(names):
                     value = values[i] if i < len(values) else Nil()
+
+                    # Special handling for anonymous functions with captures
+                    if isinstance(value, AnonymousFunction) and value.scope_id is not None:
+                        scope = self.scopes[value.scope_id]
+                        if scope.captures:
+                            # This is a closure - handle it specially
+                            anon_name = f"_anon_{self.next_temp}"
+                            self.next_temp += 1
+
+                            # Lower the function body
+                            prev_scope = self.current_scope_id
+                            self.current_scope_id = value.scope_id
+
+                            # Handle captured parameters
+                            captured_params = self._get_captured_params(value.scope_id, value.params)
+                            param_setup = self._generate_captured_param_setup(value.params, captured_params)
+
+                            func_body = param_setup + self._lower_block(value.body)
+                            self.current_scope_id = prev_scope
+
+                            # Create function def
+                            func_def = CFunctionDef(
+                                name=anon_name,
+                                params=value.params,
+                                body=func_body,
+                                captures=[v.name for v in scope.captures],
+                                captured_params=captured_params
+                            )
+                            self.c_functions.append(func_def)
+
+                            # Generate closure creation (no GC - closures manage their own refcounting)
+                            closure_expr = CLiteral(f"TCLOSURE({anon_name}, {len(scope.captures)})", TVALUE)
+                            stmts.append(CDeclare(CVar(name, TVALUE), closure_expr, direct_init=True))
+
+                            # Set up captures
+                            for idx, captured_var_info in enumerate(scope.captures):
+                                cap_var_name = captured_var_info.name
+                                cap_scope_id = captured_var_info.scope_id
+                                cap_idx_var = self.capture_indices.get((cap_scope_id, cap_var_name))
+                                if cap_idx_var is None:
+                                    continue
+
+                                call = CFunctionCall("set_closure_arg", [
+                                    CVarRef(CVar(name, TVALUE)),
+                                    CLiteral(str(idx), CType("uint8_t")),
+                                    CVarRef(CVar(cap_idx_var, CType("uint16_t")))
+                                ])
+                                stmts.append(CExprStmt(call, needs_cleanup=False))
+
+                            continue
+
                     value_expr = self._lower_expr(value)
-                    stmts.append(CDeclare(CVar(name, TVALUE, CVarQualifier.GC), value_expr))
+
+                    if name in captured_vars:
+                        # This variable is captured by nested functions
+                        # Allocate in captured arena
+                        cap_idx_var = f"_cap_idx_{name}"
+                        self.capture_indices[(self.current_scope_id, name)] = cap_idx_var
+
+                        # Track that this variable is a pointer
+                        if self.current_scope_id not in self.captured_ptr_vars:
+                            self.captured_ptr_vars[self.current_scope_id] = set()
+                        self.captured_ptr_vars[self.current_scope_id].add(name)
+
+                        # uint16_t _cap_idx_varname = _alloc_captured(value);
+                        stmts.append(CDeclare(
+                            CVar(cap_idx_var, CType("uint16_t")),
+                            CFunctionCall("_alloc_captured", [value_expr]),
+                            direct_init=True
+                        ))
+
+                        # TValue_t* varname = &_captured.captured[_cap_idx_varname].value;
+                        # Use CType("TValue_t*") so code generator knows it's a pointer
+                        ptr_expr = CLiteral(f"&_captured.captured[{cap_idx_var}].value", CType("TValue_t*"))
+                        stmts.append(CDeclare(
+                            CVar(name, CType("TValue_t*")),
+                            ptr_expr,
+                            direct_init=True
+                        ))
+                    else:
+                        # Regular local variable
+                        stmts.append(CDeclare(CVar(name, TVALUE, CVarQualifier.GC), value_expr))
                 return stmts
 
             case Assign(targets, values):
                 stmts = []
                 for i, target in enumerate(targets):
                     value = values[i] if i < len(values) else Nil()
+
+                    # Special handling for anonymous functions with captures
+                    if isinstance(value, AnonymousFunction) and value.scope_id is not None:
+                        scope = self.scopes[value.scope_id]
+                        if scope.captures:
+                            # Generate the anonymous function
+                            anon_name = f"_anon_{self.next_temp}"
+                            self.next_temp += 1
+
+                            # Lower function body
+                            prev_scope = self.current_scope_id
+                            self.current_scope_id = value.scope_id
+
+                            # Handle captured parameters
+                            captured_params = self._get_captured_params(value.scope_id, value.params)
+                            param_setup = self._generate_captured_param_setup(value.params, captured_params)
+
+                            func_body = param_setup + self._lower_block(value.body)
+                            self.current_scope_id = prev_scope
+
+                            # Create function def
+                            func_def = CFunctionDef(
+                                name=anon_name,
+                                params=value.params,
+                                body=func_body,
+                                captures=[v.name for v in scope.captures],
+                                captured_params=captured_params
+                            )
+                            self.c_functions.append(func_def)
+
+                            # Get capture indices
+                            cap_indices = []
+                            for cap_var_info in scope.captures:
+                                key = (cap_var_info.scope_id, cap_var_info.name)
+                                if key in self.capture_indices:
+                                    cap_indices.append(self.capture_indices[key])
+
+                            num_captures = len(cap_indices)
+
+                            # Generate assignment with TCLOSURE
+                            closure_expr = CLiteral(f"TCLOSURE({anon_name}, {num_captures})", TVALUE)
+
+                            # Determine target variable name for set_closure_arg calls
+                            target_var_name = None
+                            match target:
+                                case NameRef(name, resolved):
+                                    if resolved and resolved.kind == VarKind.GLOBAL:
+                                        if name not in self.globals:
+                                            self.globals.append(name)
+                                    var_type = self._get_var_type(name)
+                                    stmts.append(CAssign(CVar(name, var_type), closure_expr))
+                                    target_var_name = name
+
+                                case TableAccess(table, key, is_dot):
+                                    # For table assignments, we need to create a temp variable
+                                    temp_var = f"_tmp{self.next_temp}"
+                                    self.next_temp += 1
+                                    stmts.append(CDeclare(CVar(temp_var, TVALUE, CVarQualifier.GC), closure_expr))
+                                    target_var_name = temp_var
+
+                                    # Then assign to table
+                                    table_expr = self._lower_expr(table)
+                                    key_expr = self._lower_expr(key)
+                                    call = CFunctionCall("set_tabvalue", [table_expr, key_expr, CVarRef(CVar(temp_var, TVALUE))])
+                                    stmts.append(CExprStmt(call, needs_cleanup=False))
+
+                            # Generate set_closure_arg calls
+                            for idx, cap_idx_var in enumerate(cap_indices):
+                                call = CFunctionCall("set_closure_arg", [
+                                    CVarRef(CVar(target_var_name, TVALUE)),
+                                    CLiteral(str(idx), CType("uint8_t")),
+                                    CVarRef(CVar(cap_idx_var, CType("uint16_t")))
+                                ])
+                                stmts.append(CExprStmt(call, needs_cleanup=False))
+
+                            continue  # Skip normal processing
 
                     match target:
                         case NameRef(name, resolved):
@@ -107,7 +338,8 @@ class IRLowering:
                                     self.globals.append(name)
 
                             value_expr = self._lower_expr(value)
-                            stmts.append(CAssign(CVar(name, TVALUE), value_expr))
+                            var_type = self._get_var_type(name)
+                            stmts.append(CAssign(CVar(name, var_type), value_expr))
 
                         case TableAccess(table, key, is_dot):
                             value_expr = self._lower_expr(value)
@@ -121,14 +353,15 @@ class IRLowering:
                 # a += b  ->  a = a + b
                 match target:
                     case NameRef(name, resolved):
-                        left = CVarRef(CVar(name, TVALUE))
+                        var_type = self._get_var_type(name)
+                        left = CVarRef(CVar(name, var_type))
                         right = self._lower_expr(value)
                         result = self._lower_binop(op, left, right)
-                        return [CAssign(CVar(name, TVALUE), result)]
+                        return [CAssign(CVar(name, var_type), result)]
                 return []
 
             case FunctionDef(name_parts, is_method, params, body, scope_id):
-                func_name = "_".join(name_parts)
+                base_func_name = "_".join(name_parts)
 
                 # Get captures from scope
                 captures = []
@@ -136,10 +369,22 @@ class IRLowering:
                     scope = self.scopes[scope_id]
                     captures = [v.name for v in scope.captures]
 
+                # For local functions with captures, use a different C function name to avoid shadowing
+                is_local = (self.current_scope_id != self.global_scope.scope_id and len(name_parts) == 1)
+                if is_local and captures:
+                    func_name = f"{base_func_name}_fn"
+                else:
+                    func_name = base_func_name
+
                 # Lower function body
                 prev_scope = self.current_scope_id
                 self.current_scope_id = scope_id
-                func_body = self._lower_block(body)
+
+                # Handle captured parameters - move them to captured arena
+                captured_params = self._get_captured_params(scope_id, params)
+                param_setup = self._generate_captured_param_setup(params, captured_params)
+
+                func_body = param_setup + self._lower_block(body)
                 self.current_scope_id = prev_scope
 
                 # Create function def
@@ -147,7 +392,8 @@ class IRLowering:
                     name=func_name,
                     params=params,
                     body=func_body,
-                    captures=captures
+                    captures=captures,
+                    captured_params=captured_params
                 )
                 self.c_functions.append(func_def)
 
@@ -162,14 +408,84 @@ class IRLowering:
                     # Key is the last part
                     key = String(name_parts[-1])
 
-                    # Value is TFUN(func_name)
-                    func_value = CLiteral(f"TFUN({func_name})", TVALUE)
+                    # Value is TFUN(func_name) or TCLOSURE if it has captures
+                    if captures:
+                        # For dotted names with captures, we need to create a temporary closure
+                        stmts = []
+                        temp = self._new_temp()
+
+                        # Create the closure
+                        closure_expr = CLiteral(f"TCLOSURE({func_name}, {len(captures)})", TVALUE)
+                        stmts.append(CDeclare(CVar(temp, TVALUE), closure_expr, direct_init=True))
+
+                        # Set up captures
+                        for idx, captured_var_info in enumerate(scope.captures):
+                            cap_var_name = captured_var_info.name
+                            cap_scope_id = captured_var_info.scope_id
+                            cap_idx_var = self.capture_indices.get((cap_scope_id, cap_var_name))
+                            if cap_idx_var is None:
+                                continue
+
+                            call = CFunctionCall("set_closure_arg", [
+                                CVarRef(CVar(temp, TVALUE)),
+                                CLiteral(str(idx), CType("uint8_t")),
+                                CVarRef(CVar(cap_idx_var, CType("uint16_t")))
+                            ])
+                            stmts.append(CExprStmt(call, needs_cleanup=False))
+
+                        # Assign to table
+                        table_expr = self._lower_expr(table)
+                        key_expr = self._lower_expr(key)
+                        call = CFunctionCall("set_tabvalue", [table_expr, key_expr, CVarRef(CVar(temp, TVALUE))])
+                        stmts.append(CExprStmt(call, needs_cleanup=False))
+                        return stmts
+                    else:
+                        func_value = CLiteral(f"TFUN({func_name})", TVALUE)
 
                     # Generate set_tabvalue call
                     table_expr = self._lower_expr(table)
                     key_expr = self._lower_expr(key)
                     call = CFunctionCall("set_tabvalue", [table_expr, key_expr, func_value])
                     return [CExprStmt(call, needs_cleanup=False)]
+
+                # For simple named functions (not dotted), check if they need closure setup
+                if len(name_parts) == 1 and captures:
+                    # This is a local or global function with captures
+                    # Determine if it's global or local
+                    is_global = (self.current_scope_id == self.global_scope.scope_id)
+                    var_name = base_func_name
+
+                    stmts = []
+
+                    if is_global:
+                        # For global functions, we need to generate assignment to the global var
+                        # The global variable declaration will be handled elsewhere
+                        closure_expr = CLiteral(f"TCLOSURE({func_name}, {len(captures)})", TVALUE)
+                        stmts.append(CAssign(CVar(var_name, TVALUE), closure_expr))
+                    else:
+                        # For local functions, declare the variable
+                        closure_expr = CLiteral(f"TCLOSURE({func_name}, {len(captures)})", TVALUE)
+                        stmts.append(CDeclare(CVar(var_name, TVALUE), closure_expr, direct_init=True))
+
+                    # Set up captures
+                    for idx, captured_var_info in enumerate(scope.captures):
+                        cap_var_name = captured_var_info.name
+                        cap_scope_id = captured_var_info.scope_id
+
+                        # Get the capture index variable
+                        cap_idx_var = self.capture_indices.get((cap_scope_id, cap_var_name))
+                        if cap_idx_var is None:
+                            # This shouldn't happen, but handle it gracefully
+                            continue
+
+                        call = CFunctionCall("set_closure_arg", [
+                            CVarRef(CVar(var_name, TVALUE)),
+                            CLiteral(str(idx), CType("uint8_t")),
+                            CVarRef(CVar(cap_idx_var, CType("uint16_t")))
+                        ])
+                        stmts.append(CExprStmt(call, needs_cleanup=False))
+
+                    return stmts
 
                 return []
 
@@ -204,20 +520,57 @@ class IRLowering:
                 stop_expr = self._lower_expr(stop)
                 step_expr = self._lower_expr(step) if step else CLiteral("TNUM8(1)", TVALUE)
 
+                # Check if loop variable is captured
+                captured_vars = self._get_captured_vars_in_scope(scope_id) if scope_id else set()
+
                 stmts = []
-                stmts.append(CDeclare(CVar(var, TVALUE, CVarQualifier.GC), start_expr))
+
+                # Declare loop variable (captured or regular)
+                if var in captured_vars:
+                    # Captured loop variable
+                    cap_idx_var = f"_cap_idx_{var}"
+                    self.capture_indices[(scope_id, var)] = cap_idx_var
+
+                    # Track that this variable is a pointer
+                    if scope_id not in self.captured_ptr_vars:
+                        self.captured_ptr_vars[scope_id] = set()
+                    self.captured_ptr_vars[scope_id].add(var)
+
+                    # Save current scope and switch to loop scope
+                    prev_scope = self.current_scope_id
+                    self.current_scope_id = scope_id
+
+                    stmts.append(CDeclare(
+                        CVar(cap_idx_var, CType("uint16_t")),
+                        CFunctionCall("_alloc_captured", [start_expr]),
+                        direct_init=True
+                    ))
+                    ptr_expr = CLiteral(f"&_captured.captured[{cap_idx_var}].value", CType("TValue_t*"))
+                    stmts.append(CDeclare(
+                        CVar(var, CType("TValue_t*")),
+                        ptr_expr,
+                        direct_init=True
+                    ))
+                else:
+                    # Regular loop variable
+                    stmts.append(CDeclare(CVar(var, TVALUE, CVarQualifier.GC), start_expr))
 
                 stop_var = self._new_temp()
                 stmts.append(CDeclare(CVar(stop_var, TVALUE, CVarQualifier.GC), stop_expr))
 
                 # Condition: var <= stop (or >= if step < 0)
-                cond = CFunctionCall("_leq", [CVarRef(CVar(var, TVALUE)), CVarRef(CVar(stop_var, TVALUE))])
+                var_type = self._get_var_type(var) if scope_id and scope_id == self.current_scope_id else TVALUE
+                cond = CFunctionCall("_leq", [CVarRef(CVar(var, var_type)), CVarRef(CVar(stop_var, TVALUE))])
                 cond = CFunctionCall("__bool", [cond])
 
                 body_stmts = self._lower_block(body)
                 # Increment: var = var + step
-                increment = CFunctionCall("_add", [CVarRef(CVar(var, TVALUE)), step_expr])
-                body_stmts.append(CAssign(CVar(var, TVALUE), increment))
+                increment = CFunctionCall("_add", [CVarRef(CVar(var, var_type)), step_expr])
+                body_stmts.append(CAssign(CVar(var, var_type), increment))
+
+                # Restore scope if we changed it
+                if var in captured_vars:
+                    self.current_scope_id = prev_scope
 
                 stmts.append(CWhile(cond, body_stmts))
                 return stmts
@@ -379,7 +732,7 @@ class IRLowering:
         """Lower an expression to C IR"""
         match expr:
             case NameRef(name, resolved):
-                return CVarRef(CVar(name, TVALUE))
+                return CVarRef(CVar(name, self._get_var_type(name)))
 
             case Number(value):
                 # Check if it's a hexadecimal floating point literal (e.g., 0x0.8000)
@@ -493,8 +846,14 @@ class IRLowering:
                 )
                 self.c_functions.append(func_def)
 
-                # Return reference to function
-                return CLiteral(f"/* closure {anon_name} */", TVALUE)
+                # Generate closure creation
+                if not captures:
+                    # No captures: TFUN(func_name)
+                    return CLiteral(f"TFUN({anon_name})", TVALUE)
+                else:
+                    # Has captures - this should have been hoisted by normalizer
+                    # But if we get here, error with a helpful message
+                    raise AssertionError(f"Anonymous function with captures should have been hoisted by normalizer: {anon_name}")
 
         assert False, f"{expr} unhandled"
 

@@ -17,6 +17,7 @@ class CCodeGenerator:
     def __init__(self):
         self.indent_level = 0
         self.escaping_vars = set()
+        self.current_captures = set()  # Track captured vars (pointers) in current function
 
     def generate(self, globals: list[str], functions: list[CFunctionDef], escaping_vars: set[str] = None, string_constants: dict[str, str] = None) -> str:
         """Generate complete C program from IR"""
@@ -57,25 +58,43 @@ class CCodeGenerator:
         """Generate a single C function"""
         lines = []
 
-        # TODO: Handle closures with captures
-        if func.is_closure():
-            lines.append(f"// WARNING: Closure {func.name} has captures: {func.captures}")
-            lines.append("// TODO: Implement closure context struct")
-            lines.append("")
+        # Track captures for this function
+        prev_captures = self.current_captures
+        self.current_captures = set(func.captures)
 
         # Function signature: TValue_t name(TVSlice_t args)
         lines.append(f"TValue_t {func.name}(TVSlice_t args) {{")
 
         self.indent_level += 1
 
-        # Extract parameters from args array
-        for i, param_name in enumerate(func.params):
-            lines.append(self._indent(
-                f"TValue_t {param_name} = (args.num > {i}) ? args.elems[{i}] : T_NULL;"
-            ))
+        # Extract parameters from args array (skip captured parameters - they're handled in function body)
+        captured_params_set = set(func.captured_params)
 
-        if func.params:
+        for i, param_name in enumerate(func.params):
+            if param_name not in captured_params_set:
+                lines.append(self._indent(
+                    f"TValue_t {param_name} = (args.num > {i}) ? args.elems[{i}] : T_NULL;"
+                ))
+
+        non_captured_params = [p for p in func.params if p not in captured_params_set]
+        if non_captured_params:
             lines.append("")  # Blank line after param extraction
+
+        # Handle closures with captures
+        if func.is_closure():
+            lines.append(self._indent("// Extract closure context"))
+            lines.append(self._indent(
+                f"TValue_t _closure_func = (args.num > {len(func.params)}) ? args.elems[args.num - 1] : T_NULL;"
+            ))
+            lines.append(self._indent("TFunc_t* _func = GETTFUN(_closure_func);"))
+            lines.append("")
+
+            # Load captured variables from the function's captured_indices array
+            for i, cap_name in enumerate(func.captures):
+                lines.append(self._indent(
+                    f"TValue_t* {cap_name} = &_captured.captured[_func->captured_indices[{i}]].value;"
+                ))
+            lines.append("")  # Blank line after capture loading
 
         # Initialize string constants in _lua_main
         if func.name == "_lua_main" and self.string_constants:
@@ -93,8 +112,15 @@ class CCodeGenerator:
             stmt_code = self._generate_stmt(stmt)
             lines.append(self._indent(stmt_code))
 
+        # Add implicit return T_NULL if function doesn't end with a return
+        if not func.body or not isinstance(func.body[-1], CReturn):
+            lines.append(self._indent("return T_NULL;"))
+
         self.indent_level -= 1
         lines.append("}")
+
+        # Restore previous captures
+        self.current_captures = prev_captures
 
         return '\n'.join(lines)
 
@@ -123,7 +149,14 @@ class CCodeGenerator:
             case CAssign(target, value):
                 value_expr = self._generate_expr(value)
                 if target.type == TVALUE:
-                    return f"_set(&{target.name}, {value_expr});"
+                    # For captured variables (pointers), don't add &
+                    if target.name in self.current_captures or target.type.name == "TValue_t*":
+                        return f"_set({target.name}, {value_expr});"
+                    else:
+                        return f"_set(&{target.name}, {value_expr});"
+                elif target.type.name == "TValue_t*":
+                    # Pointer assignment via _set
+                    return f"_set({target.name}, {value_expr});"
                 else:
                     return f"{target.name} = {value_expr};"
 
@@ -200,6 +233,9 @@ class CCodeGenerator:
         """Generate C code for an expression"""
         match expr:
             case CVarRef(var):
+                # Dereference captured variables (pointers) when reading
+                if var.name in self.current_captures or var.type.name == "TValue_t*":
+                    return f"*{var.name}"
                 return var.name
 
             case CLiteral(value, _):

@@ -60,10 +60,9 @@ TValue_t main(TVSlice_t args) {
 
     // Test 2: Function with one capture
     uint16_t cap_idx = _alloc_captured(TNUM(123));
-    uint16_t* cap_array = malloc(sizeof(uint16_t) * 1);
-    cap_array[0] = cap_idx;
 
-    TValue_t gc f2 = TCLOSURE(closure_func, cap_array, 1);
+    TValue_t gc f2 = TCLOSURE(closure_func, 1);
+    set_closure_arg(f2, 0, cap_idx);
     TValue_t result2 = CALL(f2, ((TVSlice_t){NULL, 0}));
     printh(result2);
 
@@ -73,10 +72,8 @@ TValue_t main(TVSlice_t args) {
     printh(result3);
 
     // Test 4: Share captured variable between two closures
-    uint16_t* cap_array2 = malloc(sizeof(uint16_t) * 1);
-    cap_array2[0] = cap_idx;
-
-    TValue_t gc f3 = TCLOSURE(closure_func, cap_array2, 1);
+    TValue_t gc f3 = TCLOSURE(closure_func, 1);
+    set_closure_arg(f3, 0, cap_idx);
     TValue_t result4 = CALL(f3, ((TVSlice_t){NULL, 0}));
     printh(result4);
 
@@ -115,11 +112,9 @@ TValue_t main(TVSlice_t args) {
     uint16_t cap_idx1 = _alloc_captured(TNUM(10));
     uint16_t cap_idx2 = _alloc_captured(TNUM(20));
 
-    uint16_t* cap_array = malloc(sizeof(uint16_t) * 2);
-    cap_array[0] = cap_idx1;
-    cap_array[1] = cap_idx2;
-
-    TValue_t gc f = TCLOSURE(closure_with_two_captures, cap_array, 2);
+    TValue_t gc f = TCLOSURE(closure_with_two_captures, 2);
+    set_closure_arg(f, 0, cap_idx1);
+    set_closure_arg(f, 1, cap_idx2);
     TValue_t result = CALL(f, ((TVSlice_t){NULL, 0}));
     printh(result);
 
@@ -157,9 +152,8 @@ TValue_t main(TVSlice_t args) {
 
     // Create closure in a scope
     {
-        uint16_t* cap_array = malloc(sizeof(uint16_t) * 1);
-        cap_array[0] = cap_idx;
-        TValue_t gc f = TCLOSURE(get_captured, cap_array, 1);
+        TValue_t gc f = TCLOSURE(get_captured, 1);
+        set_closure_arg(f, 0, cap_idx);
 
         TValue_t result = CALL(f, ((TVSlice_t){NULL, 0}));
         printh(result);
