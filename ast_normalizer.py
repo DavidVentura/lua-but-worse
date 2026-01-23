@@ -94,6 +94,45 @@ class ASTNormalizer:
 
         return NameRef(name=temp_name, resolved=var_info)
 
+    def _normalize_assignment_target(self, target: Expr) -> Expr:
+        """Normalize an assignment target, hoisting function calls to temps
+
+        When a target is func().attr, we need to hoist func() to a temp:
+          local _tmp = func()
+          _tmp.attr = value
+        """
+        match target:
+            case TableAccess(table, key, is_dot):
+                # Check if table is a function call - if so, hoist it
+                if isinstance(table, FunctionCall | MethodCall):
+                    # Hoist the function call to a temp
+                    normalized_call = self._normalize_expr(table)
+
+                    # If normalization already hoisted it to a NameRef, use that
+                    if isinstance(normalized_call, NameRef):
+                        hoisted_ref = normalized_call
+                    else:
+                        # Create temp for the function call result
+                        temp_name = self._new_temp()
+                        var_info = self._declare_temp(temp_name)
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_call]))
+                        hoisted_ref = NameRef(name=temp_name, resolved=var_info)
+
+                    # Recursively normalize the key
+                    normalized_key = self._normalize_expr(key)
+
+                    # Return TableAccess with temp variable instead of function call
+                    return TableAccess(table=hoisted_ref, key=normalized_key, is_dot=is_dot)
+                else:
+                    # Regular case: recursively normalize both table and key
+                    normalized_table = self._normalize_assignment_target(table)
+                    normalized_key = self._normalize_expr(key)
+                    return TableAccess(table=normalized_table, key=normalized_key, is_dot=is_dot)
+
+            case _:
+                # For other expressions (NameRef, etc.), normalize normally
+                return self._normalize_expr(target)
+
     def _normalize_expr(self, expr: Expr) -> Expr:
         """Normalize an expression, hoisting table constructors to temps"""
         match expr:
@@ -181,15 +220,16 @@ class ASTNormalizer:
                 return self.hoisted_stmts + [normalized_stmt]
 
             case Assign(targets, values):
-                # Normalize all values and targets (tables can appear in both!)
+                # Normalize all values and targets
+                # Use _normalize_assignment_target for targets to handle func().attr = value
                 normalized_values = [self._normalize_expr(val) for val in values]
-                normalized_targets = [self._normalize_expr(target) for target in targets]
+                normalized_targets = [self._normalize_assignment_target(target) for target in targets]
                 normalized_stmt = Assign(targets=normalized_targets, values=normalized_values)
                 return self.hoisted_stmts + [normalized_stmt]
 
             case CompoundAssign(target, op, value):
                 normalized_value = self._normalize_expr(value)
-                normalized_target = self._normalize_expr(target)
+                normalized_target = self._normalize_assignment_target(target)
                 normalized_stmt = CompoundAssign(target=normalized_target, op=op, value=normalized_value)
                 return self.hoisted_stmts + [normalized_stmt]
 

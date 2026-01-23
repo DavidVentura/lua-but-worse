@@ -168,12 +168,27 @@ class ASTBuilder(Transformer):
         return items
 
     def assignable(self, items):
-        """assignable: NAME table_suffix*"""
-        result = NameRef(items[0].value)
+        """assignable: NAME table_suffix*
+                     | primary function_call+ table_suffix+
+        """
+        if isinstance(items[0], Token):
+            result = NameRef(items[0].value)
+        else:
+            result = items[0]
+
         for suffix in items[1:]:
             if isinstance(suffix, tuple):
-                suffix_type, (key, is_dot) = suffix
-                result = TableAccess(result, key, is_dot)
+                suffix_type, suffix_data = suffix
+                if suffix_type == 'table_suffix':
+                    key, is_dot = suffix_data
+                    result = TableAccess(result, key, is_dot)
+                elif suffix_type == 'function_call':
+                    args, method_info = suffix_data
+                    if method_info:
+                        method_name, call_args = method_info
+                        result = MethodCall(result, method_name, call_args)
+                    else:
+                        result = FunctionCall(result, args)
         return result
 
     def local_decl(self, items):

@@ -46,6 +46,7 @@ assignment: assignable_list "=" expr_list
 assignable_list: assignable ("," assignable)*
 
 assignable: NAME table_suffix*
+          | primary function_call+ table_suffix+
 
 expr_list: expr ("," expr)*
 
