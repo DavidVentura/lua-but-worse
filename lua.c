@@ -627,6 +627,7 @@ uint16_t make_fun(Func_t f, uint16_t env_table_idx, const char* name) {
 uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
 	TFunc_t t = (TFunc_t){.fun=f, .env_table_idx=env_table_idx};
 #endif
+	// FIXME no refcount = closure can't escape!
 	uint16_t new_len = _funcs.len == 0 ? 32 : _funcs.len*2;
 	uint16_t first_null = UINT16_MAX;
 
@@ -636,6 +637,7 @@ uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
 		_funcs.len = new_len;
 	} else {
 		for(uint16_t i=0; i<_funcs.len; i++) {
+			// when does this vvvv happen???
 			if (_funcs.funcs[i].fun == f && _funcs.funcs[i].env_table_idx == env_table_idx) return i; // already stored
 			if (_funcs.funcs[i].fun == NULL) {
 				first_null = i;
