@@ -31,6 +31,10 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
              f"{root.absolute()}/lua_math.c",
              ]
     #flags = ['tcc', '-O0', '-std=c11', '-fsanitize=address', f'-I{root.absolute()}', str(_target_temp)]
+    if os.environ.get("DEBUG2"):
+        flags += ["-DDEBUG2"]
+    if os.environ.get("DEBUG"):
+        flags += ["-DDEBUG"]
     if testing_params.get('disable_grow_table'):
         flags += ["-DNO_GROW_TABLE"]
     s = subprocess.check_output(flags, cwd=dest_dir)
