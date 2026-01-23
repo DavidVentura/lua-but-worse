@@ -1,18 +1,16 @@
+g_obj = nil
+
 function make_obj()
-    return {x=10, y=20}
+    g_obj = {x=10, y=20}
+    return g_obj
 end
 
 function main()
-    local obj1 = make_obj()
-    obj1.x = -1
-    printh(obj1.x)
+    make_obj().x = -1
+    printh(g_obj.x)
 
-    local obj2 = make_obj()
-    printh(obj2.x)
-
-    local obj3 = make_obj()
-    obj3.y = 99
-    printh(obj3.y)
+    make_obj().y = 99
+    printh(g_obj.y)
 
     return 0
 end
