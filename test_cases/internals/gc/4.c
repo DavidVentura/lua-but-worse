@@ -1,35 +1,45 @@
 #include "lua.h"
 #include "lua_math.h"
 #include "lua_table.h"
-#include "pico8.h"
 #include "stdlib.h"
-TValue_t __preinit();
-TValue_t __main();
-TValue_t deleted_tables(TVSlice_t function_arguments);
 
-TValue_t deleted_tables(TVSlice_t function_arguments) {
-  TValue_t gc tab = T_NULL;
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
-  _set(&tab, TTAB(make_table(0)));
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(1));
+TValue_t deleted_tables(TVSlice_t args);
+TValue_t main(TVSlice_t args);
+TValue_t _lua_main(TVSlice_t args);
 
-  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(5))); i = _add(i, TNUM16(1))) {
-    set_tabvalue(tab, i, TTAB(make_table(0)));
-  }
-  run_gc();
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(6));
-
-  for (TValue_t i = TNUM16(1); __bool(_leq(i, TNUM16(5))); i = _add(i, TNUM16(1))) {
-    del(tab, TNUM16(1));
-  }
-  run_gc();
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(1));
+TValue_t deleted_tables(TVSlice_t args) {
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, TTAB(make_table(0)));
+    TValue_t gc tab = T_NULL;
+    _set(&tab, _tmp0);
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(1));
+    {
+            TValue_t gc i = T_NULL;
+            _set(&i, TNUM(1));
+            TValue_t gc tmp_0 = T_NULL;
+            _set(&tmp_0, TNUM(5));
+            while (__bool(_leq(i, tmp_0))) {
+                        TValue_t gc _tmp1 = T_NULL;
+                        _move(&_tmp1, TTAB(make_table(0)));
+                        set_tabvalue(tab, i, _tmp1);
+                        _move(&i, _add(i, TNUM8(1)));
+                    }
+        }
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(6));
+    return T_NULL;
 }
 
-TValue_t __main() {
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
-  CALL((deleted_tables), ((TVSlice_t){.elems = NULL, .num = 0}));
-  __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM16(0));
+TValue_t main(TVSlice_t args) {
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    {
+        TValue_t gc _tmp;
+        _set(&_tmp, CALL(deleted_tables, ((TVSlice_t){NULL, 0})));
+    }
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    return T_NULL;
 }
 
-TValue_t __preinit() { _grow_strings_to(0); }
+TValue_t _lua_main(TVSlice_t args) {
+    return T_NULL;
+}

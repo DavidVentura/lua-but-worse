@@ -589,7 +589,8 @@ class IRLowering:
                     self.current_scope_id = prev_scope
 
                 stmts.append(CWhile(cond, body_stmts))
-                return stmts
+                # Wrap in a block to avoid variable redefinition across multiple loops
+                return [CBlock(stmts)]
 
             case ForIn(vars, iterator, body, scope_id):
                 is_kv_iterator = len(vars) > 1
