@@ -13,6 +13,7 @@
 TArena_t _tables = {.tables=NULL, .len=0, .used=0, .free_tables=NULL};
 SArena_t _strings = {.strings=NULL, .len=0};
 FArena_t _funcs = {.funcs=NULL, .len=0};
+CArena_t _captured = {.captured=NULL, .len=0};
 
 TVRefSlice_t _gc_to_visit = {.len=0, .ref=NULL};
 
@@ -72,14 +73,11 @@ TValue_t __call(TValue_t t, TVSlice_t args) {
 	TFunc_t* f = GETTFUN(t);
 	DEBUG2_PRINT("Calling %s\n", f->name);
 	assert(f->fun != NULL);
-	if(f->env_table_idx != UINT16_MAX) {
-		// This is not stack allocated as _most_ of the time the code-path isn't taken
-		// This can't use a static, shared buffer as it must be re-entrant, closures
-		// can call other closures.
-		// TODO: move to another function duh
+	if(f->num_captures > 0) {
+		// Pass the function TValue_t as an extra argument so the closure can access its captures
 		TValue_t* argarray = calloc(args.num+1, sizeof(TValue_t));
 		memcpy(argarray, args.elems, sizeof(TValue_t)*args.num);
-		argarray[args.num] = TTAB(f->env_table_idx);
+		argarray[args.num] = t;
 		TValue_t ret = f->fun((TVSlice_t){.elems=argarray, .num=args.num+1});
 		free(argarray);
 		return ret;
@@ -621,13 +619,12 @@ uint16_t _store_str(Str_t s) {
 }
 
 #ifdef DEBUG
-uint16_t make_fun(Func_t f, uint16_t env_table_idx, const char* name) {
-	TFunc_t t = (TFunc_t){.fun=f, .name=name, .env_table_idx=env_table_idx};
+uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures, const char* name) {
+	TFunc_t t = (TFunc_t){.fun=f, .name=name, .captured_indices=captured_indices, .num_captures=num_captures, .refcount=1};
 #else
-uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
-	TFunc_t t = (TFunc_t){.fun=f, .env_table_idx=env_table_idx};
+uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures) {
+	TFunc_t t = (TFunc_t){.fun=f, .captured_indices=captured_indices, .num_captures=num_captures, .refcount=1};
 #endif
-	// FIXME no refcount = closure can't escape!
 	uint16_t new_len = _funcs.len == 0 ? 32 : _funcs.len*2;
 	uint16_t first_null = UINT16_MAX;
 
@@ -637,8 +634,6 @@ uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
 		_funcs.len = new_len;
 	} else {
 		for(uint16_t i=0; i<_funcs.len; i++) {
-			// when does this vvvv happen???
-			if (_funcs.funcs[i].fun == f && _funcs.funcs[i].env_table_idx == env_table_idx) return i; // already stored
 			if (_funcs.funcs[i].fun == NULL) {
 				first_null = i;
 				break;
@@ -654,7 +649,73 @@ uint16_t make_fun(Func_t f, uint16_t env_table_idx) {
 
 	_funcs.funcs[first_null] = t;
 
+	// Increment refcount for all captured variables
+	for (uint8_t i = 0; i < num_captures; i++) {
+		_incref_captured(captured_indices[i]);
+	}
+
 	return first_null;
+}
+
+uint16_t _alloc_captured(TValue_t initial) {
+	uint16_t new_len = _captured.len == 0 ? 32 : _captured.len * 2;
+	uint16_t first_null = UINT16_MAX;
+
+	if (_captured.captured == NULL) {
+		_captured.captured = calloc(32, sizeof(CapturedVar_t));
+		first_null = 0;
+		_captured.len = new_len;
+	} else {
+		for (uint16_t i = 0; i < _captured.len; i++) {
+			if (_captured.captured[i].refcount == 0) {
+				first_null = i;
+				break;
+			}
+		}
+	}
+
+	if (first_null == UINT16_MAX) {
+		_captured.captured = realloc(_captured.captured, new_len * sizeof(CapturedVar_t));
+		memset(_captured.captured + _captured.len, 0, (new_len - _captured.len) * sizeof(CapturedVar_t));
+		_captured.len = new_len;
+		first_null = _captured.len;
+	}
+
+	_captured.captured[first_null].value = initial;
+	_captured.captured[first_null].refcount = 1;
+
+	DEBUG2_PRINT("Allocated captured variable at index %d with refcount=1\n", first_null);
+
+	return first_null;
+}
+
+void _incref_captured(uint16_t idx) {
+	if (idx >= _captured.len) {
+		DEBUG_PRINT("ERROR: _incref_captured with invalid index %d (len=%d)\n", idx, _captured.len);
+		return;
+	}
+	_captured.captured[idx].refcount++;
+	DEBUG2_PRINT("Incremented captured[%d] refcount to %d\n", idx, _captured.captured[idx].refcount);
+}
+
+void _decref_captured(uint16_t idx) {
+	if (idx >= _captured.len) {
+		DEBUG_PRINT("ERROR: _decref_captured with invalid index %d (len=%d)\n", idx, _captured.len);
+		return;
+	}
+	if (_captured.captured[idx].refcount == 0) {
+		DEBUG_PRINT("ERROR: _decref_captured called on index %d with refcount already 0\n", idx);
+		return;
+	}
+
+	_captured.captured[idx].refcount--;
+	DEBUG2_PRINT("Decremented captured[%d] refcount to %d\n", idx, _captured.captured[idx].refcount);
+
+	if (_captured.captured[idx].refcount == 0) {
+		DEBUG2_PRINT("Freeing captured variable at index %d\n", idx);
+		_decref(_captured.captured[idx].value);
+		_captured.captured[idx].value = T_NULL;
+	}
 }
 
 uint16_t make_str(char* c) {
@@ -776,10 +837,29 @@ void _decref(TValue_t v) {
 	switch(v.tag) {
 		case NUL:
 		case NUM:
-		case FUN:
 		case BOOL:
 			// these are value types
 			break;
+		case FUN: {
+			TFunc_t* func = GETTFUN(v);
+			assert(func->refcount > 0);
+			func->refcount--;
+			DEBUG2_PRINT("Decremented TFunc_t[%d] refcount to %d\n", v.fun_idx, func->refcount);
+
+			if (func->refcount == 0) {
+				DEBUG2_PRINT("Freeing TFunc_t[%d] with %d captures\n", v.fun_idx, func->num_captures);
+				for (uint8_t i = 0; i < func->num_captures; i++) {
+					_decref_captured(func->captured_indices[i]);
+				}
+				if (func->captured_indices != NULL) {
+					free(func->captured_indices);
+				}
+				func->fun = NULL;
+				func->captured_indices = NULL;
+				func->num_captures = 0;
+			}
+			break;
+		}
 		case TAB:
 			assert(GETTAB(v)->refcount > 0);
 			_tab_decref(GETTAB(v), v.table_idx);
@@ -795,10 +875,12 @@ void __decref(TValue_t* v) {
 	switch(v->tag) {
 		case NUL:
 		case NUM:
-		case FUN:
 		case BOOL:
 			// these are value types
 			return;
+		case FUN:
+			DEBUG2_PRINT("End of scope for <fun %d>\n", v->fun_idx);
+			break;
 		case TAB:
 			DEBUG2_PRINT("End of scope for <tab %d>\n", v->table_idx);
 			break;
@@ -814,10 +896,16 @@ void _incref(TValue_t v) {
 	switch(v.tag) {
 		case NUL:
 		case NUM:
-		case FUN:
 		case BOOL:
 			// these are value types
 			break;
+		case FUN: {
+			TFunc_t* func = GETTFUN(v);
+			assert(func->refcount < 65000);
+			func->refcount++;
+			DEBUG2_PRINT("added refc on <fun %d>=%d\n", v.fun_idx, func->refcount);
+			break;
+		}
 		case TAB:
 			assert(GETTAB(v)->refcount < 250);
 			GETTAB(v)->refcount++;
@@ -940,11 +1028,6 @@ void __internal_debug_assert_eq(TValue_t got, TValue_t expected) {
 	printh(got);
 }
 
-
-TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx) {
-	if(idx >= arr.num) return T_NULL;
-	return arr.elems[idx];
-}
 
 int16_t __get_int(TVSlice_t args, uint8_t idx) {
 	// This truncates the decimal part

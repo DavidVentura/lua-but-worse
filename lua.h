@@ -66,13 +66,15 @@ typedef struct TFunc_s {
 #ifdef DEBUG
 	const char* name;
 #endif
-	uint16_t env_table_idx;
+	uint16_t* captured_indices;
+	uint16_t refcount;
+	uint8_t num_captures;
 } TFunc_t;
 
 #ifdef DEBUG
-_Static_assert(sizeof(TFunc_t) <= 24, "too big"); // (2)8 for pointer on 64bit, 2 for env, 4 for padding
+_Static_assert(sizeof(TFunc_t) <= 32, "too big"); // 8 for func pointer, 8 for name, 8 for captured_indices, 1 for num_captures, 2 for refcount, padding
 #else
-_Static_assert(sizeof(TFunc_t) <= 16, "too big"); // 8 for pointer on 64bit, 2 for env, 4 for padding
+_Static_assert(sizeof(TFunc_t) <= 24, "too big"); // 8 for func pointer, 8 for captured_indices, 1 for num_captures, 2 for refcount, padding
 #endif
 
 #if UINTPTR_MAX == UINT32_MAX
@@ -143,6 +145,16 @@ typedef struct FArena_s {
 	uint16_t len;
 } FArena_t;
 
+typedef struct CapturedVar_s {
+	TValue_t value;
+	uint16_t refcount;
+} CapturedVar_t;
+
+typedef struct CArena_s {
+	CapturedVar_t* captured;
+	uint16_t len;
+} CArena_t;
+
 
 #define TNUM(x)        ((TValue_t){.tag = NUM,  .num = (x)})
 #define TNUM8(x)       ((TValue_t){.tag = NUM,  .num = (fix32_from_int8(x))})
@@ -154,11 +166,11 @@ typedef struct FArena_s {
 #define TBOOL(x)       ((TValue_t){.tag = BOOL, .num = (fix32_from_int8(x))})
 
 #ifdef DEBUG
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, UINT16_MAX, #x))})
-#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, (y).table_idx, #x))})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, NULL, 0, #x))})
+#define TCLOSURE(x,y,z)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y, z, #x))})
 #else
-#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, UINT16_MAX))})
-#define TCLOSURE(x,y)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, (y).table_idx))})
+#define TFUN(x)        ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, NULL, 0))})
+#define TCLOSURE(x,y,z)  ((TValue_t){.tag = FUN,  .fun_idx = (make_fun(x, y, z))})
 #endif
 
 #define TTAB(x)        ((TValue_t){.tag = TAB,  .table_idx = x})
@@ -250,10 +262,13 @@ uint16_t _store_str_at_or_die(Str_t s, uint16_t idx);
 void _grow_strings_to(uint16_t new_len);
 uint16_t make_str(char* c);
 #ifdef DEBUG
-uint16_t make_fun(Func_t f, uint16_t env_table_idx, const char* name);
+uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures, const char* name);
 #else
-uint16_t make_fun(Func_t f, uint16_t env_table_idx);
+uint16_t make_fun(Func_t f, uint16_t* captured_indices, uint8_t num_captures);
 #endif
+uint16_t _alloc_captured(TValue_t initial);
+void _incref_captured(uint16_t idx);
+void _decref_captured(uint16_t idx);
 void run_gc();
 void _str_decref(Str_t* s);
 void _tab_decref(Table_t* t, uint16_t cur_idx);
@@ -269,7 +284,6 @@ TValue_t __internal_debug_str_used();
 TValue_t __internal_debug_tables_used();
 TValue_t tostring(TValue_t v);
 void __internal_debug_assert_eq(TValue_t got, TValue_t expected);
-TValue_t __get_array_index_capped(TVSlice_t arr, uint8_t idx);
 int16_t  __get_int(TVSlice_t args, uint8_t idx);
 int16_t  __opt_int(TVSlice_t args, uint8_t idx, int16_t _default);
 bool     __get_bool(TVSlice_t args, uint8_t idx);
@@ -288,4 +302,6 @@ Str_t GETSTR(TValue_t x);
 Table_t* GETTAB(TValue_t x);
 TFunc_t* GETTFUN(TValue_t x);
 Table_t GETMETATAB(Table_t x);
+
+extern CArena_t _captured;
 #endif
