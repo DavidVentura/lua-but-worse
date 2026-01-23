@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import subprocess
 
-here = Path(__file__).parent
+root = Path(__file__).parent.parent
 
 
 def _compile_and_run(c_code: str, dest_dir: Path):
@@ -14,14 +14,14 @@ def _compile_and_run(c_code: str, dest_dir: Path):
 
     flags = [
         'gcc', '-O0', '-std=c11', '-fsanitize=address',
-        f'-I{here.absolute()}',
+        f'-I{root.absolute()}',
         '-lm',
         '-g',
         str(target_temp),
-        f"{here.absolute()}/lua.c",
-        f"{here.absolute()}/fix32.c",
-        f"{here.absolute()}/lua_table.c",
-        f"{here.absolute()}/lua_math.c",
+        f"{root.absolute()}/lua.c",
+        f"{root.absolute()}/fix32.c",
+        f"{root.absolute()}/lua_table.c",
+        f"{root.absolute()}/lua_math.c",
     ]
 
     subprocess.check_output(flags, cwd=dest_dir)

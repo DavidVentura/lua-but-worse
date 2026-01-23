@@ -12,7 +12,7 @@ from ir_lowering import IRLowering
 from code_generator import CCodeGenerator
 
 
-TEST_CASES_DIR = Path(__file__).parent / "test_cases"
+TEST_CASES_DIR = Path(__file__).parent.parent / "test_cases"
 
 
 def get_test_files():
@@ -20,7 +20,7 @@ def get_test_files():
         return []
 
     test_files = []
-    for lua_file in TEST_CASES_DIR.rglob("in.lua"):
+    for lua_file in TEST_CASES_DIR.rglob("*.lua"):
         test_files.append((lua_file.parent.name, lua_file))
     return sorted(test_files)
 

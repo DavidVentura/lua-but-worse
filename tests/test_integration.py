@@ -9,7 +9,7 @@ import pytest
 #from a import transform
 from compiler import compile
 
-here = Path(__file__).parent
+root = Path(__file__).parent.parent
 SHOULD_REGENERATE_OUTPUT = os.environ.get("SHOULD_REGENERATE_OUTPUT", None)
 
 def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict):
@@ -20,17 +20,17 @@ def _compile_and_run(transformed_src: str, dest_dir: Path, testing_params: dict)
 
 
     flags = ['gcc', '-O0', '-std=c11', '-fsanitize=address',
-            f'-I{here.absolute()}',
+            f'-I{root.absolute()}',
             # '-I/home/david/git/PicoPico/src',
              '-lm',  # link, -l, not I
              '-g',
              str(_target_temp),
-             f"{here.absolute()}/lua.c",
-             f"{here.absolute()}/fix32.c",
-             f"{here.absolute()}/lua_table.c",
-             f"{here.absolute()}/lua_math.c",
+             f"{root.absolute()}/lua.c",
+             f"{root.absolute()}/fix32.c",
+             f"{root.absolute()}/lua_table.c",
+             f"{root.absolute()}/lua_math.c",
              ]
-    #flags = ['tcc', '-O0', '-std=c11', '-fsanitize=address', f'-I{here.absolute()}', str(_target_temp)]
+    #flags = ['tcc', '-O0', '-std=c11', '-fsanitize=address', f'-I{root.absolute()}', str(_target_temp)]
     if testing_params.get('disable_grow_table'):
         flags += ["-DNO_GROW_TABLE"]
     s = subprocess.check_output(flags, cwd=dest_dir)
