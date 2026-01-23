@@ -66,6 +66,7 @@ TValue_t del(TValue_t tab, TValue_t v) {
 		if(last_contiguous_key.tag == NUL && equal(val, v)) {
 			last_contiguous_key = key;
 			found_value = val;
+			_incref(found_value);  // Keep alive during shifting
 			wanted++; // avoid copying the key to itself if it's matches on the first iteration
 			continue;
 		}
@@ -84,7 +85,46 @@ TValue_t del(TValue_t tab, TValue_t v) {
 }
 
 TValue_t deli(TVSlice_t varargs) {
-	assert(false);
+	if (varargs.num < 1) return T_NULL;
+	TValue_t tab = varargs.elems[0];
+	if (tab.tag != TAB) return T_NULL;
+
+	int16_t idx;
+	if (varargs.num >= 2 && varargs.elems[1].tag == NUM) {
+		idx = fix32_to_int32(varargs.elems[1].num);
+		if (idx < 1) return T_NULL;
+	} else {
+		// No index provided - remove last element
+		idx = _sequential_until(tab);
+		if (idx == 0) return T_NULL;  // Empty table
+	}
+
+	// Get the value to remove
+	TValue_t removed = get_tabvalue(tab, TNUM(idx));
+	if (removed.tag == NUL) return T_NULL;
+
+	// Keep it alive during shifting
+	_incref(removed);
+
+	// Shift all subsequent elements down, similar to del()
+	int16_t last_key = idx;
+	for (int16_t i = idx + 1; ; i++) {
+		TValue_t val = get_tabvalue(tab, TNUM(i));
+		if (val.tag == NUL) {
+			// No more elements
+			break;
+		}
+		// Copy val to previous position
+		set_tabvalue(tab, TNUM(last_key), val);
+		last_key = i;
+	}
+
+	// Remove the last element (which is now a duplicate), or the original element if no shift occurred
+	TValue_t duplicate = del_tabvalue(tab, TNUM(last_key));
+	// del_tabvalue transfers ownership, but we don't want this value, so decref it
+	__decref(&duplicate);
+
+	return removed;
 }
 
 void _foreach(TValue_t t, Func_t f) {
