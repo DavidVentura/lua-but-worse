@@ -21,6 +21,7 @@ class ASTNormalizer:
         self.global_scope = global_scope
         self.current_scope_id: Optional[int] = None
         self.next_temp = 0
+        self.next_var_id = 0  # For temp variables
         self.hoisted_stmts: list[Stmt] = []
 
     def normalize(self, ast: Block) -> Block:
@@ -47,8 +48,12 @@ class ASTNormalizer:
         var = VarInfo(
             name=name,
             scope_id=scope.scope_id,
-            kind=VarKind.LOCAL
+            kind=VarKind.LOCAL,
+            c_name=name,  # Temp vars already have unique names like _tmp0, _tmp1
+            var_id=self.next_var_id
         )
+        self.next_var_id += 1
+        scope.used_c_names.add(name)
         scope.vars[name] = var
         return var
 
@@ -64,13 +69,13 @@ class ASTNormalizer:
         # Empty table constructor (optimization: no hoisting needed, but we do it for consistency)
         if not table.fields:
             empty_table = TableConstructor(fields=[], size_hint=0)
-            self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table]))
+            self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table], resolved=[var_info]))
             return NameRef(name=temp_name, resolved=var_info)
 
         # Create local declaration: local _tmpN = {} with size hint
         num_fields = len(table.fields)
         empty_table = TableConstructor(fields=[], size_hint=num_fields)
-        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table]))
+        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[empty_table], resolved=[var_info]))
 
         # For each field, emit assignment statement
         array_index = 1
@@ -116,7 +121,7 @@ class ASTNormalizer:
                         # Create temp for the function call result
                         temp_name = self._new_temp()
                         var_info = self._declare_temp(temp_name)
-                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_call]))
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_call], resolved=[var_info]))
                         hoisted_ref = NameRef(name=temp_name, resolved=var_info)
 
                     # Recursively normalize the key
@@ -152,13 +157,13 @@ class ASTNormalizer:
                     # 1. Create temp for left side and assign it
                     left_temp_name = self._new_temp()
                     left_var_info = self._declare_temp(left_temp_name)
-                    self.hoisted_stmts.append(LocalDecl(names=[left_temp_name], values=[normalized_left]))
+                    self.hoisted_stmts.append(LocalDecl(names=[left_temp_name], values=[normalized_left], resolved=[left_var_info]))
                     left_temp_ref = NameRef(name=left_temp_name, resolved=left_var_info)
 
                     # 2. Create temp for result (declared but not assigned yet)
                     result_temp_name = self._new_temp()
                     result_var_info = self._declare_temp(result_temp_name)
-                    self.hoisted_stmts.append(LocalDecl(names=[result_temp_name], values=[]))
+                    self.hoisted_stmts.append(LocalDecl(names=[result_temp_name], values=[], resolved=[result_var_info]))
                     result_temp_ref = NameRef(name=result_temp_name, resolved=result_var_info)
 
                     # 3. Create If statement with appropriate branches
@@ -186,13 +191,13 @@ class ASTNormalizer:
                     if isinstance(normalized_left, FunctionCall | MethodCall):
                         temp_name = self._new_temp()
                         var_info = self._declare_temp(temp_name)
-                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_left]))
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_left], resolved=[var_info]))
                         normalized_left = NameRef(name=temp_name, resolved=var_info)
 
                     if isinstance(normalized_right, FunctionCall | MethodCall):
                         temp_name = self._new_temp()
                         var_info = self._declare_temp(temp_name)
-                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_right]))
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_right], resolved=[var_info]))
                         normalized_right = NameRef(name=temp_name, resolved=var_info)
 
                     return BinOp(op=op, left=normalized_left, right=normalized_right)
@@ -210,7 +215,7 @@ class ASTNormalizer:
                     if isinstance(normalized_arg, FunctionCall | MethodCall):
                         temp_name = self._new_temp()
                         var_info = self._declare_temp(temp_name)
-                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg]))
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg], resolved=[var_info]))
                         normalized_args.append(NameRef(name=temp_name, resolved=var_info))
                     else:
                         normalized_args.append(normalized_arg)
@@ -226,7 +231,7 @@ class ASTNormalizer:
                     if isinstance(normalized_arg, FunctionCall | MethodCall):
                         temp_name = self._new_temp()
                         var_info = self._declare_temp(temp_name)
-                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg]))
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg], resolved=[var_info]))
                         normalized_args.append(NameRef(name=temp_name, resolved=var_info))
                     else:
                         normalized_args.append(normalized_arg)
@@ -266,7 +271,7 @@ class ASTNormalizer:
                     var_info = self._declare_temp(temp_name)
 
                     normalized_func = AnonymousFunction(params=params, body=normalized_body, scope_id=scope_id)
-                    self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_func]))
+                    self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_func], resolved=[var_info]))
 
                     return NameRef(name=temp_name, resolved=var_info)
                 else:
@@ -287,10 +292,10 @@ class ASTNormalizer:
         self.hoisted_stmts = []
 
         match stmt:
-            case LocalDecl(names, values):
+            case LocalDecl(names, values, resolved):
                 # Normalize all values (may hoist table constructors)
                 normalized_values = [self._normalize_expr(val) for val in values]
-                normalized_stmt = LocalDecl(names=names, values=normalized_values)
+                normalized_stmt = LocalDecl(names=names, values=normalized_values, resolved=resolved)
                 return self.hoisted_stmts + [normalized_stmt]
 
             case Assign(targets, values):
@@ -485,10 +490,10 @@ class ASTNormalizer:
         # First pass: identify table temps and their mappings
         for i, stmt in enumerate(stmts):
             match stmt:
-                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=size)]):
+                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=size)], resolved=resolved):
                     # This is a hoisted table temp
-                    table_temps[name] = [i, size if size else 0, 0]  # [index, initial_size, additional_count]
-                case LocalDecl(names=[final_name], values=[NameRef(name=temp_name)]) if temp_name in table_temps:
+                    table_temps[name] = [i, size if size else 0, 0, resolved]  # [index, initial_size, additional_count, resolved]
+                case LocalDecl(names=[final_name], values=[NameRef(name=temp_name)], resolved=_) if temp_name in table_temps:
                     # This maps temp to final variable
                     temp_to_final[temp_name] = final_name
 
@@ -507,11 +512,11 @@ class ASTNormalizer:
         result = []
         for i, stmt in enumerate(stmts):
             match stmt:
-                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=old_size)]) if name in table_temps:
-                    _, initial_size, additional = table_temps[name]
+                case LocalDecl(names=[name], values=[TableConstructor(fields=[], size_hint=old_size)], resolved=_) if name in table_temps:
+                    _, initial_size, additional, resolved = table_temps[name]
                     new_size = initial_size + additional
                     new_constructor = TableConstructor(fields=[], size_hint=new_size)
-                    result.append(LocalDecl(names=[name], values=[new_constructor]))
+                    result.append(LocalDecl(names=[name], values=[new_constructor], resolved=resolved))
                 case _:
                     result.append(stmt)
 

@@ -8,6 +8,7 @@ class ScopeResolver:
         self.scopes: dict[int, Scope] = {}
         self.scope_stack: list[Scope] = []
         self.next_scope_id = 0
+        self.next_var_id = 0
         self.global_scope = self._push_scope(is_function=False)
         self.ast = ast
 
@@ -36,13 +37,38 @@ class ScopeResolver:
         return self.scope_stack[-1]
 
     def _declare_var(self, name: str, kind: VarKind = VarKind.LOCAL) -> VarInfo:
-        """Declare a local variable in current scope"""
+        """Declare a local variable in current scope.
+
+        If a variable with this name already exists in the current scope,
+        this creates a new VarInfo that shadows the old one (Lua semantics).
+        Each declaration gets a unique var_id and c_name.
+        """
         scope = self._current_scope()
+
+        # Check if this name already exists in the current scope
+        # If so, generate a unique C name to avoid redefinition errors
+        if name in scope.used_c_names:
+            # Find a unique suffix by checking all used c_names in this scope
+            suffix = 1
+            while f"{name}_{suffix}" in scope.used_c_names:
+                suffix += 1
+            c_name = f"{name}_{suffix}"
+        else:
+            c_name = name
+
         var = VarInfo(
             name=name,
             scope_id=scope.scope_id,
-            kind=kind
+            kind=kind,
+            c_name=c_name,
+            var_id=self.next_var_id
         )
+        self.next_var_id += 1
+
+        # Track this c_name as used
+        scope.used_c_names.add(c_name)
+
+        # Store the new VarInfo, shadowing any previous declaration with same name
         scope.vars[name] = var
         return var
 
@@ -53,11 +79,16 @@ class ScopeResolver:
                 return scope.vars[name]
 
         if name not in self.global_scope.vars:
-            self.global_scope.vars[name] = VarInfo(
+            var = VarInfo(
                 name=name,
                 scope_id=self.global_scope.scope_id,
-                kind=VarKind.GLOBAL
+                kind=VarKind.GLOBAL,
+                c_name=name,  # Globals always use their Lua name
+                var_id=self.next_var_id
             )
+            self.next_var_id += 1
+            self.global_scope.vars[name] = var
+            self.global_scope.used_c_names.add(name)
         return self.global_scope.vars[name]
 
     def _visit_block(self, block: Block):
@@ -69,8 +100,12 @@ class ScopeResolver:
             case LocalDecl(names, values):
                 for val in values:
                     self._visit_expr(val)
+                var_infos = []
                 for name in names:
-                    self._declare_var(name)
+                    var_info = self._declare_var(name)
+                    var_infos.append(var_info)
+                # Store the VarInfo for each declared variable
+                object.__setattr__(stmt, 'resolved', var_infos)
 
             case Assign(targets, values):
                 for val in values:
@@ -83,12 +118,15 @@ class ScopeResolver:
                 self._visit_expr(target)
 
             case FunctionDef(name_parts, is_method, params, body, scope_id):
-                func_name = name_parts[0]
-                current_scope = self._current_scope()
-                if current_scope == self.global_scope:
-                    self._declare_var(func_name, VarKind.GLOBAL)
-                else:
-                    self._declare_var(func_name)
+                # Only declare the function as a variable if it's a simple function name,
+                # not a table method like "vector.new"
+                if len(name_parts) == 1:
+                    func_name = name_parts[0]
+                    current_scope = self._current_scope()
+                    if current_scope == self.global_scope:
+                        self._declare_var(func_name, VarKind.GLOBAL)
+                    else:
+                        self._declare_var(func_name)
 
                 func_scope = self._push_scope(is_function=True)
                 object.__setattr__(stmt, 'scope_id', func_scope.scope_id)
@@ -102,12 +140,29 @@ class ScopeResolver:
 
             case If(condition, then_block, elseif_parts, else_block):
                 self._visit_expr(condition)
+
+                # then block creates a new scope
+                then_scope = self._push_scope()
+                object.__setattr__(stmt, 'then_scope_id', then_scope.scope_id)
                 self._visit_block(then_block)
+                self._pop_scope()
+
+                # each elseif creates a new scope
+                elseif_scope_ids = []
                 for elif_cond, elif_block in elseif_parts:
                     self._visit_expr(elif_cond)
+                    elif_scope = self._push_scope()
+                    elseif_scope_ids.append(elif_scope.scope_id)
                     self._visit_block(elif_block)
+                    self._pop_scope()
+                object.__setattr__(stmt, 'elseif_scope_ids', elseif_scope_ids)
+
+                # else block creates a new scope
                 if else_block:
+                    else_scope = self._push_scope()
+                    object.__setattr__(stmt, 'else_scope_id', else_scope.scope_id)
                     self._visit_block(else_block)
+                    self._pop_scope()
 
             case ForNum(var, start, stop, step, body, scope_id):
                 loop_scope = self._push_scope(is_loop=True)
@@ -138,7 +193,11 @@ class ScopeResolver:
 
             case While(condition, body):
                 self._visit_expr(condition)
+                # while body creates a new scope (in addition to being a loop)
+                loop_scope = self._push_scope(is_loop=True)
+                object.__setattr__(stmt, 'body_scope_id', loop_scope.scope_id)
                 self._visit_block(body)
+                self._pop_scope()
 
             case Return(values):
                 if values:

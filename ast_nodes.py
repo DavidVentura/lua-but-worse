@@ -120,6 +120,7 @@ class LocalDecl:
     """Local declaration: local a, b = 1, 2"""
     names: list[str]
     values: list['Expr']
+    resolved: Optional[list['VarInfo']] = None  # VarInfo for each declared variable
 
 
 @dataclass(frozen=True)
@@ -139,6 +140,9 @@ class If:
     then_block: 'Block'
     elseif_parts: list[tuple['Expr', 'Block']]
     else_block: Optional['Block']
+    then_scope_id: Optional[int] = None
+    elseif_scope_ids: Optional[list[int]] = None
+    else_scope_id: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -166,6 +170,7 @@ class While:
     """While loop: while cond do ... end"""
     condition: 'Expr'
     body: 'Block'
+    body_scope_id: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -203,9 +208,11 @@ class VarKind(Enum):
 @dataclass(frozen=True)
 class VarInfo:
     """Information about a variable"""
-    name: str
+    name: str  # Original Lua variable name
     scope_id: int
     kind: VarKind
+    c_name: str  # Unique C variable name (e.g., "x", "x_1", "x_2")
+    var_id: int  # Unique identifier for this variable declaration
 
 
 @dataclass
@@ -217,3 +224,4 @@ class Scope:
     is_loop: bool = False
     vars: dict[str, VarInfo] = field(default_factory=dict)
     captures: set[VarInfo] = field(default_factory=set)
+    used_c_names: set[str] = field(default_factory=set)  # Track all c_names used in this scope

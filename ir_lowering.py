@@ -58,7 +58,7 @@ class IRLowering:
         )
         self.c_functions.append(main_func)
 
-        escaping_names = {v.name for v in self.escaping_vars}
+        escaping_names = {v.c_name for v in self.escaping_vars}
         return (self.globals, self.c_functions, escaping_names, self.string_constants)
 
     def _new_temp(self) -> str:
@@ -83,9 +83,16 @@ class IRLowering:
 
         return captured_vars
 
-    def _get_var_type(self, name: str) -> CType:
+    def _get_var_info(self, lua_name: str) -> VarInfo:
+        """Look up VarInfo for a variable by its Lua name in the current scope"""
+        if self.current_scope_id is None:
+            return self.global_scope.vars[lua_name]
+        scope = self.scopes.get(self.current_scope_id, self.global_scope)
+        return scope.vars[lua_name]
+
+    def _get_var_type(self, c_name: str) -> CType:
         """Get the type of a variable (TVALUE or TValue_t* for captured pointers)"""
-        if self.current_scope_id in self.captured_ptr_vars and name in self.captured_ptr_vars[self.current_scope_id]:
+        if self.current_scope_id in self.captured_ptr_vars and c_name in self.captured_ptr_vars[self.current_scope_id]:
             return CType("TValue_t*")
         return TVALUE
 
@@ -166,12 +173,16 @@ class IRLowering:
     def _lower_stmt(self, stmt: Stmt) -> list[CStmt]:
         """Lower a single statement to one or more C statements"""
         match stmt:
-            case LocalDecl(names, values):
+            case LocalDecl(names, values, resolved):
                 stmts = []
                 captured_vars = self._get_captured_vars_in_scope(self.current_scope_id)
 
-                for i, name in enumerate(names):
+                for i, lua_name in enumerate(names):
                     value = values[i] if i < len(values) else Nil()
+
+                    # Get the c_name for this variable from the resolved VarInfo
+                    var_info = resolved[i] if resolved else self._get_var_info(lua_name)
+                    c_name = var_info.c_name
 
                     # Special handling for anonymous functions with captures
                     if isinstance(value, AnonymousFunction) and value.scope_id is not None:
@@ -197,25 +208,25 @@ class IRLowering:
                                 name=anon_name,
                                 params=value.params,
                                 body=func_body,
-                                captures=[v.name for v in scope.captures],
+                                captures=[v.c_name for v in scope.captures],
                                 captured_params=captured_params
                             )
                             self.c_functions.append(func_def)
 
                             # Generate closure creation (no GC - closures manage their own refcounting)
                             closure_expr = CLiteral(f"TCLOSURE({anon_name}, {len(scope.captures)})", TVALUE)
-                            stmts.append(CDeclare(CVar(name, TVALUE), closure_expr, direct_init=True))
+                            stmts.append(CDeclare(CVar(c_name, TVALUE), closure_expr, direct_init=True))
 
                             # Set up captures
                             for idx, captured_var_info in enumerate(scope.captures):
-                                cap_var_name = captured_var_info.name
+                                cap_var_lua_name = captured_var_info.name
                                 cap_scope_id = captured_var_info.scope_id
-                                cap_idx_var = self.capture_indices.get((cap_scope_id, cap_var_name))
+                                cap_idx_var = self.capture_indices.get((cap_scope_id, cap_var_lua_name))
                                 if cap_idx_var is None:
                                     continue
 
                                 call = CFunctionCall("set_closure_arg", [
-                                    CVarRef(CVar(name, TVALUE)),
+                                    CVarRef(CVar(c_name, TVALUE)),
                                     CLiteral(str(idx), CType("uint8_t")),
                                     CVarRef(CVar(cap_idx_var, CType("uint16_t")))
                                 ])
@@ -225,16 +236,16 @@ class IRLowering:
 
                     value_expr = self._lower_expr(value)
 
-                    if name in captured_vars:
+                    if lua_name in captured_vars:
                         # This variable is captured by nested functions
                         # Allocate in captured arena
-                        cap_idx_var = f"_cap_idx_{name}"
-                        self.capture_indices[(self.current_scope_id, name)] = cap_idx_var
+                        cap_idx_var = f"_cap_idx_{c_name}"
+                        self.capture_indices[(self.current_scope_id, lua_name)] = cap_idx_var
 
-                        # Track that this variable is a pointer
+                        # Track that this variable is a pointer (use c_name)
                         if self.current_scope_id not in self.captured_ptr_vars:
                             self.captured_ptr_vars[self.current_scope_id] = set()
-                        self.captured_ptr_vars[self.current_scope_id].add(name)
+                        self.captured_ptr_vars[self.current_scope_id].add(c_name)
 
                         # uint16_t _cap_idx_varname = _alloc_captured(value);
                         stmts.append(CDeclare(
@@ -247,13 +258,13 @@ class IRLowering:
                         # Use CType("TValue_t*") so code generator knows it's a pointer
                         ptr_expr = CLiteral(f"&_captured.captured[{cap_idx_var}].value", CType("TValue_t*"))
                         stmts.append(CDeclare(
-                            CVar(name, CType("TValue_t*")),
+                            CVar(c_name, CType("TValue_t*")),
                             ptr_expr,
                             direct_init=True
                         ))
                     else:
                         # Regular local variable
-                        stmts.append(CDeclare(CVar(name, TVALUE, CVarQualifier.GC), value_expr))
+                        stmts.append(CDeclare(CVar(c_name, TVALUE, CVarQualifier.GC), value_expr))
                 return stmts
 
             case Assign(targets, values):
@@ -285,7 +296,7 @@ class IRLowering:
                                 name=anon_name,
                                 params=value.params,
                                 body=func_body,
-                                captures=[v.name for v in scope.captures],
+                                captures=[v.c_name for v in scope.captures],
                                 captured_params=captured_params
                             )
                             self.c_functions.append(func_def)
@@ -306,12 +317,13 @@ class IRLowering:
                             target_var_name = None
                             match target:
                                 case NameRef(name, resolved):
+                                    c_name = resolved.c_name if resolved else name
                                     if resolved and resolved.kind == VarKind.GLOBAL:
                                         if name not in self.globals:
                                             self.globals.append(name)
-                                    var_type = self._get_var_type(name)
-                                    stmts.append(CAssign(CVar(name, var_type), closure_expr))
-                                    target_var_name = name
+                                    var_type = self._get_var_type(c_name)
+                                    stmts.append(CAssign(CVar(c_name, var_type), closure_expr))
+                                    target_var_name = c_name
 
                                 case TableAccess(table, key, is_dot):
                                     # For table assignments, we need to create a temp variable
@@ -339,13 +351,14 @@ class IRLowering:
 
                     match target:
                         case NameRef(name, resolved):
+                            c_name = resolved.c_name if resolved else name
                             if resolved and resolved.kind == VarKind.GLOBAL:
                                 if name not in self.globals:
                                     self.globals.append(name)
 
                             value_expr = self._lower_expr(value)
-                            var_type = self._get_var_type(name)
-                            stmts.append(CAssign(CVar(name, var_type), value_expr))
+                            var_type = self._get_var_type(c_name)
+                            stmts.append(CAssign(CVar(c_name, var_type), value_expr))
 
                         case TableAccess(table, key, is_dot):
                             value_expr = self._lower_expr(value)
@@ -360,11 +373,12 @@ class IRLowering:
                 # t.x += b  ->  t.x = t.x + b
                 match target:
                     case NameRef(name, resolved):
-                        var_type = self._get_var_type(name)
-                        left = CVarRef(CVar(name, var_type))
+                        c_name = resolved.c_name if resolved else name
+                        var_type = self._get_var_type(c_name)
+                        left = CVarRef(CVar(c_name, var_type))
                         right = self._lower_expr(value)
                         result = self._lower_binop(op, left, right)
-                        return [CAssign(CVar(name, var_type), result)]
+                        return [CAssign(CVar(c_name, var_type), result)]
                     case TableAccess(table, key, is_dot):
                         table_expr = self._lower_expr(table)
                         key_expr = self._lower_expr(key)
@@ -383,7 +397,7 @@ class IRLowering:
                 captures = []
                 if scope_id is not None:
                     scope = self.scopes[scope_id]
-                    captures = [v.name for v in scope.captures]
+                    captures = [v.c_name for v in scope.captures]
 
                 # For local functions with captures, use a different C function name to avoid shadowing
                 is_local = (self.current_scope_id != self.global_scope.scope_id and len(name_parts) == 1)
@@ -749,7 +763,8 @@ class IRLowering:
         """Lower an expression to C IR"""
         match expr:
             case NameRef(name, resolved):
-                return CVarRef(CVar(name, self._get_var_type(name)))
+                c_name = resolved.c_name if resolved else name
+                return CVarRef(CVar(c_name, self._get_var_type(c_name)))
 
             case Number(value):
                 # Check if it's a hexadecimal floating point literal (e.g., 0x0.8000)
@@ -862,7 +877,7 @@ class IRLowering:
                 captures = []
                 if scope_id is not None:
                     scope = self.scopes[scope_id]
-                    captures = [v.name for v in scope.captures]
+                    captures = [v.c_name for v in scope.captures]
 
                 # Lower function body
                 prev_scope = self.current_scope_id
