@@ -223,7 +223,7 @@ local g = {y=2}
 
 
 def test_mixed_expression():
-    """foo({a=1}) + bar({b=2}) → both tables hoisted"""
+    """foo({a=1}) + bar({b=2}) → tables and function calls hoisted"""
     code = "local x = foo({a=1}) + bar({b=2})"
     result = normalize_code(code)
 
@@ -232,15 +232,19 @@ def test_mixed_expression():
     # _tmp0.a = 1
     # local _tmp1 = {}
     # _tmp1.b = 2
-    # local x = foo(_tmp0) + bar(_tmp1)
-    assert len(result.stmts) == 5
+    # local _tmp2 = foo(_tmp0)
+    # local _tmp3 = bar(_tmp1)
+    # local x = _tmp2 + _tmp3
+    assert len(result.stmts) == 7
 
-    # Last statement: local x = foo(_tmp0) + bar(_tmp1)
+    # Last statement: local x = _tmp2 + _tmp3
     last_stmt = result.stmts[-1]
     assert isinstance(last_stmt, LocalDecl)
     assert last_stmt.names[0] == 'x'
     assert isinstance(last_stmt.values[0], BinOp)
     assert last_stmt.values[0].op == '+'
+    assert isinstance(last_stmt.values[0].left, NameRef)
+    assert isinstance(last_stmt.values[0].right, NameRef)
 
 
 def test_empty_table_hoisted():
@@ -404,3 +408,172 @@ def test_method_call_with_table():
     assert len(last_stmt.args) == 1
     assert isinstance(last_stmt.args[0], NameRef)
     assert last_stmt.args[0].name.startswith('_tmp')
+
+
+def test_and_operator_transformation():
+    """a and b → if statement with temps for refcount safety"""
+    code = "local result = a and b"
+    result = normalize_code(code)
+
+    # Should have:
+    # local _tmp0 = a
+    # local _tmp1
+    # if _tmp0 then _tmp1 = b else _tmp1 = _tmp0 end
+    # local result = _tmp1
+    assert len(result.stmts) == 4
+
+    # First: local _tmp0 = a
+    stmt0 = result.stmts[0]
+    assert isinstance(stmt0, LocalDecl)
+    assert stmt0.names[0].startswith('_tmp')
+    assert len(stmt0.values) == 1
+    assert isinstance(stmt0.values[0], NameRef)
+    assert stmt0.values[0].name == 'a'
+
+    # Second: local _tmp1 (no value, declared but not assigned)
+    stmt1 = result.stmts[1]
+    assert isinstance(stmt1, LocalDecl)
+    assert stmt1.names[0].startswith('_tmp')
+    assert len(stmt1.values) == 0
+
+    # Third: if _tmp0 then _tmp1 = b else _tmp1 = _tmp0 end
+    stmt2 = result.stmts[2]
+    assert isinstance(stmt2, If)
+    assert isinstance(stmt2.condition, NameRef)
+    assert stmt2.condition.name.startswith('_tmp')
+
+    # Check then block: _tmp1 = b
+    assert len(stmt2.then_block.stmts) == 1
+    then_assign = stmt2.then_block.stmts[0]
+    assert isinstance(then_assign, Assign)
+    assert isinstance(then_assign.targets[0], NameRef)
+    assert then_assign.targets[0].name.startswith('_tmp')
+    assert isinstance(then_assign.values[0], NameRef)
+    assert then_assign.values[0].name == 'b'
+
+    # Check else block: _tmp1 = _tmp0
+    assert stmt2.else_block is not None
+    assert len(stmt2.else_block.stmts) == 1
+    else_assign = stmt2.else_block.stmts[0]
+    assert isinstance(else_assign, Assign)
+    assert isinstance(else_assign.targets[0], NameRef)
+    assert else_assign.targets[0].name.startswith('_tmp')
+    assert isinstance(else_assign.values[0], NameRef)
+    assert else_assign.values[0].name.startswith('_tmp')
+
+    # Fourth: local result = _tmp1
+    stmt3 = result.stmts[3]
+    assert isinstance(stmt3, LocalDecl)
+    assert stmt3.names[0] == 'result'
+    assert isinstance(stmt3.values[0], NameRef)
+    assert stmt3.values[0].name.startswith('_tmp')
+
+
+def test_or_operator_transformation():
+    """a or b → if statement with temps for refcount safety"""
+    code = "local result = a or b"
+    result = normalize_code(code)
+
+    # Should have:
+    # local _tmp0 = a
+    # local _tmp1
+    # if _tmp0 then _tmp1 = _tmp0 else _tmp1 = b end
+    # local result = _tmp1
+    assert len(result.stmts) == 4
+
+    # First: local _tmp0 = a
+    stmt0 = result.stmts[0]
+    assert isinstance(stmt0, LocalDecl)
+    assert stmt0.names[0].startswith('_tmp')
+    assert len(stmt0.values) == 1
+    assert isinstance(stmt0.values[0], NameRef)
+    assert stmt0.values[0].name == 'a'
+
+    # Second: local _tmp1 (no value)
+    stmt1 = result.stmts[1]
+    assert isinstance(stmt1, LocalDecl)
+    assert stmt1.names[0].startswith('_tmp')
+    assert len(stmt1.values) == 0
+
+    # Third: if _tmp0 then _tmp1 = _tmp0 else _tmp1 = b end
+    stmt2 = result.stmts[2]
+    assert isinstance(stmt2, If)
+    assert isinstance(stmt2.condition, NameRef)
+    assert stmt2.condition.name.startswith('_tmp')
+
+    # Check then block: _tmp1 = _tmp0
+    assert len(stmt2.then_block.stmts) == 1
+    then_assign = stmt2.then_block.stmts[0]
+    assert isinstance(then_assign, Assign)
+    assert isinstance(then_assign.targets[0], NameRef)
+    assert then_assign.targets[0].name.startswith('_tmp')
+    assert isinstance(then_assign.values[0], NameRef)
+    assert then_assign.values[0].name.startswith('_tmp')
+
+    # Check else block: _tmp1 = b
+    assert stmt2.else_block is not None
+    assert len(stmt2.else_block.stmts) == 1
+    else_assign = stmt2.else_block.stmts[0]
+    assert isinstance(else_assign, Assign)
+    assert isinstance(else_assign.targets[0], NameRef)
+    assert else_assign.targets[0].name.startswith('_tmp')
+    assert isinstance(else_assign.values[0], NameRef)
+    assert else_assign.values[0].name == 'b'
+
+    # Fourth: local result = _tmp1
+    stmt3 = result.stmts[3]
+    assert isinstance(stmt3, LocalDecl)
+    assert stmt3.names[0] == 'result'
+    assert isinstance(stmt3.values[0], NameRef)
+    assert stmt3.values[0].name.startswith('_tmp')
+
+
+def test_and_with_function_call():
+    """true and tostring(5) → ensures tostring result is in gc-tracked temp"""
+    code = "local x = true and tostring(5)"
+    result = normalize_code(code)
+
+    # Should transform and into if statement
+    # The function call should appear in the then block assignment
+    assert len(result.stmts) >= 4
+
+    # Find the If statement
+    if_stmt = None
+    for stmt in result.stmts:
+        if isinstance(stmt, If):
+            if_stmt = stmt
+            break
+
+    assert if_stmt is not None
+    # The then block should assign the function call result to temp
+    assert len(if_stmt.then_block.stmts) == 1
+    then_assign = if_stmt.then_block.stmts[0]
+    assert isinstance(then_assign, Assign)
+    # The value could be either a direct function call or a NameRef to a hoisted call
+    assert isinstance(then_assign.values[0], (FunctionCall, NameRef))
+
+
+def test_or_with_function_call():
+    """nil or tostring(5) → ensures tostring result is in gc-tracked temp"""
+    code = "local x = nil or tostring(5)"
+    result = normalize_code(code)
+
+    # Should transform or into if statement
+    # The function call should appear in the else block assignment
+    assert len(result.stmts) >= 4
+
+    # Find the If statement
+    if_stmt = None
+    for stmt in result.stmts:
+        if isinstance(stmt, If):
+            if_stmt = stmt
+            break
+
+    assert if_stmt is not None
+    # The else block should assign the function call result to temp
+    assert if_stmt.else_block is not None
+    assert len(if_stmt.else_block.stmts) == 1
+    else_assign = if_stmt.else_block.stmts[0]
+    assert isinstance(else_assign, Assign)
+    # The value could be either a direct function call or a NameRef to a hoisted call
+    assert isinstance(else_assign.values[0], (FunctionCall, NameRef))

@@ -54,17 +54,25 @@ TValue_t _anon_4(TVSlice_t args) {
 TValue_t main(TVSlice_t args) {
     _set(&captured, TNUM(7));
     _set(&a, TFUN(_anon_1));
-    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
-    _set(&b, TFUN(_anon_2));
-    printh(CALL(b, ((TVSlice_t){(TValue_t[]){TNUM(5), TNUM(6)}, 2})));
     TValue_t gc _tmp0 = T_NULL;
-    _move(&_tmp0, TTAB(make_table(0)));
-    _set(&c, _tmp0);
+    _move(&_tmp0, CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    printh(_tmp0);
+    _set(&b, TFUN(_anon_2));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, CALL(b, ((TVSlice_t){(TValue_t[]){TNUM(5), TNUM(6)}, 2})));
+    printh(_tmp1);
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, TTAB(make_table(0)));
+    _set(&c, _tmp2);
     set_tabvalue(c, __str_ct_f_1, TFUN(_anon_3));
-    printh(CALL(get_tabvalue(c, __str_ct_f_1), ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, CALL(get_tabvalue(c, __str_ct_f_1), ((TVSlice_t){NULL, 0})));
+    printh(_tmp3);
     _set(&v, __str_ct_index_2);
     set_tabvalue(c, v, TFUN(_anon_4));
-    printh(CALL(get_tabvalue(c, v), ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp4 = T_NULL;
+    _move(&_tmp4, CALL(get_tabvalue(c, v), ((TVSlice_t){NULL, 0})));
+    printh(_tmp4);
     {
         TValue_t gc _tmp = T_NULL;
         _move(&_tmp, CALL(g, ((TVSlice_t){(TValue_t[]){TNUM(55)}, 1})));

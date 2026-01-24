@@ -17,12 +17,22 @@ TValue_t _lua_main(TVSlice_t args);
 TValue_t test_returning_lambda(TVSlice_t args) {
     printh(__str_ct_newCount_0);
     _move(&c1, CALL(newCounter, ((TVSlice_t){NULL, 0})));
-    printh(CALL(c1, ((TVSlice_t){NULL, 0})));
-    printh(CALL(c1, ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, CALL(c1, ((TVSlice_t){NULL, 0})));
+    printh(_tmp0);
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, CALL(c1, ((TVSlice_t){NULL, 0})));
+    printh(_tmp1);
     _move(&c2, CALL(newCounter, ((TVSlice_t){NULL, 0})));
-    printh(CALL(c2, ((TVSlice_t){NULL, 0})));
-    printh(CALL(c1, ((TVSlice_t){NULL, 0})));
-    printh(CALL(c2, ((TVSlice_t){NULL, 0})));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, CALL(c2, ((TVSlice_t){NULL, 0})));
+    printh(_tmp2);
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, CALL(c1, ((TVSlice_t){NULL, 0})));
+    printh(_tmp3);
+    TValue_t gc _tmp4 = T_NULL;
+    _move(&_tmp4, CALL(c2, ((TVSlice_t){NULL, 0})));
+    printh(_tmp4);
     return T_NULL;
 }
 
@@ -40,9 +50,9 @@ TValue_t _anon_0(TVSlice_t args) {
 TValue_t newCounter(TVSlice_t args) {
     uint16_t _cap_idx_i = _alloc_captured(TNUM(0));
     TValue_t* i = &_captured.captured[_cap_idx_i].value;
-    TValue_t _tmp0 = TCLOSURE(_anon_0, 1);
-    set_closure_arg(_tmp0, 0, _cap_idx_i);
-    _return(_tmp0);
+    TValue_t _tmp5 = TCLOSURE(_anon_0, 1);
+    set_closure_arg(_tmp5, 0, _cap_idx_i);
+    _return(_tmp5);
 }
 
 TValue_t main(TVSlice_t args) {

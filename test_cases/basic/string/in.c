@@ -37,11 +37,21 @@ TValue_t test_sub(TVSlice_t args) {
     TValue_t gc s = T_NULL;
     _set(&s, __str_ct_somethin_1);
     printh(__str_ct_test_sub_2);
-    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(5)}, 2})));
-    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-5)}, 2})));
-    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-4), TNUM(-3)}, 3})));
-    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-2), T_NULL}, 3})));
-    printh(CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(8), T_NULL}, 3})));
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(5)}, 2})));
+    printh(_tmp0);
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-5)}, 2})));
+    printh(_tmp1);
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-4), TNUM(-3)}, 3})));
+    printh(_tmp2);
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(-2), T_NULL}, 3})));
+    printh(_tmp3);
+    TValue_t gc _tmp4 = T_NULL;
+    _move(&_tmp4, CALL(sub, ((TVSlice_t){(TValue_t[]){s, TNUM(8), T_NULL}, 3})));
+    printh(_tmp4);
     return T_NULL;
 }
 

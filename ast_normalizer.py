@@ -144,7 +144,58 @@ class ASTNormalizer:
             case BinOp(op, left, right):
                 normalized_left = self._normalize_expr(left)
                 normalized_right = self._normalize_expr(right)
-                return BinOp(op=op, left=normalized_left, right=normalized_right)
+
+                if op in ('and', 'or'):
+                    # Transform and/or to If statements with gc-tracked temps
+                    # This ensures refcount safety while preserving short-circuit semantics
+
+                    # 1. Create temp for left side and assign it
+                    left_temp_name = self._new_temp()
+                    left_var_info = self._declare_temp(left_temp_name)
+                    self.hoisted_stmts.append(LocalDecl(names=[left_temp_name], values=[normalized_left]))
+                    left_temp_ref = NameRef(name=left_temp_name, resolved=left_var_info)
+
+                    # 2. Create temp for result (declared but not assigned yet)
+                    result_temp_name = self._new_temp()
+                    result_var_info = self._declare_temp(result_temp_name)
+                    self.hoisted_stmts.append(LocalDecl(names=[result_temp_name], values=[]))
+                    result_temp_ref = NameRef(name=result_temp_name, resolved=result_var_info)
+
+                    # 3. Create If statement with appropriate branches
+                    if op == 'and':
+                        # if left_temp then result = right else result = left_temp
+                        then_block = Block(stmts=[Assign(targets=[result_temp_ref], values=[normalized_right])])
+                        else_block = Block(stmts=[Assign(targets=[result_temp_ref], values=[left_temp_ref])])
+                    else:  # op == 'or'
+                        # if left_temp then result = left_temp else result = right
+                        then_block = Block(stmts=[Assign(targets=[result_temp_ref], values=[left_temp_ref])])
+                        else_block = Block(stmts=[Assign(targets=[result_temp_ref], values=[normalized_right])])
+
+                    if_stmt = If(
+                        condition=left_temp_ref,
+                        then_block=then_block,
+                        elseif_parts=[],
+                        else_block=else_block
+                    )
+                    self.hoisted_stmts.append(if_stmt)
+
+                    # 4. Return reference to result temp
+                    return result_temp_ref
+                else:
+                    # For other binary ops, hoist function calls to temps
+                    if isinstance(normalized_left, FunctionCall | MethodCall):
+                        temp_name = self._new_temp()
+                        var_info = self._declare_temp(temp_name)
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_left]))
+                        normalized_left = NameRef(name=temp_name, resolved=var_info)
+
+                    if isinstance(normalized_right, FunctionCall | MethodCall):
+                        temp_name = self._new_temp()
+                        var_info = self._declare_temp(temp_name)
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_right]))
+                        normalized_right = NameRef(name=temp_name, resolved=var_info)
+
+                    return BinOp(op=op, left=normalized_left, right=normalized_right)
 
             case UnOp(op, operand):
                 normalized_operand = self._normalize_expr(operand)
@@ -152,12 +203,34 @@ class ASTNormalizer:
 
             case FunctionCall(func, args):
                 normalized_func = self._normalize_expr(func)
-                normalized_args = [self._normalize_expr(arg) for arg in args]
+                normalized_args = []
+
+                for arg in args:
+                    normalized_arg = self._normalize_expr(arg)
+                    if isinstance(normalized_arg, FunctionCall | MethodCall):
+                        temp_name = self._new_temp()
+                        var_info = self._declare_temp(temp_name)
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg]))
+                        normalized_args.append(NameRef(name=temp_name, resolved=var_info))
+                    else:
+                        normalized_args.append(normalized_arg)
+
                 return FunctionCall(func=normalized_func, args=normalized_args)
 
             case MethodCall(obj, method, args):
                 normalized_obj = self._normalize_expr(obj)
-                normalized_args = [self._normalize_expr(arg) for arg in args]
+                normalized_args = []
+
+                for arg in args:
+                    normalized_arg = self._normalize_expr(arg)
+                    if isinstance(normalized_arg, FunctionCall | MethodCall):
+                        temp_name = self._new_temp()
+                        var_info = self._declare_temp(temp_name)
+                        self.hoisted_stmts.append(LocalDecl(names=[temp_name], values=[normalized_arg]))
+                        normalized_args.append(NameRef(name=temp_name, resolved=var_info))
+                    else:
+                        normalized_args.append(normalized_arg)
+
                 return MethodCall(obj=normalized_obj, method=method, args=normalized_args)
 
             case TableAccess(table, key, is_dot):
@@ -262,23 +335,49 @@ class ASTNormalizer:
                 normalized_condition = self._normalize_expr(condition)
                 # Save hoisted statements from condition before normalizing blocks
                 hoisted = self.hoisted_stmts[:]
+                self.hoisted_stmts = []
 
                 normalized_then = Block(stmts=self._normalize_block(then_block))
 
-                normalized_elseif_parts = []
-                for elif_cond, elif_block in elseif_parts:
-                    normalized_elif_cond = self._normalize_expr(elif_cond)
-                    normalized_elif_block = Block(stmts=self._normalize_block(elif_block))
-                    normalized_elseif_parts.append((normalized_elif_cond, normalized_elif_block))
-
+                # Transform elseif parts into nested If statements inside else block
+                # This ensures hoisted statements from elseif conditions are placed correctly
                 normalized_else = None
-                if else_block:
+                if elseif_parts:
+                    # Build nested If from elseif parts (right to left)
+                    current_else = else_block
+                    for elif_cond, elif_block in reversed(elseif_parts):
+                        # Normalize the elseif condition
+                        normalized_elif_cond = self._normalize_expr(elif_cond)
+                        # Save hoisted statements from this elseif condition
+                        elif_hoisted = self.hoisted_stmts[:]
+                        self.hoisted_stmts = []
+
+                        # Normalize the elseif block
+                        normalized_elif_block = Block(stmts=self._normalize_block(elif_block))
+
+                        # Normalize current else block if it exists
+                        normalized_current_else = None
+                        if current_else:
+                            normalized_current_else = Block(stmts=self._normalize_block(current_else))
+
+                        # Create nested If statement with hoisted statements prepended
+                        nested_if = If(
+                            condition=normalized_elif_cond,
+                            then_block=normalized_elif_block,
+                            elseif_parts=[],
+                            else_block=normalized_current_else
+                        )
+                        # Wrap in a Block with hoisted statements
+                        current_else = Block(stmts=elif_hoisted + [nested_if])
+
+                    normalized_else = current_else
+                elif else_block:
                     normalized_else = Block(stmts=self._normalize_block(else_block))
 
                 normalized_stmt = If(
                     condition=normalized_condition,
                     then_block=normalized_then,
-                    elseif_parts=normalized_elseif_parts,
+                    elseif_parts=[],
                     else_block=normalized_else
                 )
                 return hoisted + [normalized_stmt]

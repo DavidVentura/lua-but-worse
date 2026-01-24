@@ -4,8 +4,8 @@
 #include "stdlib.h"
 
 TValue_t __str_ct_a_0;
-TValue_t __str_ct_c_1;
-TValue_t __str_ct_b_2;
+TValue_t __str_ct_b_1;
+TValue_t __str_ct_c_2;
 
 TValue_t cond(TVSlice_t args);
 TValue_t main(TVSlice_t args);
@@ -20,9 +20,9 @@ TValue_t cond(TVSlice_t args) {
             printh(__str_ct_a_0);
         } else {
             if (__bool(b)) {
-                        printh(__str_ct_b_2);
+                        printh(__str_ct_b_1);
                     } else {
-                        printh(__str_ct_c_1);
+                        printh(__str_ct_c_2);
                     }
         }
     return T_NULL;
@@ -47,8 +47,8 @@ TValue_t main(TVSlice_t args) {
 TValue_t _lua_main(TVSlice_t args) {
     _grow_strings_to(3);
     _set(&__str_ct_a_0, TSTRi(_store_str_at_or_die(CONSTSTR("a"), 0)));
-    _set(&__str_ct_c_1, TSTRi(_store_str_at_or_die(CONSTSTR("c"), 1)));
-    _set(&__str_ct_b_2, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 2)));
+    _set(&__str_ct_b_1, TSTRi(_store_str_at_or_die(CONSTSTR("b"), 1)));
+    _set(&__str_ct_c_2, TSTRi(_store_str_at_or_die(CONSTSTR("c"), 2)));
 
     return T_NULL;
 }

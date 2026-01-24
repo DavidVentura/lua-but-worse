@@ -907,8 +907,6 @@ class IRLowering:
             '<=': '_leq',
             '>': '_gt',
             '>=': '_geq',
-            'and': '_and',
-            'or': '_or',
         }
 
         func_name = op_map.get(op, f'_binop_{op}')

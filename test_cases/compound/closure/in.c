@@ -39,16 +39,22 @@ TValue_t main(TVSlice_t args) {
     TValue_t _tmp0 = TCLOSURE(_anon_0, 1);
     set_closure_arg(_tmp0, 0, _cap_idx_captured);
     _set(&a, _tmp0);
-    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    printh(_tmp1);
     _set(captured, TNUM(1));
-    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    printh(_tmp2);
     TValue_t b = TCLOSURE(b_fn, 1);
     set_closure_arg(b, 0, _cap_idx_captured);
     {
         TValue_t gc _tmp = T_NULL;
         _move(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
     }
-    printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+    printh(_tmp3);
     _return(TNUM(0));
 }
 

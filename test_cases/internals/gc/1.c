@@ -20,20 +20,28 @@ TValue_t returned_tables_1(TVSlice_t args) {
 }
 
 TValue_t returned_tables(TVSlice_t args) {
-    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    TValue_t gc _tmp1 = T_NULL;
+    _move(&_tmp1, __internal_debug_tables_used());
+    __internal_debug_assert_eq(_tmp1, TNUM(0));
     TValue_t gc t = T_NULL;
     _move(&t, CALL(returned_tables_1, ((TVSlice_t){NULL, 0})));
-    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(1));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, __internal_debug_tables_used());
+    __internal_debug_assert_eq(_tmp2, TNUM(1));
     return T_NULL;
 }
 
 TValue_t main(TVSlice_t args) {
-    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, __internal_debug_tables_used());
+    __internal_debug_assert_eq(_tmp3, TNUM(0));
     {
         TValue_t gc _tmp = T_NULL;
         _move(&_tmp, CALL(returned_tables, ((TVSlice_t){NULL, 0})));
     }
-    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
+    TValue_t gc _tmp4 = T_NULL;
+    _move(&_tmp4, __internal_debug_tables_used());
+    __internal_debug_assert_eq(_tmp4, TNUM(0));
     return T_NULL;
 }
 

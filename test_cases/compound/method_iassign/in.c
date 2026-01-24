@@ -51,10 +51,14 @@ TValue_t vector_new(TVSlice_t args) {
 TValue_t main(TVSlice_t args) {
     TValue_t gc zero = T_NULL;
     _move(&zero, CALL(get_tabvalue(vector, __str_ct_new_6), ((TVSlice_t){(TValue_t[]){TNUM(0), TNUM(0)}, 2})));
-    printh(CALL(get_tabvalue(zero, TSTR("len")), ((TVSlice_t){(TValue_t[]){zero}, 1})));
+    TValue_t gc _tmp2 = T_NULL;
+    _move(&_tmp2, CALL(get_tabvalue(zero, TSTR("len")), ((TVSlice_t){(TValue_t[]){zero}, 1})));
+    printh(_tmp2);
     TValue_t gc one = T_NULL;
     _move(&one, CALL(get_tabvalue(vector, __str_ct_new_6), ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(1)}, 2})));
-    printh(CALL(get_tabvalue(one, TSTR("len")), ((TVSlice_t){(TValue_t[]){one}, 1})));
+    TValue_t gc _tmp3 = T_NULL;
+    _move(&_tmp3, CALL(get_tabvalue(one, TSTR("len")), ((TVSlice_t){(TValue_t[]){one}, 1})));
+    printh(_tmp3);
     _return(TNUM(0));
 }
 

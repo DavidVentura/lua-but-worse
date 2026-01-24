@@ -11,7 +11,16 @@ TValue_t main(TVSlice_t args) {
     _set(&b, TNUM(1));
     TValue_t gc a = T_NULL;
     _set(&a, TNUM(1));
-    if (__bool(_and(_add(a, TNUM(1)), _add(b, TNUM(1))))) {
+    TValue_t gc _tmp0 = T_NULL;
+    _move(&_tmp0, _add(a, TNUM(1)));
+    TValue_t gc _tmp1 = T_NULL;
+    _set(&_tmp1, T_NULL);
+    if (__bool(_tmp0)) {
+            _move(&_tmp1, _add(b, TNUM(1)));
+        } else {
+            _set(&_tmp1, _tmp0);
+        }
+    if (__bool(_tmp1)) {
             _set(&a, TNUM(2));
         }
     _return(TNUM(0));
