@@ -22,8 +22,8 @@ TValue_t add_particle(TVSlice_t args) {
     set_tabvalue(_tmp1, __str_ct_x_0, x);
     set_tabvalue(_tmp1, __str_ct_y_1, y);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, add(particles, _tmp1));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, add(particles, _tmp1));
     }
     return T_NULL;
 }
@@ -38,8 +38,8 @@ TValue_t _anon_0(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(add_particle, ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(5)}, 2})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(add_particle, ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(5)}, 2})));
     }
     foreach(particles, TFUN(_anon_0));
     _return(TNUM(0));

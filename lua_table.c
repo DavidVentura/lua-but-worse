@@ -48,7 +48,7 @@ TValue_t add(TValue_t tab, TValue_t v) {
 	}
 	int16_t wanted = _sequential_until(tab) + 1;
 	set_tabvalue(tab, TNUM(wanted), v);
-	return v;
+	_return(v);
 }
 
 TValue_t del(TValue_t tab, TValue_t v) {
