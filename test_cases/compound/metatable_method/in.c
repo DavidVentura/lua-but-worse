@@ -32,14 +32,14 @@ TValue_t main(TVSlice_t args) {
     _set(&b, _tmp1);
     setmetatable(b, a);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(get_tabvalue(b, TSTR("method")), ((TVSlice_t){(TValue_t[]){b}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(get_tabvalue(b, TSTR("method")), ((TVSlice_t){(TValue_t[]){b}, 1})));
     }
     printh(get_tabvalue(a, __str_ct_x_1));
     printh(get_tabvalue(b, __str_ct_x_1));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a}, 1})));
     }
     printh(get_tabvalue(a, __str_ct_x_1));
     printh(get_tabvalue(b, __str_ct_x_1));

@@ -14,8 +14,8 @@ TValue_t b(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
     }
     _return(TNUM(0));
 }

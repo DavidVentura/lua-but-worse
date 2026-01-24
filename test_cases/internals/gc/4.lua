@@ -7,7 +7,7 @@ function deleted_tables()
 	end
 	__internal_debug_assert_eq(__internal_debug_tables_used(), 6)
 	for i = 1,5 do
-		del(tab, 1)
+		deli(tab, 1)
 	end
 	__internal_debug_assert_eq(__internal_debug_tables_used(), 1)
 end

@@ -66,8 +66,8 @@ TValue_t main(TVSlice_t args) {
     set_tabvalue(c, v, TFUN(_anon_4));
     printh(CALL(get_tabvalue(c, v), ((TVSlice_t){NULL, 0})));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(g, ((TVSlice_t){(TValue_t[]){TNUM(55)}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(g, ((TVSlice_t){(TValue_t[]){TNUM(55)}, 1})));
     }
     _return(TNUM(0));
 }

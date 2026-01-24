@@ -60,16 +60,16 @@ TValue_t test_concat(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(test_empty_thing, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(test_empty_thing, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(test_sub, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(test_sub, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(test_concat, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(test_concat, ((TVSlice_t){NULL, 0})));
     }
     _return(TNUM(0));
 }

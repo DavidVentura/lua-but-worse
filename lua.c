@@ -291,7 +291,8 @@ TValue_t del_tabvalue(TValue_t u, TValue_t key) {
 			t->kvp.kvs[i].key = T_NULL;
 			t->kvp.kvs[i].value = T_NULL;
 			t->count--;
-			_return(ret);
+			// Value already has refcount from being in table, just transfer it
+			return ret;
 		}
 	}
 	return T_NULL;

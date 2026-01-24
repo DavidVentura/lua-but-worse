@@ -25,8 +25,8 @@ TValue_t _references_in_table_destroyed(TVSlice_t args) {
 TValue_t test_references_in_table_destroyed(TVSlice_t args) {
     __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(_references_in_table_destroyed, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(_references_in_table_destroyed, ((TVSlice_t){NULL, 0})));
     }
     __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
     return T_NULL;
@@ -34,8 +34,8 @@ TValue_t test_references_in_table_destroyed(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(test_references_in_table_destroyed, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(test_references_in_table_destroyed, ((TVSlice_t){NULL, 0})));
     }
     return T_NULL;
 }

@@ -224,7 +224,10 @@ class CCodeGenerator:
             case CExprStmt(expr, needs_cleanup):
                 expr_str = self._generate_expr(expr)
                 if needs_cleanup:
-                    return f"{{\n    TValue_t gc _tmp;\n    _set(&_tmp, {expr_str});\n}}"
+                    # Use _move for function calls, _set for variable refs
+                    is_move = isinstance(expr, CFunctionCall)
+                    func = "_move" if is_move else "_set"
+                    return f"{{\n    TValue_t gc _tmp = T_NULL;\n    {func}(&_tmp, {expr_str});\n}}"
                 else:
                     return f"{expr_str};"
 

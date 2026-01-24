@@ -15,8 +15,8 @@ TValue_t something(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(something, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(something, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
     }
     printh(CALL(something, ((TVSlice_t){(TValue_t[]){TNUM(6)}, 1})));
     _return(TNUM(0));

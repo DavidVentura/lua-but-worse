@@ -27,8 +27,8 @@ TValue_t main(TVSlice_t args) {
     set_tabvalue(a, __str_ct_method_1, TFUN(a_method));
     printh(get_tabvalue(a, __str_ct_x_0));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a, TNUM(5)}, 2})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(get_tabvalue(a, TSTR("method")), ((TVSlice_t){(TValue_t[]){a, TNUM(5)}, 2})));
     }
     printh(get_tabvalue(a, __str_ct_x_0));
     _return(TNUM(0));

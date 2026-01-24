@@ -30,16 +30,16 @@ TValue_t cond(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_TRUE, T_FALSE, T_FALSE}, 3})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_TRUE, T_FALSE, T_FALSE}, 3})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_TRUE, T_FALSE}, 3})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_TRUE, T_FALSE}, 3})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_FALSE, T_TRUE}, 3})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(cond, ((TVSlice_t){(TValue_t[]){T_FALSE, T_FALSE, T_TRUE}, 3})));
     }
     _return(TNUM(0));
 }

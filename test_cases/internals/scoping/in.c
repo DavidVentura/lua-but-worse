@@ -58,18 +58,18 @@ TValue_t local_var(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(local_var, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(local_var, ((TVSlice_t){NULL, 0})));
     }
     printh(__str_ct_____2);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(else_arm, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(else_arm, ((TVSlice_t){NULL, 0})));
     }
     printh(__str_ct_____2);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(elseif_else_arm, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(elseif_else_arm, ((TVSlice_t){NULL, 0})));
     }
     _return(TNUM(0));
 }

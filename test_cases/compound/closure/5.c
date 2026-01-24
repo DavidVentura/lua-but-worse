@@ -38,24 +38,24 @@ TValue_t test_function_args_captured(TVSlice_t args) {
     _move(&captures_5, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
     _move(&captures_6, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(6)}, 1})));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(captures_5, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(captures_5, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(captures_6, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(captures_6, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(captures_5, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(captures_5, ((TVSlice_t){NULL, 0})));
     }
     return T_NULL;
 }
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(test_function_args_captured, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(test_function_args_captured, ((TVSlice_t){NULL, 0})));
     }
     return T_NULL;
 }

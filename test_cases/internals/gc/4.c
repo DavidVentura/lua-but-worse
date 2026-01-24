@@ -27,14 +27,28 @@ TValue_t deleted_tables(TVSlice_t args) {
                     }
         }
     __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(6));
+    {
+            TValue_t gc i = T_NULL;
+            _set(&i, TNUM(1));
+            TValue_t gc tmp_1 = T_NULL;
+            _set(&tmp_1, TNUM(5));
+            while (__bool(_leq(i, tmp_1))) {
+                        {
+                            TValue_t gc _tmp = T_NULL;
+                            _move(&_tmp, CALL(deli, ((TVSlice_t){(TValue_t[]){tab, TNUM(1)}, 2})));
+                        }
+                        _move(&i, _add(i, TNUM8(1)));
+                    }
+        }
+    __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(1));
     return T_NULL;
 }
 
 TValue_t main(TVSlice_t args) {
     __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(deleted_tables, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(deleted_tables, ((TVSlice_t){NULL, 0})));
     }
     __internal_debug_assert_eq(__internal_debug_tables_used(), TNUM(0));
     return T_NULL;

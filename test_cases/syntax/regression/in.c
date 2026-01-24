@@ -114,20 +114,20 @@ TValue_t celeste(TVSlice_t args) {
 
 TValue_t main(TVSlice_t args) {
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(celeste, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(celeste, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(integer_div, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(integer_div, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(bunny, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(bunny, ((TVSlice_t){NULL, 0})));
     }
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(fractional_binary_literal, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(fractional_binary_literal, ((TVSlice_t){NULL, 0})));
     }
     _return(TNUM(0));
 }

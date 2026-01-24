@@ -25,18 +25,18 @@ TValue_t f(TVSlice_t args) {
 TValue_t main(TVSlice_t args) {
     printh(__str_ct_all_0);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(2), TNUM(3)}, 3})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(1), TNUM(2), TNUM(3)}, 3})));
     }
     printh(__str_ct_str_1);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(1)}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(f, ((TVSlice_t){(TValue_t[]){TNUM(1)}, 1})));
     }
     printh(__str_ct_all_miss_2);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(f, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(f, ((TVSlice_t){NULL, 0})));
     }
     _return(TNUM(0));
 }

@@ -45,8 +45,8 @@ TValue_t main(TVSlice_t args) {
     TValue_t b = TCLOSURE(b_fn, 1);
     set_closure_arg(b, 0, _cap_idx_captured);
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(b, ((TVSlice_t){NULL, 0})));
     }
     printh(CALL(a, ((TVSlice_t){(TValue_t[]){TNUM(5)}, 1})));
     _return(TNUM(0));

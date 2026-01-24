@@ -62,8 +62,8 @@ TValue_t main(TVSlice_t args) {
     printh(get_tabvalue(get_tabvalue(literals, __str_ct_top_8), __str_ct_y_7));
     printh(get_tabvalue(get_tabvalue(literals, __str_ct_right_11), __str_ct_x_6));
     {
-        TValue_t gc _tmp;
-        _set(&_tmp, CALL(get_tabvalue(func_in_tab, __str_ct_func_5), ((TVSlice_t){(TValue_t[]){func_in_tab}, 1})));
+        TValue_t gc _tmp = T_NULL;
+        _move(&_tmp, CALL(get_tabvalue(func_in_tab, __str_ct_func_5), ((TVSlice_t){(TValue_t[]){func_in_tab}, 1})));
     }
     _return(TNUM(0));
 }
