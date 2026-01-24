@@ -253,7 +253,7 @@ TValue_t get_tabvalue(TValue_t u, TValue_t key) {
 	Table_t* t = GETTAB(u);
 	for(uint16_t i=0; i<t->kvp.len; i++) {
 		if (equal(t->kvp.kvs[i].key, key)) {
-			return t->kvp.kvs[i].value;
+			_return(t->kvp.kvs[i].value);
 		}
 	}
 	if(t->metatable_idx != UINT16_MAX) {
@@ -732,6 +732,9 @@ uint16_t make_str(char* c) {
 		uint8_t* buf = malloc(len);
 		memcpy(buf, c, len);
 		strindex = _store_str((Str_t){.len=len, .data=buf, .refcount=1});
+	} else {
+		// Found existing string - increment refcount for the new reference
+		_strings.strings[strindex].refcount++;
 	}
 	return strindex;
 }
@@ -926,9 +929,10 @@ TValue_t _concat(TValue_t a, TValue_t b) {
 		strindex = _store_str((Str_t){.len=_concat_buf.len, .data=buf, .refcount=1});
 		ret = (TValue_t){.tag=STR, .str_idx=strindex};
 	} else {
+		// Found existing string - need to increment refcount for the new reference
 		ret = (TValue_t){.tag=STR, .str_idx=strindex};
+		_incref(ret);
 	}
-
 
 	return ret;
 }
@@ -955,7 +959,8 @@ TValue_t __internal_debug_tables_used() {
 
 TValue_t tostring(TValue_t v) {
 	if (v.tag == STR) {
-		return v;
+		// Returning reference to existing string - increment refcount
+		_return(v);
 	}
 	if (v.tag == TAB) {
 		printf("tab %d\n", v.table_idx);
@@ -965,7 +970,7 @@ TValue_t tostring(TValue_t v) {
 	assert(v.tag == NUM);
 	char buf[MAX_STR_LEN_FIX32] = {0};
 	print_fix32(v.num, buf);
-	ret = TSTR(buf); // TSTR makes its own copy
+	ret = TSTR(buf); // TSTR makes its own copy with refcount=1
 	return ret;
 }
 

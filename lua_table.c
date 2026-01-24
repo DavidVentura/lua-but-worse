@@ -66,8 +66,9 @@ TValue_t del(TValue_t tab, TValue_t v) {
 		if(last_contiguous_key.tag == NUL && equal(val, v)) {
 			last_contiguous_key = key;
 			found_value = val;
-			_incref(found_value);  // Keep alive during shifting
+			// get_tabvalue already incremented refcount, so found_value is owned
 			wanted++; // avoid copying the key to itself if it's matches on the first iteration
+			__decref(&val);  // Release the reference from get_tabvalue since we copied to found_value
 			continue;
 		}
 		if(last_contiguous_key.tag != NUL) {
@@ -75,6 +76,7 @@ TValue_t del(TValue_t tab, TValue_t v) {
 			// on the first iteration
 			set_tabvalue(tab, last_contiguous_key, val);
 		}
+		__decref(&val);  // Release the reference from get_tabvalue
 		last_contiguous_key = key;
 		wanted++;
 	}
@@ -102,9 +104,7 @@ TValue_t deli(TVSlice_t varargs) {
 	// Get the value to remove
 	TValue_t removed = get_tabvalue(tab, TNUM(idx));
 	if (removed.tag == NUL) return T_NULL;
-
-	// Keep it alive during shifting
-	_incref(removed);
+	// get_tabvalue already incremented refcount via _return(), so removed is owned
 
 	// Shift all subsequent elements down, similar to del()
 	int16_t last_key = idx;
@@ -114,8 +114,10 @@ TValue_t deli(TVSlice_t varargs) {
 			// No more elements
 			break;
 		}
-		// Copy val to previous position
+		// set_tabvalue will incref val, and val will be decreffed when it goes out of scope
+		// This is correct - set_tabvalue adds a reference, val's ownership is transferred to the scope
 		set_tabvalue(tab, TNUM(last_key), val);
+		__decref(&val);  // Release the reference from get_tabvalue
 		last_key = i;
 	}
 
